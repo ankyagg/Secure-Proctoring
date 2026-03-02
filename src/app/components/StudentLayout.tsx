@@ -1,4 +1,5 @@
 import { useState, useEffect, createContext, useContext } from "react";
+import WebcamPreview from "./WebcamPreview";
 import { Outlet, useNavigate, useLocation, Link } from "react-router";
 import {
   Code2,
@@ -16,12 +17,14 @@ interface StudentContextType {
   timeRemaining: number;
   warningCount: number;
   addWarning: () => void;
+  currentUser: { username: string; avatar?: string };
 }
 
 export const StudentContext = createContext<StudentContextType>({
   timeRemaining: 6332,
   warningCount: 1,
   addWarning: () => {},
+  currentUser: { username: "alex_coder" },
 });
 
 export function useStudentContext() {
@@ -57,7 +60,7 @@ export default function StudentLayout() {
     timeRemaining < 600 ? "bg-red-50 border-red-200" : timeRemaining < 1800 ? "bg-amber-50 border-amber-200" : "bg-slate-50 border-slate-200";
 
   return (
-    <StudentContext.Provider value={{ timeRemaining, warningCount, addWarning }}>
+    <StudentContext.Provider value={{ timeRemaining, warningCount, addWarning, currentUser: { username: "alex_coder" } }}>
       <div className="min-h-screen bg-slate-50 flex flex-col">
         {/* Top Bar */}
         <header className="bg-white border-b border-slate-200 px-5 py-0 flex items-center justify-between h-14 sticky top-0 z-40">
@@ -128,7 +131,7 @@ export default function StudentLayout() {
             {/* Webcam indicator */}
             <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-green-50 border border-green-200 text-green-700 text-xs">
               <Eye className="w-3 h-3" />
-              <span className="hidden sm:block">CAM ON</span>
+              <span className="hidden sm:block">N/A</span>
             </div>
 
             {/* User */}
@@ -153,6 +156,8 @@ export default function StudentLayout() {
         <main className="flex-1 overflow-auto">
           <Outlet />
         </main>
+        {/* keep camera visible throughout contest */}
+        <WebcamPreview username={"alex_coder"} />
       </div>
     </StudentContext.Provider>
   );

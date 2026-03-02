@@ -17,6 +17,7 @@ import {
   X,
   Terminal,
 } from "lucide-react";
+import WebcamPreview from "../../components/WebcamPreview";
 import { problems } from "../../data/mockData";
 import { useStudentContext } from "../../components/StudentLayout";
 
@@ -127,7 +128,7 @@ const verdictConfig: Record<
 export default function CodingWorkspace() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { addWarning } = useStudentContext();
+  const { addWarning, currentUser } = useStudentContext();
 
   const problem = problems.find((p) => p.id === id) ?? problems[0];
 
@@ -465,19 +466,7 @@ export default function CodingWorkspace() {
       </div>
 
       {/* Webcam preview */}
-      <div className="fixed bottom-5 right-5 w-36 h-28 bg-slate-900 rounded-xl border border-slate-700 overflow-hidden shadow-xl z-30">
-        <div className="w-full h-full bg-gradient-to-br from-slate-800 to-slate-900 flex flex-col items-center justify-center gap-2">
-          <Camera className="w-5 h-5 text-slate-400" />
-          <span className="text-slate-500 text-xs">Camera Active</span>
-          <span className="flex items-center gap-1 text-green-400 text-xs">
-            <span className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse" />
-            REC
-          </span>
-        </div>
-        <div className="absolute bottom-1 left-1 right-1 flex items-center justify-center">
-          <span className="text-slate-500 text-xs">alex_coder</span>
-        </div>
-      </div>
+      <WebcamPreview username={currentUser?.username} />
 
       {/* Submission Result Modal */}
       {showModal && verdict && (
