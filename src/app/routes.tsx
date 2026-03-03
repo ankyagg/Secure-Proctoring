@@ -11,6 +11,8 @@ import ContestManagement from "./pages/admin/ContestManagement";
 import QuestionManagement from "./pages/admin/QuestionManagement";
 import SubmissionsMonitoring from "./pages/admin/SubmissionsMonitoring";
 import AntiCheatMonitoring from "./pages/admin/AntiCheatMonitoring";
+import AddContest from "./pages/admin/AddContest";
+import AddQuestion from "./pages/admin/AddQuestion";
 
 export const router = createBrowserRouter([
   {
@@ -38,5 +40,13 @@ export const router = createBrowserRouter([
       { path: "submissions", Component: SubmissionsMonitoring },
       { path: "anticheat", Component: AntiCheatMonitoring },
     ],
+  },
+  {
+    path: "/admin/contests/new",
+    Component: AddContest,
+  },
+  {
+    path: "/admin/questions/new",
+    Component: AddQuestion,
   },
 ]);
