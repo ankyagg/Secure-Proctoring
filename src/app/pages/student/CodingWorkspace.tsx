@@ -45,7 +45,7 @@ int main() {
     cin >> n >> target;
     vector<int> nums(n);
     for (int i = 0; i < n; i++) cin >> nums[i];
-    
+
     vector<int> result = twoSum(nums, target);
     cout << result[0] << " " << result[1] << endl;
     return 0;
@@ -55,7 +55,7 @@ using namespace std;
 
 int main() {
     // Your solution here
-    
+
     return 0;
 }`,
   },
@@ -66,7 +66,7 @@ public class Solution {
     public static void main(String[] args) {
         Scanner sc = new Scanner(System.in);
         // Your solution here
-        
+
     }
 }`,
   },
@@ -144,8 +144,78 @@ export default function CodingWorkspace() {
   const [verdict, setVerdict] = useState<Verdict>(null);
   const [activeTab, setActiveTab] = useState<"statement" | "input" | "output">("statement");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-
+  const [violations, setViolations] = useState(0);
   const lineCount = code.split("\n").length;
+  useEffect(() => {
+  let violationCount = 0;
+
+const logViolation = (reason: string) => {
+  setViolations(prev => {
+    const newCount = prev + 1;
+
+    console.log(reason); // now valid
+
+    addWarning?.();
+
+    if (newCount >= 5) {
+      alert("Too many violations. Auto submitting...");
+      handleSubmit();
+    }
+
+    return newCount;
+  });
+};
+
+  const handleVisibility = () => {
+    if (document.hidden) {
+      logViolation("Tab switched");
+    }
+  };
+
+  const handleBlur = () => {
+    logViolation("Window lost focus");
+  };
+
+  const handleFullscreenChange = () => {
+    if (!document.fullscreenElement) {
+      logViolation("Exited fullscreen");
+    }
+  };
+
+  const blockCopyPaste = (e: ClipboardEvent) => {
+    e.preventDefault();
+    logViolation("Copy/Paste attempt");
+  };
+
+  const blockRightClick = (e: MouseEvent) => {
+    e.preventDefault();
+    logViolation("Right click disabled");
+  };
+
+  const enterFullscreen = async () => {
+    try {
+      await document.documentElement.requestFullscreen();
+    } catch (err) {}
+  };
+
+  enterFullscreen();
+
+  document.addEventListener("visibilitychange", handleVisibility);
+  window.addEventListener("blur", handleBlur);
+  document.addEventListener("fullscreenchange", handleFullscreenChange);
+  document.addEventListener("copy", blockCopyPaste);
+  document.addEventListener("paste", blockCopyPaste);
+  document.addEventListener("contextmenu", blockRightClick);
+
+  return () => {
+    document.removeEventListener("visibilitychange", handleVisibility);
+    window.removeEventListener("blur", handleBlur);
+    document.removeEventListener("fullscreenchange", handleFullscreenChange);
+    document.removeEventListener("copy", blockCopyPaste);
+    document.removeEventListener("paste", blockCopyPaste);
+    document.removeEventListener("contextmenu", blockRightClick);
+  };
+}, []);
 
   const handleLanguageChange = (lang: string) => {
     setLanguage(lang);
@@ -359,6 +429,10 @@ export default function CodingWorkspace() {
             </div>
 
             <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-1.5 text-red-400 text-xs ml-3">
+  <AlertTriangle className="w-3.5 h-3.5" />
+  {violations}
+</div>
               <button
                 onClick={() => {
                   const boilerplate =
