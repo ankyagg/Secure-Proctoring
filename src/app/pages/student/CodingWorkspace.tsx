@@ -23,6 +23,14 @@ import { useStudentContext } from "../../components/StudentLayout";
 
 const LANGUAGES = ["C++", "Java", "Python"];
 
+// Wandbox API - Free compiler service, no API key needed
+const WANDBOX_URL = "https://wandbox.org/api/compile.json";
+const WANDBOX_COMPILERS: Record<string, string> = {
+  "C++": "gcc-head",
+  "Java": "openjdk-jdk-21+35",
+  "Python": "cpython-3.12.0",
+};
+
 const BOILERPLATES: Record<string, Record<string, string>> = {
   "C++": {
     A: `#include <bits/stdc++.h>
@@ -147,75 +155,8 @@ export default function CodingWorkspace() {
   const [violations, setViolations] = useState(0);
   const lineCount = code.split("\n").length;
   useEffect(() => {
-  let violationCount = 0;
-
-const logViolation = (reason: string) => {
-  setViolations(prev => {
-    const newCount = prev + 1;
-
-    console.log(reason); // now valid
-
-    addWarning?.();
-
-    if (newCount >= 5) {
-      alert("Too many violations. Auto submitting...");
-      handleSubmit();
-    }
-
-    return newCount;
-  });
-};
-
-  const handleVisibility = () => {
-    if (document.hidden) {
-      logViolation("Tab switched");
-    }
-  };
-
-  const handleBlur = () => {
-    logViolation("Window lost focus");
-  };
-
-  const handleFullscreenChange = () => {
-    if (!document.fullscreenElement) {
-      logViolation("Exited fullscreen");
-    }
-  };
-
-  const blockCopyPaste = (e: ClipboardEvent) => {
-    e.preventDefault();
-    logViolation("Copy/Paste attempt");
-  };
-
-  const blockRightClick = (e: MouseEvent) => {
-    e.preventDefault();
-    logViolation("Right click disabled");
-  };
-
-  const enterFullscreen = async () => {
-    try {
-      await document.documentElement.requestFullscreen();
-    } catch (err) {}
-  };
-
-  enterFullscreen();
-
-  document.addEventListener("visibilitychange", handleVisibility);
-  window.addEventListener("blur", handleBlur);
-  document.addEventListener("fullscreenchange", handleFullscreenChange);
-  document.addEventListener("copy", blockCopyPaste);
-  document.addEventListener("paste", blockCopyPaste);
-  document.addEventListener("contextmenu", blockRightClick);
-
-  return () => {
-    document.removeEventListener("visibilitychange", handleVisibility);
-    window.removeEventListener("blur", handleBlur);
-    document.removeEventListener("fullscreenchange", handleFullscreenChange);
-    document.removeEventListener("copy", blockCopyPaste);
-    document.removeEventListener("paste", blockCopyPaste);
-    document.removeEventListener("contextmenu", blockRightClick);
-  };
-}, []);
+    // Proctoring restrictions disabled
+  }, []);
 
   const handleLanguageChange = (lang: string) => {
     setLanguage(lang);
@@ -224,24 +165,68 @@ const logViolation = (reason: string) => {
     setCode(boilerplate);
   };
 
-  const handleRun = () => {
+  const handleRun = async () => {
     setIsRunning(true);
     setActiveTab("output");
-    setTimeout(() => {
-      setOutputText(`Running on custom input...\n\n> Input:\n${customInput}\n\n> Output:\n${problem.sampleOutput}\n\n✓ Matches expected output`);
+    setOutputText("⏳ Running your code...");
+    try {
+      const res = await fetch(WANDBOX_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          compiler: WANDBOX_COMPILERS[language],
+          code,
+          stdin: customInput,
+        }),
+      });
+      const data = await res.json();
+      if (data.compiler_error) {
+        setOutputText(`❌ Compilation Error:\n${data.compiler_error}`);
+      } else if (data.program_error) {
+        setOutputText(`⚠️ Runtime Error:\n${data.program_error}`);
+      } else {
+        setOutputText(`✅ Output:\n${data.program_output || "(no output)"}`);
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setOutputText(`❌ Error: ${msg}`);
+    } finally {
       setIsRunning(false);
-    }, 1200);
+    }
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     setIsSubmitting(true);
-    setTimeout(() => {
-      const verdicts: Verdict[] = ["Accepted", "Accepted", "Accepted", "Wrong Answer", "TLE"];
-      const picked = verdicts[Math.floor(Math.random() * verdicts.length)];
-      setVerdict(picked);
+    setActiveTab("output");
+    setOutputText("⏳ Judging your code...");
+    try {
+      const res = await fetch(WANDBOX_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          compiler: WANDBOX_COMPILERS[language],
+          code,
+          stdin: problem.sampleInput,
+        }),
+      });
+      const data = await res.json();
+      if (data.compiler_error) {
+        setVerdict("CE");
+        setOutputText(`❌ Compilation Error:\n${data.compiler_error}`);
+      } else if (data.program_output?.trim() === problem.sampleOutput.trim()) {
+        setVerdict("Accepted");
+        setOutputText(`✅ Sample test passed!\n\nOutput: ${data.program_output}`);
+      } else {
+        setVerdict("Wrong Answer");
+        setOutputText(`❌ Wrong Answer\n\nExpected:\n${problem.sampleOutput}\n\nGot:\n${data.program_output || "(no output)"}${data.program_error ? `\n\nError:\n${data.program_error}` : ""}`);
+      }
       setIsSubmitting(false);
       setShowModal(true);
-    }, 2000);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      alert(`❌ Failed: ${msg}`);
+      setIsSubmitting(false);
+    }
   };
 
   const difficultyConfig = {
@@ -297,11 +282,10 @@ const logViolation = (reason: string) => {
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`px-3 py-2.5 text-xs capitalize border-b-2 transition-colors -mb-px ${
-                  activeTab === tab
-                    ? "border-blue-600 text-blue-700"
-                    : "border-transparent text-slate-400 hover:text-slate-600"
-                }`}
+                className={`px-3 py-2.5 text-xs capitalize border-b-2 transition-colors -mb-px ${activeTab === tab
+                  ? "border-blue-600 text-blue-700"
+                  : "border-transparent text-slate-400 hover:text-slate-600"
+                  }`}
                 style={{ fontWeight: 500 }}
               >
                 {tab === "input" ? "Custom Input" : tab === "output" ? "Output" : "Statement"}
@@ -430,9 +414,9 @@ const logViolation = (reason: string) => {
 
             <div className="flex items-center gap-1.5">
               <div className="flex items-center gap-1.5 text-red-400 text-xs ml-3">
-  <AlertTriangle className="w-3.5 h-3.5" />
-  {violations}
-</div>
+                <AlertTriangle className="w-3.5 h-3.5" />
+                {violations}
+              </div>
               <button
                 onClick={() => {
                   const boilerplate =
@@ -586,9 +570,8 @@ const logViolation = (reason: string) => {
                     return (
                       <div
                         key={i}
-                        className={`w-8 h-8 rounded-lg text-xs flex items-center justify-center ${
-                          pass ? "bg-green-100 text-green-700 border border-green-200" : "bg-red-100 text-red-700 border border-red-200"
-                        }`}
+                        className={`w-8 h-8 rounded-lg text-xs flex items-center justify-center ${pass ? "bg-green-100 text-green-700 border border-green-200" : "bg-red-100 text-red-700 border border-red-200"
+                          }`}
                         style={{ fontWeight: 600 }}
                       >
                         {i + 1}

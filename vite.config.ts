@@ -10,10 +10,18 @@ export default defineConfig({
   ],
   resolve: {
     alias: {
-      // Alias @ to the src directory
       '@': path.resolve(__dirname, './src'),
     },
   },
-
+  server: {
+    proxy: {
+      '/api/piston': {
+        target: 'https://emkc.org',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/piston/, '/api/v2/piston'),
+        secure: true,
+      }
+    }
+  },
   assetsInclude: ['**/*.svg', '**/*.csv'],
 })
