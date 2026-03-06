@@ -8,10 +8,11 @@ import {
   LayoutList,
   Trophy,
   LogOut,
-  ChevronRight,
   Eye,
 } from "lucide-react";
 import { contest } from "../data/mockData";
+import { auth } from "../services/firebase";
+import { onAuthStateChanged } from "firebase/auth";
 
 interface StudentContextType {
   timeRemaining: number;
@@ -24,7 +25,7 @@ export const StudentContext = createContext<StudentContextType>({
   timeRemaining: 6332,
   warningCount: 1,
   addWarning: () => {},
-  currentUser: { username: "alex_coder" },
+  currentUser: { username: "user" },
 });
 
 export function useStudentContext() {
@@ -41,8 +42,10 @@ function formatTime(seconds: number) {
 export default function StudentLayout() {
   const navigate = useNavigate();
   const location = useLocation();
-  const [timeRemaining, setTimeRemaining] = useState(6332); // ~1h 45m 32s
+
+  const [timeRemaining, setTimeRemaining] = useState(6332);
   const [warningCount, setWarningCount] = useState(1);
+  const [username, setUsername] = useState("user");
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -51,19 +54,46 @@ export default function StudentLayout() {
     return () => clearInterval(timer);
   }, []);
 
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user?.email) {
+        const name = user.email.split("@")[0];
+        setUsername(name);
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
+
   const addWarning = () => setWarningCount((w) => w + 1);
 
   const isWorkspace = location.pathname.includes("/workspace");
+
   const timerColor =
-    timeRemaining < 600 ? "text-red-600" : timeRemaining < 1800 ? "text-amber-600" : "text-slate-700";
+    timeRemaining < 600
+      ? "text-red-600"
+      : timeRemaining < 1800
+      ? "text-amber-600"
+      : "text-slate-700";
+
   const timerBg =
-    timeRemaining < 600 ? "bg-red-50 border-red-200" : timeRemaining < 1800 ? "bg-amber-50 border-amber-200" : "bg-slate-50 border-slate-200";
+    timeRemaining < 600
+      ? "bg-red-50 border-red-200"
+      : timeRemaining < 1800
+      ? "bg-amber-50 border-amber-200"
+      : "bg-slate-50 border-slate-200";
+
+  const avatarLetters = username.substring(0, 2).toUpperCase();
 
   return (
-    <StudentContext.Provider value={{ timeRemaining, warningCount, addWarning, currentUser: { username: "alex_coder" } }}>
+    <StudentContext.Provider
+      value={{ timeRemaining, warningCount, addWarning, currentUser: { username } }}
+    >
       <div className="min-h-screen bg-slate-50 flex flex-col">
+
         {/* Top Bar */}
         <header className="bg-white border-b border-slate-200 px-5 py-0 flex items-center justify-between h-14 sticky top-0 z-40">
+
           {/* Left */}
           <div className="flex items-center gap-4">
             <Link to="/student/lobby" className="flex items-center gap-2">
@@ -74,18 +104,21 @@ export default function StudentLayout() {
                 CodeArena
               </span>
             </Link>
+
             <div className="h-5 w-px bg-slate-200 hidden sm:block" />
+
             <span className="text-slate-600 text-sm hidden md:block truncate max-w-56">
               {contest.shortName}
             </span>
           </div>
 
-          {/* Center nav (not on workspace) */}
+          {/* Center Nav */}
           {!isWorkspace && (
             <nav className="hidden md:flex items-center gap-1">
+
               <Link
                 to="/student/problems"
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition-colors ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm ${
                   location.pathname === "/student/problems"
                     ? "bg-blue-50 text-blue-700"
                     : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
@@ -94,9 +127,10 @@ export default function StudentLayout() {
                 <LayoutList className="w-4 h-4" />
                 Problems
               </Link>
+
               <Link
                 to="/student/leaderboard"
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm transition-colors ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm ${
                   location.pathname === "/student/leaderboard"
                     ? "bg-blue-50 text-blue-700"
                     : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
@@ -105,15 +139,15 @@ export default function StudentLayout() {
                 <Trophy className="w-4 h-4" />
                 Leaderboard
               </Link>
+
             </nav>
           )}
 
           {/* Right */}
           <div className="flex items-center gap-2.5">
+
             {/* Timer */}
-            <div
-              className={`flex items-center gap-1.5 px-3 py-1 rounded-lg border text-sm ${timerBg} ${timerColor}`}
-            >
+            <div className={`flex items-center gap-1.5 px-3 py-1 rounded-lg border text-sm ${timerBg} ${timerColor}`}>
               <Clock className="w-3.5 h-3.5" />
               <span style={{ fontFamily: "monospace", fontWeight: 600 }}>
                 {formatTime(timeRemaining)}
@@ -128,27 +162,32 @@ export default function StudentLayout() {
               </div>
             )}
 
-            {/* Webcam indicator */}
+            {/* Webcam Indicator */}
             <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-green-50 border border-green-200 text-green-700 text-xs">
               <Eye className="w-3 h-3" />
-              <span className="hidden sm:block">N/A</span>
+              <span className="hidden sm:block">Live</span>
             </div>
 
             {/* User */}
             <div className="hidden sm:flex items-center gap-2 pl-2">
-              <div className="w-7 h-7 bg-blue-600 rounded-full flex items-center justify-center text-white text-xs" style={{ fontWeight: 600 }}>
-                AC
+              <div className="w-7 h-7 bg-blue-600 rounded-full flex items-center justify-center text-white text-xs">
+                {avatarLetters}
               </div>
-              <span className="text-sm text-slate-700 hidden lg:block">alex_coder</span>
+
+              <span className="text-sm text-slate-700 hidden lg:block">
+                {username}
+              </span>
             </div>
 
+            {/* Exit */}
             <button
               onClick={() => navigate("/")}
-              className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+              className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg"
               title="Exit Contest"
             >
               <LogOut className="w-4 h-4" />
             </button>
+
           </div>
         </header>
 
@@ -156,8 +195,10 @@ export default function StudentLayout() {
         <main className="flex-1 overflow-auto">
           <Outlet />
         </main>
-        {/* keep camera visible throughout contest */}
-        <WebcamPreview username={"alex_coder"} />
+
+        {/* Webcam */}
+        <WebcamPreview username={username} />
+
       </div>
     </StudentContext.Provider>
   );
