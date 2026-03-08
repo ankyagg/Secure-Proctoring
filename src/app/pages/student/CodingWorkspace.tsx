@@ -28,9 +28,18 @@ const WANDBOX_URL = "https://wandbox.org/api/compile.json";
 const WANDBOX_COMPILERS: Record<string, string> = {
   "C++": "gcc-head",
   "Java": "openjdk-jdk-21+35",
-  "Python": "cpython-3.12.0",
+  "Python": "cpython-3.12.3",
 };
 
+// Helper: safely parse Wandbox response (may return plain text on error)
+async function parseWandbox(res: Response): Promise<Record<string, string>> {
+  const text = await res.text();
+  try {
+    return JSON.parse(text);
+  } catch {
+    return { program_error: text, program_output: "" };
+  }
+}
 const BOILERPLATES: Record<string, Record<string, string>> = {
   "C++": {
     A: `#include <bits/stdc++.h>
@@ -136,7 +145,7 @@ const verdictConfig: Record<
 export default function CodingWorkspace() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { addWarning, currentUser } = useStudentContext();
+  const { addWarning, currentUser, antiCheat } = useStudentContext();
 
   const problem = problems.find((p) => p.id === id) ?? problems[0];
 
@@ -153,10 +162,50 @@ export default function CodingWorkspace() {
   const [activeTab, setActiveTab] = useState<"statement" | "input" | "output">("statement");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [violations, setViolations] = useState(0);
+  const [isFullscreen, setIsFullscreen] = useState(!!document.fullscreenElement);
+  const [showFullscreenPrompt, setShowFullscreenPrompt] = useState(false);
   const lineCount = code.split("\n").length;
+
+  // ── Fullscreen enforcement ──────────────────────────────────────────────────
   useEffect(() => {
-    // Proctoring restrictions disabled
-  }, []);
+    if (!antiCheat?.enabled || !antiCheat.fullscreen) return;
+
+    const requestFs = () => {
+      document.documentElement.requestFullscreen().catch(() => {});
+    };
+
+    if (!document.fullscreenElement) {
+      requestFs();
+    }
+
+    const onFsChange = () => {
+      const inFs = !!document.fullscreenElement;
+      setIsFullscreen(inFs);
+      if (!inFs) {
+        setShowFullscreenPrompt(true);
+        addWarning();
+      } else {
+        setShowFullscreenPrompt(false);
+      }
+    };
+
+    document.addEventListener("fullscreenchange", onFsChange);
+    return () => document.removeEventListener("fullscreenchange", onFsChange);
+  }, [antiCheat, addWarning]);
+
+  // ── Tab-switch / window-blur detection ─────────────────────────────────────
+  useEffect(() => {
+    if (!antiCheat?.enabled || !antiCheat.tabSwitch) return;
+
+    const onVisibility = () => {
+      if (document.visibilityState === "hidden") {
+        addWarning();
+      }
+    };
+
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => document.removeEventListener("visibilitychange", onVisibility);
+  }, [antiCheat, addWarning]);
 
   const handleLanguageChange = (lang: string) => {
     setLanguage(lang);
@@ -179,7 +228,7 @@ export default function CodingWorkspace() {
           stdin: customInput,
         }),
       });
-      const data = await res.json();
+      const data = await parseWandbox(res);
       if (data.compiler_error) {
         setOutputText(`❌ Compilation Error:\n${data.compiler_error}`);
       } else if (data.program_error) {
@@ -209,7 +258,7 @@ export default function CodingWorkspace() {
           stdin: problem.sampleInput,
         }),
       });
-      const data = await res.json();
+      const data = await parseWandbox(res);
       if (data.compiler_error) {
         setVerdict("CE");
         setOutputText(`❌ Compilation Error:\n${data.compiler_error}`);
@@ -237,6 +286,24 @@ export default function CodingWorkspace() {
 
   return (
     <div className="flex flex-col h-[calc(100vh-56px)]">
+      {/* Fullscreen required overlay */}
+      {showFullscreenPrompt && antiCheat?.fullscreen && (
+        <div className="fixed inset-0 z-50 bg-slate-900/95 flex flex-col items-center justify-center gap-5">
+          <AlertTriangle className="w-12 h-12 text-amber-400" />
+          <h2 className="text-white text-xl font-bold">Fullscreen Required</h2>
+          <p className="text-slate-300 text-sm text-center max-w-xs">
+            This contest requires fullscreen mode. A violation has been recorded.
+            Return to fullscreen to continue.
+          </p>
+          <button
+            onClick={() => document.documentElement.requestFullscreen().catch(() => {})}
+            className="px-6 py-2.5 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700"
+          >
+            Return to Fullscreen
+          </button>
+        </div>
+      )}
+
       {/* Main layout: left panel + right panel */}
       <div className="flex flex-1 overflow-hidden">
         {/* ===== LEFT PANEL: Problem ===== */}

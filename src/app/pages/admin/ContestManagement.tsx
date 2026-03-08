@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState,useEffect } from "react";
 import {
   Plus,
   Edit2,
@@ -10,10 +10,11 @@ import {
   BookOpen,
   Calendar,
   Clock,
+  Trophy,
 } from "lucide-react";
-import { adminContests } from "../../data/mockData";
+import { fetchContests, deleteContest } from "../../services/contest";
 
-type Contest = typeof adminContests[0];
+type Contest = {id: string ; [key:string]:any};
 
 const statusConfig = {
   Live: { bg: "bg-green-50", text: "text-green-700", border: "border-green-200", dot: "bg-green-500" },
@@ -22,18 +23,34 @@ const statusConfig = {
 };
 
 export default function ContestManagement() {
-  const [contests, setContests] = useState(adminContests);
+  const [contests, setContests] = useState<Contest[]>([]);
   const [search, setSearch] = useState("");
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  
+  useEffect(() => {
+    fetchContests().then(setContests);
 
-  const filtered = contests.filter((c) =>
-    c.name.toLowerCase().includes(search.toLowerCase())
-  );
-
-  const handleDelete = (id: string) => {
-    setContests(contests.filter((c) => c.id !== id));
+    const handler = (e: MessageEvent) => {
+      if (e.origin !== window.location.origin) return;
+      if (e.data.type === "c-added") {
+        setContests(c => [...c, e.data.c]);
+      } else if (e.data.type === "c-updated") {
+        setContests(c =>
+          c.map(x => (x.id === e.data.id ? { ...x, ...e.data.updates } : x))
+        );
+      }
+    };
+    window.addEventListener("message", handler);
+    return () => window.removeEventListener("message", handler);
+  }, []);
+  const handleDelete = async (id: string) => {
+    await deleteContest(id)
+    setContests(c=> c.filter((c) => c.id !== id));
     setDeleteId(null);
   };
+  const filtered = contests.filter(c =>
+  c.name.toLowerCase().includes(search.toLowerCase())
+);
 
   return (
     <div className="p-6 space-y-5">
@@ -43,7 +60,7 @@ export default function ContestManagement() {
           <h1 className="text-slate-900" style={{ fontWeight: 700, fontSize: "1.4rem" }}>
             Contest Management
           </h1>
-          <p className="text-slate-500 text-sm mt-0.5">{contests.length} contests total</p>
+          <p className="text-slate-500 text-sm mt-0.5">{contests.length} Contests total</p>
         </div>
         <button
           onClick={() => window.open("/admin/contests/new", "_blank")}
@@ -61,7 +78,7 @@ export default function ContestManagement() {
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Search contests..."
+          placeholder="Search Contest..."
           className="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-lg text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 transition-all"
         />
       </div>
@@ -70,7 +87,7 @@ export default function ContestManagement() {
       <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden">
         <div className="grid px-5 py-3 bg-slate-50 border-b border-slate-200 text-xs text-slate-400"
           style={{ gridTemplateColumns: "1fr 120px 180px 80px 80px 100px 100px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em" }}>
-          <span>Contest</span>
+          <span>Contests</span>
           <span>Status</span>
           <span>Schedule</span>
           <span>Problems</span>
@@ -79,50 +96,56 @@ export default function ContestManagement() {
           <span>Actions</span>
         </div>
 
-        {filtered.map((contest) => {
-          const s = statusConfig[contest.status as keyof typeof statusConfig];
+        {filtered.map((c) => {
+          const s = statusConfig[c.status as keyof typeof statusConfig] || {
+          bg: "bg-gray-50",
+          text: "text-gray-700",
+          border: "border-gray-200",
+  dot: "bg-gray-500"
+          }
+
           return (
             <div
-              key={contest.id}
+              key={c.id}
               className="grid px-5 py-4 border-b border-slate-100 last:border-0 items-center hover:bg-slate-50/50 transition-colors"
               style={{ gridTemplateColumns: "1fr 120px 180px 80px 80px 100px 100px" }}
             >
               <div>
                 <div className="text-slate-800 text-sm" style={{ fontWeight: 500 }}>
-                  {contest.name}
+                  {c.name}
                 </div>
               </div>
 
               <div>
                 <span className={`inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full border ${s.bg} ${s.text} ${s.border}`}>
-                  <span className={`w-1.5 h-1.5 rounded-full ${s.dot} ${contest.status === "Live" ? "animate-pulse" : ""}`} />
-                  {contest.status}
+                  <span className={`w-1.5 h-1.5 rounded-full ${s.dot} ${c.status === "Live" ? "animate-pulse" : ""}`} />
+                  {c.status}
                 </span>
               </div>
 
               <div className="text-xs text-slate-500 space-y-0.5">
                 <div className="flex items-center gap-1.5">
                   <Calendar className="w-3 h-3 text-slate-400" />
-                  {contest.startTime.split(" ")[0]}
+                  {c.startTime.split(" ")[0]}
                 </div>
                 <div className="flex items-center gap-1.5">
                   <Clock className="w-3 h-3 text-slate-400" />
-                  {contest.startTime.split(" ")[1]} – {contest.endTime.split(" ")[1]}
+                  {c.startTime.split(" ")[1]} – {c.endTime.split(" ")[1]}
                 </div>
               </div>
 
               <div className="flex items-center gap-1.5 text-slate-500 text-sm">
                 <BookOpen className="w-3.5 h-3.5 text-slate-400" />
-                {contest.problems}
+                {c.problems}
               </div>
 
               <div className="flex items-center gap-1.5 text-slate-500 text-sm">
                 <Users className="w-3.5 h-3.5 text-slate-400" />
-                {contest.participants}
+                {c.participants}
               </div>
 
               <div>
-                {contest.antiCheat ? (
+                {c.antiCheat ? (
                   <span className="inline-flex items-center gap-1 text-xs text-green-700 bg-green-50 border border-green-200 rounded-full px-2 py-0.5">
                     <Shield className="w-3 h-3" />
                     On
@@ -140,11 +163,12 @@ export default function ContestManagement() {
                   onClick={() => {
                     const params = new URLSearchParams({
                       edit: "true",
-                      name: contest.name,
-                      startTime: contest.startTime,
-                      endTime: contest.endTime,
-                      problems: String(contest.problems),
-                      antiCheat: String(contest.antiCheat),
+                      id: c.id,
+                      name: c.name,
+                      startTime: c.startTime,
+                      endTime: c.endTime,
+                      problems: String(c.problems),
+                      antiCheat: typeof c.antiCheat === "object" ? JSON.stringify(c.antiCheat) : String(c.antiCheat),
                     });
                     window.open(`/admin/contests/new?${params.toString()}`, "_blank");
                   }}
@@ -154,7 +178,7 @@ export default function ContestManagement() {
                   <Edit2 className="w-4 h-4" />
                 </button>
                 <button
-                  onClick={() => setDeleteId(contest.id)}
+                  onClick={() => setDeleteId(c.id)}
                   className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                   title="Delete"
                 >
@@ -168,7 +192,7 @@ export default function ContestManagement() {
         {filtered.length === 0 && (
           <div className="text-center py-12 text-slate-400">
             <Trophy className="w-8 h-8 mx-auto mb-3 opacity-30" />
-            <p className="text-sm">No contests found</p>
+            <p className="text-sm">No cs found</p>
           </div>
         )}
       </div>
@@ -177,8 +201,8 @@ export default function ContestManagement() {
       {deleteId && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-sm">
-            <h3 className="text-slate-900 mb-2" style={{ fontWeight: 600 }}>Delete Contest?</h3>
-            <p className="text-slate-500 text-sm mb-5">This action cannot be undone. All submissions and data for this contest will be permanently deleted.</p>
+            <h3 className="text-slate-900 mb-2" style={{ fontWeight: 600 }}>Delete c?</h3>
+            <p className="text-slate-500 text-sm mb-5">This action cannot be undone. All submissions and data for this c will be permanently deleted.</p>
             <div className="flex gap-3">
               <button onClick={() => setDeleteId(null)} className="flex-1 px-4 py-2.5 border border-slate-200 text-slate-700 text-sm rounded-lg hover:bg-slate-50">Cancel</button>
               <button onClick={() => handleDelete(deleteId)} className="flex-1 px-4 py-2.5 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700" style={{ fontWeight: 500 }}>Delete</button>

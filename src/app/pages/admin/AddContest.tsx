@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useSearchParams } from "react-router";
 import { Check, ArrowLeft } from "lucide-react";
-
+import { createContest, updateContest } from "../../services/contest";
 export default function AddContest() {
   const [searchParams] = useSearchParams();
   const isEdit = searchParams.get("edit") === "true";
@@ -14,20 +14,52 @@ export default function AddContest() {
     problems: Number(searchParams.get("problems")) || 5,
   });
 
-  const [antiCheat, setAntiCheat] = useState({
-    enabled: searchParams.get("antiCheat") !== "false",
-    fullscreen: true,
-    tabSwitch: true,
-    webcam: true,
-    faceDetection: true,
+  const [antiCheat, setAntiCheat] = useState(() => {
+    // When editing, try to parse stored sub-flags from URL (best-effort)
+    const raw = searchParams.get("antiCheat");
+    const parsed = raw && raw !== "true" && raw !== "false" && raw !== "[object Object]"
+      ? (() => { try { return JSON.parse(raw); } catch { return null; } })()
+      : null;
+    return {
+      enabled: parsed ? parsed.enabled : raw !== "false",
+      fullscreen: parsed ? parsed.fullscreen : true,
+      tabSwitch: parsed ? parsed.tabSwitch : true,
+      webcam: parsed ? parsed.webcam : true,
+      faceDetection: parsed ? parsed.faceDetection : true,
+    };
   });
 
   const [saved, setSaved] = useState(false);
 
-  const handleSave = () => {
-    // In a real app this would call an API
-    setSaved(true);
-    setTimeout(() => window.close(), 1200);
+  const handleSave = async () => {
+    const payload = {...form, antiCheat};
+    try {
+      if (isEdit) {
+        const id = searchParams.get("id");
+        if (!id) {
+          alert("Contest ID is missing. Please close this window and reopen the edit button from the contest list.");
+          return;
+        }
+        await updateContest(id, payload);
+        window.opener?.postMessage(
+          { type: "contest-updated", id },
+          window.location.origin
+        );
+      } else {
+        const newContest = await createContest(payload);
+        window.opener?.postMessage(
+          { type: "contest-added", contest: newContest },
+          window.location.origin
+        );
+      }
+      setSaved(true);
+      setTimeout(() => window.close(),1200);
+    }
+    catch(err){
+      alert("Failed to save: " + (err instanceof Error ? err.message : String(err)));
+    }
+    
+    
   };
 
   return (
@@ -123,9 +155,11 @@ export default function AddContest() {
           <div className="space-y-2.5">
             {/* Master toggle */}
             <label className="flex items-center gap-3 cursor-pointer">
-              <div
-                onClick={() => {
-                  const next = !antiCheat.enabled;
+              <input 
+                type="checkbox"
+                checked={antiCheat.enabled}
+                onChange={e => {
+                  const next = e.target.checked;
                   setAntiCheat({
                     enabled: next,
                     fullscreen: next,
@@ -134,12 +168,8 @@ export default function AddContest() {
                     faceDetection: next,
                   });
                 }}
-                className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
-                  antiCheat.enabled ? "bg-blue-600 border-blue-600" : "border-slate-300"
-                }`}
-              >
-                {antiCheat.enabled && <Check className="w-3 h-3 text-white" />}
-              </div>
+                className="form-checkbox h-5 w-5 text-blue-600"
+                 />
               <span className="text-sm text-slate-700">Enable Anti-Cheat Monitoring</span>
             </label>
 
@@ -151,24 +181,19 @@ export default function AddContest() {
               { key: "faceDetection" as const, label: "Multiple face detection" },
             ]).map((item) => (
               <label key={item.key} className="flex items-center gap-3 cursor-pointer ml-5">
-                <div
-                  onClick={() => {
+                <input
+                type = "checkbox"
+                checked = {antiCheat[item.key]}
+                disabled = {!antiCheat.enabled}
+                  onChange={e => {
                     if (!antiCheat.enabled) return;
-                    const updated = { ...antiCheat, [item.key]: !antiCheat[item.key] };
+                    const updated = { ...antiCheat, [item.key]: e.target.checked };
                     // If all sub-items are unchecked, disable master
                     const anyOn = updated.fullscreen || updated.tabSwitch || updated.webcam || updated.faceDetection;
                     setAntiCheat({ ...updated, enabled: anyOn });
                   }}
-                  className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
-                    antiCheat[item.key] && antiCheat.enabled
-                      ? "bg-blue-600 border-blue-600"
-                      : "border-slate-300"
-                  } ${!antiCheat.enabled ? "opacity-40" : ""}`}
-                >
-                  {antiCheat[item.key] && antiCheat.enabled && (
-                    <Check className="w-3 h-3 text-white" />
-                  )}
-                </div>
+                  
+                />
                 <span className={`text-sm text-slate-500 ${!antiCheat.enabled ? "opacity-40" : ""}`}>
                   {item.label}
                 </span>

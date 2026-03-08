@@ -1,4 +1,4 @@
-import { useNavigate } from "react-router";
+import { useNavigate, useSearchParams } from "react-router";
 import { CheckCircle2, Circle, Clock, AlertCircle, ChevronRight, Trophy, Zap } from "lucide-react";
 import { problems } from "../../data/mockData";
 
@@ -16,6 +16,8 @@ const statusConfig = {
 
 export default function ProblemList() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const contestId = searchParams.get("contestId");
 
   const solved = problems.filter((p) => p.status === "Solved").length;
   const attempted = problems.filter((p) => p.status === "Attempted").length;
@@ -82,7 +84,7 @@ export default function ProblemList() {
           return (
             <button
               key={problem.id}
-              onClick={() => navigate(`/student/workspace/${problem.id}`)}
+              onClick={() => navigate(`/student/workspace/${problem.id}${contestId ? `?contestId=${contestId}` : ""}`)}
               className="w-full bg-white border border-slate-200 rounded-xl p-5 flex items-center gap-5 text-left hover:border-blue-300 hover:shadow-sm hover:shadow-blue-100/60 transition-all group"
             >
               {/* Letter */}

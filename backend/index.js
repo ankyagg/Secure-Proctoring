@@ -77,3 +77,5 @@ app.post('/execute', async (req, res) => {
 app.listen(PORT, () => {
     console.log(`Execution server running on http://localhost:${PORT}`);
 });
+
+const contests = [];

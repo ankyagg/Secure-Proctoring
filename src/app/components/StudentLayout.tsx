@@ -13,12 +13,22 @@ import {
 import { contest } from "../data/mockData";
 import { auth } from "../services/firebase";
 import { onAuthStateChanged } from "firebase/auth";
+import { fetchContests } from "../services/contest";
+
+type AntiCheatSettings = {
+  enabled: boolean;
+  fullscreen: boolean;
+  tabSwitch: boolean;
+  webcam: boolean;
+  faceDetection: boolean;
+} | null;
 
 interface StudentContextType {
   timeRemaining: number;
   warningCount: number;
   addWarning: () => void;
   currentUser: { username: string; avatar?: string };
+  antiCheat: AntiCheatSettings;
 }
 
 export const StudentContext = createContext<StudentContextType>({
@@ -26,6 +36,7 @@ export const StudentContext = createContext<StudentContextType>({
   warningCount: 1,
   addWarning: () => {},
   currentUser: { username: "user" },
+  antiCheat: null,
 });
 
 export function useStudentContext() {
@@ -46,6 +57,7 @@ export default function StudentLayout() {
   const [timeRemaining, setTimeRemaining] = useState(6332);
   const [warningCount, setWarningCount] = useState(1);
   const [username, setUsername] = useState("user");
+  const [antiCheat, setAntiCheat] = useState<AntiCheatSettings>(null);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -64,6 +76,19 @@ export default function StudentLayout() {
 
     return () => unsubscribe();
   }, []);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const cid = params.get("contestId");
+    if (cid) {
+      fetchContests().then((cs: any[]) => {
+        const found = cs.find((x) => x.id === cid);
+        if (found?.antiCheat && typeof found.antiCheat === "object") {
+          setAntiCheat(found.antiCheat as AntiCheatSettings);
+        }
+      });
+    }
+  }, [location.search]);
 
   const addWarning = () => setWarningCount((w) => w + 1);
 
@@ -87,7 +112,7 @@ export default function StudentLayout() {
 
   return (
     <StudentContext.Provider
-      value={{ timeRemaining, warningCount, addWarning, currentUser: { username } }}
+      value={{ timeRemaining, warningCount, addWarning, currentUser: { username }, antiCheat }}
     >
       <div className="min-h-screen bg-slate-50 flex flex-col">
 
