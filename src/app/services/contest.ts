@@ -3,10 +3,26 @@ import { db } from "./firebase";
 
 const contestsCol = collection(db,"contests");
 
-export async function fetchContests() {
-  const snap = await getDocs(contestsCol);
-  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
-}
+export type Contest = {
+  id: string;
+  name: string;
+  description?: string;
+  registeredParticipants?: number;
+  problems?: number;
+  antiCheat?: { enabled?: boolean };
+  startTime: string;
+  endTime?: string; // ✅ important
+  status?: string;
+};
+
+export const fetchContests = async (): Promise<Contest[]> => {
+  const snapshot = await getDocs(collection(db, "contests"));
+
+  return snapshot.docs.map(doc => ({
+    id: doc.id,
+    ...(doc.data() as Omit<Contest, "id">)
+  }));
+};
 
 export async function createContest(data: any) {
     const ref = await addDoc(contestsCol, { ...data, createdAt: new Date() });

@@ -13,8 +13,25 @@ import {
   RefreshCw,
   Eye,
 } from "lucide-react";
-import { antiCheatEvents, suspicionScores } from "../../data/mockData";
+const antiCheatEvents = [
+  { id: 1, user: "recursion_king",  event: "Tab Switch",      time: "10:13:22", details: "Switched to external browser tab",  severity: "High",   count: 3 },
+  { id: 2, user: "newbie_coder_22", event: "Fullscreen Exit", time: "10:16:45", details: "Exited fullscreen mode",             severity: "Medium", count: 1 },
+  { id: 3, user: "sort_queen",      event: "Multiple Faces",  time: "10:18:12", details: "2 faces detected in webcam feed",   severity: "High",   count: 2 },
+  { id: 4, user: "graph_guru",      event: "Camera Off",      time: "10:21:03", details: "Webcam feed interrupted",           severity: "High",   count: 1 },
+  { id: 5, user: "recursion_king",  event: "Tab Switch",      time: "10:24:38", details: "Switched to external browser tab",  severity: "High",   count: 4 },
+  { id: 6, user: "BinaryBoss",      event: "Fullscreen Exit", time: "10:27:54", details: "Exited fullscreen mode",            severity: "Medium", count: 2 },
+  { id: 7, user: "dp_wizard",       event: "Tab Switch",      time: "10:30:11", details: "Switched to external browser tab",  severity: "High",   count: 1 },
+  { id: 8, user: "newbie_coder_22", event: "Multiple Faces",  time: "10:33:27", details: "2 faces detected in webcam feed",   severity: "High",   count: 1 },
+];
 
+const suspicionScores = [
+  { user: "recursion_king",  score: 82, tabSwitch: 4, fullscreenExit: 0, cameraOff: 0, multiFace: 0, status: "Warning Sent"  },
+  { user: "sort_queen",      score: 74, tabSwitch: 0, fullscreenExit: 0, cameraOff: 0, multiFace: 2, status: "Warning Sent"  },
+  { user: "graph_guru",      score: 65, tabSwitch: 0, fullscreenExit: 0, cameraOff: 1, multiFace: 0, status: "Under Review"  },
+  { user: "newbie_coder_22", score: 58, tabSwitch: 1, fullscreenExit: 1, cameraOff: 0, multiFace: 1, status: "Flagged"       },
+  { user: "BinaryBoss",      score: 28, tabSwitch: 0, fullscreenExit: 2, cameraOff: 0, multiFace: 0, status: "Warned"        },
+  { user: "dp_wizard",       score: 15, tabSwitch: 1, fullscreenExit: 0, cameraOff: 0, multiFace: 0, status: "Monitoring"    },
+];
 const eventConfig: Record<string, { icon: React.ElementType; color: string; bg: string; border: string }> = {
   "Tab Switch": { icon: MonitorOff, color: "text-orange-600", bg: "bg-orange-50", border: "border-orange-200" },
   "Fullscreen Exit": { icon: Maximize, color: "text-amber-600", bg: "bg-amber-50", border: "border-amber-200" },

@@ -7,96 +7,50 @@ import {
   ChevronDown,
   Copy,
   RotateCcw,
-  Maximize2,
-  Camera,
+  Terminal,
+  AlertTriangle,
   CheckCircle2,
   XCircle,
   Clock,
   Zap,
-  AlertTriangle,
   X,
-  Terminal,
 } from "lucide-react";
 import WebcamPreview from "../../components/WebcamPreview";
-import { problems } from "../../data/mockData";
 import { useStudentContext } from "../../components/StudentLayout";
+import { db } from "../../services/firebase";
+import { doc, getDoc } from "firebase/firestore";
 
 const LANGUAGES = ["C++", "Java", "Python"];
 
-// Wandbox API - Free compiler service, no API key needed
 const WANDBOX_URL = "https://wandbox.org/api/compile.json";
 const WANDBOX_COMPILERS: Record<string, string> = {
   "C++": "gcc-head",
-  "Java": "openjdk-jdk-21+35",
-  "Python": "cpython-3.12.3",
+  Java: "openjdk-jdk-21+35",
+  Python: "cpython-3.12.3",
 };
 
-// Helper: safely parse Wandbox response (may return plain text on error)
 async function parseWandbox(res: Response): Promise<Record<string, string>> {
   const text = await res.text();
   try {
-    return JSON.parse(text);
+    return JSON.parse(text) as Record<string, string>;
   } catch {
     return { program_error: text, program_output: "" };
   }
 }
-const BOILERPLATES: Record<string, Record<string, string>> = {
-  "C++": {
-    A: `#include <bits/stdc++.h>
-using namespace std;
 
-vector<int> twoSum(vector<int>& nums, int target) {
-    unordered_map<int, int> map;
-    for (int i = 0; i < nums.size(); i++) {
-        int complement = target - nums[i];
-        if (map.count(complement)) {
-            return {map[complement], i};
-        }
-        map[nums[i]] = i;
-    }
-    return {};
-}
-
-int main() {
-    int n, target;
-    cin >> n >> target;
-    vector<int> nums(n);
-    for (int i = 0; i < n; i++) cin >> nums[i];
-
-    vector<int> result = twoSum(nums, target);
-    cout << result[0] << " " << result[1] << endl;
-    return 0;
-}`,
-    default: `#include <bits/stdc++.h>
-using namespace std;
-
-int main() {
-    // Your solution here
-
-    return 0;
-}`,
-  },
-  Java: {
-    default: `import java.util.*;
-
-public class Solution {
-    public static void main(String[] args) {
-        Scanner sc = new Scanner(System.in);
-        // Your solution here
-
-    }
-}`,
-  },
-  Python: {
-    default: `import sys
-input = sys.stdin.readline
-
-def solve():
-    # Your solution here
-    pass
-
-solve()`,
-  },
+type FirestoreProblem = {
+  title: string;
+  difficulty: "Easy" | "Medium" | "Hard";
+  category: string;
+  timeLimit: string;
+  memoryLimit: string;
+  statement: string;
+  constraints: string;
+  boilerplates: Record<string, string>;
+  sampleInput?: string;
+  sampleOutput?: string;
+  explanation?: string;
+  points?: number;
 };
 
 type Verdict = "Accepted" | "Wrong Answer" | "TLE" | "MLE" | "CE" | null;
@@ -106,40 +60,31 @@ const verdictConfig: Record<
   { bg: string; text: string; border: string; icon: React.ElementType; label: string }
 > = {
   Accepted: {
-    bg: "bg-green-50",
-    text: "text-green-700",
-    border: "border-green-300",
-    icon: CheckCircle2,
-    label: "Accepted",
+    bg: "bg-green-50", text: "text-green-700", border: "border-green-300",
+    icon: CheckCircle2, label: "Accepted",
   },
   "Wrong Answer": {
-    bg: "bg-red-50",
-    text: "text-red-700",
-    border: "border-red-300",
-    icon: XCircle,
-    label: "Wrong Answer",
+    bg: "bg-red-50", text: "text-red-700", border: "border-red-300",
+    icon: XCircle, label: "Wrong Answer",
   },
   TLE: {
-    bg: "bg-orange-50",
-    text: "text-orange-700",
-    border: "border-orange-300",
-    icon: Clock,
-    label: "Time Limit Exceeded",
+    bg: "bg-orange-50", text: "text-orange-700", border: "border-orange-300",
+    icon: Clock, label: "Time Limit Exceeded",
   },
   MLE: {
-    bg: "bg-purple-50",
-    text: "text-purple-700",
-    border: "border-purple-300",
-    icon: Zap,
-    label: "Memory Limit Exceeded",
+    bg: "bg-purple-50", text: "text-purple-700", border: "border-purple-300",
+    icon: Zap, label: "Memory Limit Exceeded",
   },
   CE: {
-    bg: "bg-slate-100",
-    text: "text-slate-700",
-    border: "border-slate-300",
-    icon: XCircle,
-    label: "Compilation Error",
+    bg: "bg-slate-100", text: "text-slate-700", border: "border-slate-300",
+    icon: XCircle, label: "Compilation Error",
   },
+};
+
+const difficultyConfig = {
+  Easy: "bg-green-50 text-green-700 border-green-200",
+  Medium: "bg-amber-50 text-amber-700 border-amber-200",
+  Hard: "bg-red-50 text-red-700 border-red-200",
 };
 
 export default function CodingWorkspace() {
@@ -147,71 +92,72 @@ export default function CodingWorkspace() {
   const navigate = useNavigate();
   const { addWarning, currentUser, antiCheat } = useStudentContext();
 
-  const problem = problems.find((p) => p.id === id) ?? problems[0];
+  const [problem, setProblem] = useState<FirestoreProblem | null>(null);
+  const [loadingProblem, setLoadingProblem] = useState(true);
 
   const [language, setLanguage] = useState("C++");
-  const [code, setCode] = useState(
-    BOILERPLATES["C++"][problem.id] ?? BOILERPLATES["C++"]["default"]
-  );
-  const [customInput, setCustomInput] = useState(problem.sampleInput);
+  const [code, setCode] = useState("");
+  const [customInput, setCustomInput] = useState("");
   const [outputText, setOutputText] = useState("");
   const [isRunning, setIsRunning] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [verdict, setVerdict] = useState<Verdict>(null);
   const [activeTab, setActiveTab] = useState<"statement" | "input" | "output">("statement");
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const [violations, setViolations] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(!!document.fullscreenElement);
   const [showFullscreenPrompt, setShowFullscreenPrompt] = useState(false);
+
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const lineCount = code.split("\n").length;
 
-  // ── Fullscreen enforcement ──────────────────────────────────────────────────
+  // ── Fetch problem from Firestore ──────────────────────────────────────────
+  useEffect(() => {
+    if (!id) return;
+    setLoadingProblem(true);
+    getDoc(doc(db, "questions", id))
+      .then((snap) => {
+        if (!snap.exists()) {
+          navigate("/student/problems");
+          return;
+        }
+        const data = snap.data() as FirestoreProblem;
+        setProblem(data);
+        setCode(data.boilerplates?.["C++"] ?? "");
+        setCustomInput(data.sampleInput ?? "");
+      })
+      .catch(console.error)
+      .finally(() => setLoadingProblem(false));
+  }, [id]);
+
+  // ── Fullscreen enforcement ────────────────────────────────────────────────
   useEffect(() => {
     if (!antiCheat?.enabled || !antiCheat.fullscreen) return;
-
-    const requestFs = () => {
-      document.documentElement.requestFullscreen().catch(() => {});
-    };
-
     if (!document.fullscreenElement) {
-      requestFs();
+      document.documentElement.requestFullscreen().catch(() => {});
     }
-
     const onFsChange = () => {
       const inFs = !!document.fullscreenElement;
       setIsFullscreen(inFs);
-      if (!inFs) {
-        setShowFullscreenPrompt(true);
-        addWarning();
-      } else {
-        setShowFullscreenPrompt(false);
-      }
+      if (!inFs) { setShowFullscreenPrompt(true); addWarning(); }
+      else { setShowFullscreenPrompt(false); }
     };
-
     document.addEventListener("fullscreenchange", onFsChange);
     return () => document.removeEventListener("fullscreenchange", onFsChange);
   }, [antiCheat, addWarning]);
 
-  // ── Tab-switch / window-blur detection ─────────────────────────────────────
+  // ── Tab-switch detection ──────────────────────────────────────────────────
   useEffect(() => {
     if (!antiCheat?.enabled || !antiCheat.tabSwitch) return;
-
     const onVisibility = () => {
-      if (document.visibilityState === "hidden") {
-        addWarning();
-      }
+      if (document.visibilityState === "hidden") addWarning();
     };
-
     document.addEventListener("visibilitychange", onVisibility);
     return () => document.removeEventListener("visibilitychange", onVisibility);
   }, [antiCheat, addWarning]);
 
   const handleLanguageChange = (lang: string) => {
     setLanguage(lang);
-    const boilerplate =
-      BOILERPLATES[lang]?.[problem.id] ?? BOILERPLATES[lang]?.["default"] ?? "";
-    setCode(boilerplate);
+    setCode(problem?.boilerplates?.[lang] ?? "");
   };
 
   const handleRun = async () => {
@@ -237,14 +183,14 @@ export default function CodingWorkspace() {
         setOutputText(`✅ Output:\n${data.program_output || "(no output)"}`);
       }
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
-      setOutputText(`❌ Error: ${msg}`);
+      setOutputText(`❌ Error: ${err instanceof Error ? err.message : String(err)}`);
     } finally {
       setIsRunning(false);
     }
   };
 
   const handleSubmit = async () => {
+    if (!problem) return;
     setIsSubmitting(true);
     setActiveTab("output");
     setOutputText("⏳ Judging your code...");
@@ -255,45 +201,53 @@ export default function CodingWorkspace() {
         body: JSON.stringify({
           compiler: WANDBOX_COMPILERS[language],
           code,
-          stdin: problem.sampleInput,
+          stdin: problem.sampleInput ?? "",
         }),
       });
       const data = await parseWandbox(res);
       if (data.compiler_error) {
         setVerdict("CE");
         setOutputText(`❌ Compilation Error:\n${data.compiler_error}`);
-      } else if (data.program_output?.trim() === problem.sampleOutput.trim()) {
+      } else if (data.program_output?.trim() === (problem.sampleOutput ?? "").trim()) {
         setVerdict("Accepted");
         setOutputText(`✅ Sample test passed!\n\nOutput: ${data.program_output}`);
       } else {
         setVerdict("Wrong Answer");
-        setOutputText(`❌ Wrong Answer\n\nExpected:\n${problem.sampleOutput}\n\nGot:\n${data.program_output || "(no output)"}${data.program_error ? `\n\nError:\n${data.program_error}` : ""}`);
+        setOutputText(
+          `❌ Wrong Answer\n\nExpected:\n${problem.sampleOutput}\n\nGot:\n${data.program_output || "(no output)"}${data.program_error ? `\n\nError:\n${data.program_error}` : ""}`
+        );
       }
-      setIsSubmitting(false);
       setShowModal(true);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
-      alert(`❌ Failed: ${msg}`);
+      alert(`❌ Failed: ${err instanceof Error ? err.message : String(err)}`);
+    } finally {
       setIsSubmitting(false);
     }
   };
 
-  const difficultyConfig = {
-    Easy: "bg-green-50 text-green-700 border-green-200",
-    Medium: "bg-amber-50 text-amber-700 border-amber-200",
-    Hard: "bg-red-50 text-red-700 border-red-200",
-  };
+  // ── Loading / error states ────────────────────────────────────────────────
+  if (loadingProblem) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-slate-900">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+          <span className="text-slate-400 text-sm">Loading problem...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (!problem) return null;
 
   return (
     <div className="flex flex-col h-[calc(100vh-56px)]">
-      {/* Fullscreen required overlay */}
+      {/* Fullscreen overlay */}
       {showFullscreenPrompt && antiCheat?.fullscreen && (
         <div className="fixed inset-0 z-50 bg-slate-900/95 flex flex-col items-center justify-center gap-5">
           <AlertTriangle className="w-12 h-12 text-amber-400" />
           <h2 className="text-white text-xl font-bold">Fullscreen Required</h2>
           <p className="text-slate-300 text-sm text-center max-w-xs">
             This contest requires fullscreen mode. A violation has been recorded.
-            Return to fullscreen to continue.
           </p>
           <button
             onClick={() => document.documentElement.requestFullscreen().catch(() => {})}
@@ -304,9 +258,8 @@ export default function CodingWorkspace() {
         </div>
       )}
 
-      {/* Main layout: left panel + right panel */}
       <div className="flex flex-1 overflow-hidden">
-        {/* ===== LEFT PANEL: Problem ===== */}
+        {/* ===== LEFT PANEL ===== */}
         <div className="w-[420px] min-w-[320px] flex-shrink-0 bg-white border-r border-slate-200 flex flex-col overflow-hidden">
           {/* Problem header */}
           <div className="px-5 py-4 border-b border-slate-200">
@@ -321,19 +274,16 @@ export default function CodingWorkspace() {
             </div>
             <div className="flex items-start justify-between gap-3">
               <div>
-                <div className="flex items-center gap-2 mb-1.5">
-                  <span className="w-7 h-7 bg-slate-100 rounded-lg flex items-center justify-center text-xs text-slate-600" style={{ fontWeight: 700 }}>
-                    {problem.id}
-                  </span>
-                  <h2 className="text-slate-900 text-base" style={{ fontWeight: 600 }}>
-                    {problem.title}
-                  </h2>
-                </div>
+                <h2 className="text-slate-900 text-base mb-1.5" style={{ fontWeight: 600 }}>
+                  {problem.title}
+                </h2>
                 <div className="flex items-center gap-2">
                   <span className={`text-xs px-2 py-0.5 rounded-full border ${difficultyConfig[problem.difficulty]}`}>
                     {problem.difficulty}
                   </span>
-                  <span className="text-xs text-slate-400">{problem.points} pts</span>
+                  {problem.points && (
+                    <span className="text-xs text-slate-400">{problem.points} pts</span>
+                  )}
                   <span className="text-xs text-slate-400">·</span>
                   <span className="text-xs text-slate-400">{problem.timeLimit}</span>
                   <span className="text-xs text-slate-400">·</span>
@@ -343,16 +293,17 @@ export default function CodingWorkspace() {
             </div>
           </div>
 
-          {/* Problem tabs */}
+          {/* Tabs */}
           <div className="flex border-b border-slate-200 px-5">
             {(["statement", "input", "output"] as const).map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`px-3 py-2.5 text-xs capitalize border-b-2 transition-colors -mb-px ${activeTab === tab
-                  ? "border-blue-600 text-blue-700"
-                  : "border-transparent text-slate-400 hover:text-slate-600"
-                  }`}
+                className={`px-3 py-2.5 text-xs capitalize border-b-2 transition-colors -mb-px ${
+                  activeTab === tab
+                    ? "border-blue-600 text-blue-700"
+                    : "border-transparent text-slate-400 hover:text-slate-600"
+                }`}
                 style={{ fontWeight: 500 }}
               >
                 {tab === "input" ? "Custom Input" : tab === "output" ? "Output" : "Statement"}
@@ -360,7 +311,7 @@ export default function CodingWorkspace() {
             ))}
           </div>
 
-          {/* Problem content */}
+          {/* Panel content */}
           <div className="flex-1 overflow-y-auto p-5 text-sm text-slate-600 leading-relaxed space-y-5">
             {activeTab === "statement" && (
               <>
@@ -368,61 +319,51 @@ export default function CodingWorkspace() {
                   <p className="whitespace-pre-line">{problem.statement}</p>
                 </div>
 
-                <div>
-                  <h4 className="text-slate-800 text-xs mb-2" style={{ fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                    Input Format
-                  </h4>
-                  <p className="whitespace-pre-line text-slate-500">{problem.inputFormat}</p>
-                </div>
-
-                <div>
-                  <h4 className="text-slate-800 text-xs mb-2" style={{ fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                    Output Format
-                  </h4>
-                  <p className="text-slate-500">{problem.outputFormat}</p>
-                </div>
-
-                <div>
-                  <h4 className="text-slate-800 text-xs mb-2" style={{ fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                    Constraints
-                  </h4>
-                  <ul className="space-y-1">
-                    {problem.constraints.map((c, i) => (
-                      <li key={i} className="text-slate-500 flex items-start gap-2">
-                        <span className="mt-1.5 w-1 h-1 bg-slate-400 rounded-full flex-shrink-0" />
-                        <code className="text-xs bg-slate-50 border border-slate-200 rounded px-1.5 py-0.5 text-slate-600">
-                          {c}
-                        </code>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
-                  <h4 className="text-slate-800 text-xs mb-3" style={{ fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                    Sample
-                  </h4>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <div className="text-slate-400 text-xs mb-1.5">Input</div>
-                      <pre className="text-xs bg-white border border-slate-200 rounded-lg p-2.5 text-slate-700 overflow-x-auto">
-                        {problem.sampleInput}
-                      </pre>
-                    </div>
-                    <div>
-                      <div className="text-slate-400 text-xs mb-1.5">Output</div>
-                      <pre className="text-xs bg-white border border-slate-200 rounded-lg p-2.5 text-slate-700 overflow-x-auto">
-                        {problem.sampleOutput}
-                      </pre>
-                    </div>
+                {problem.constraints && (
+                  <div>
+                    <h4 className="text-slate-800 text-xs mb-2" style={{ fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                      Constraints
+                    </h4>
+                    <ul className="space-y-1">
+                      {problem.constraints.split("\n").filter(Boolean).map((c, i) => (
+                        <li key={i} className="text-slate-500 flex items-start gap-2">
+                          <span className="mt-1.5 w-1 h-1 bg-slate-400 rounded-full flex-shrink-0" />
+                          <code className="text-xs bg-slate-50 border border-slate-200 rounded px-1.5 py-0.5 text-slate-600">
+                            {c}
+                          </code>
+                        </li>
+                      ))}
+                    </ul>
                   </div>
-                  {problem.explanation && (
-                    <div className="mt-3 text-xs text-slate-500 border-t border-slate-200 pt-3">
-                      <strong className="text-slate-600">Explanation: </strong>
-                      {problem.explanation}
+                )}
+
+                {(problem.sampleInput || problem.sampleOutput) && (
+                  <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
+                    <h4 className="text-slate-800 text-xs mb-3" style={{ fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                      Sample
+                    </h4>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <div className="text-slate-400 text-xs mb-1.5">Input</div>
+                        <pre className="text-xs bg-white border border-slate-200 rounded-lg p-2.5 text-slate-700 overflow-x-auto">
+                          {problem.sampleInput}
+                        </pre>
+                      </div>
+                      <div>
+                        <div className="text-slate-400 text-xs mb-1.5">Output</div>
+                        <pre className="text-xs bg-white border border-slate-200 rounded-lg p-2.5 text-slate-700 overflow-x-auto">
+                          {problem.sampleOutput}
+                        </pre>
+                      </div>
                     </div>
-                  )}
-                </div>
+                    {problem.explanation && (
+                      <div className="mt-3 text-xs text-slate-500 border-t border-slate-200 pt-3">
+                        <strong className="text-slate-600">Explanation: </strong>
+                        {problem.explanation}
+                      </div>
+                    )}
+                  </div>
+                )}
               </>
             )}
 
@@ -439,7 +380,7 @@ export default function CodingWorkspace() {
                 <button
                   onClick={handleRun}
                   disabled={isRunning}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-800 text-white text-xs rounded-lg hover:bg-slate-700 transition-colors"
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-800 text-white text-xs rounded-lg hover:bg-slate-700 transition-colors disabled:opacity-50"
                 >
                   <Play className="w-3.5 h-3.5" />
                   {isRunning ? "Running..." : "Run on this Input"}
@@ -448,48 +389,37 @@ export default function CodingWorkspace() {
             )}
 
             {activeTab === "output" && (
-              <div>
-                <pre className="text-xs font-mono bg-slate-900 text-green-400 p-3 rounded-lg min-h-32 whitespace-pre-wrap">
-                  {outputText || "Output will appear here after running..."}
-                </pre>
-              </div>
+              <pre className="text-xs font-mono bg-slate-900 text-green-400 p-3 rounded-lg min-h-32 whitespace-pre-wrap">
+                {outputText || "Output will appear here after running..."}
+              </pre>
             )}
           </div>
         </div>
 
         {/* ===== RIGHT PANEL: Editor ===== */}
         <div className="flex-1 flex flex-col overflow-hidden bg-slate-900">
-          {/* Editor toolbar */}
+          {/* Toolbar */}
           <div className="flex items-center justify-between px-4 py-2.5 bg-slate-800 border-b border-slate-700 flex-shrink-0">
-            <div className="flex items-center gap-2">
-              {/* Language selector */}
-              <div className="relative">
-                <select
-                  value={language}
-                  onChange={(e) => handleLanguageChange(e.target.value)}
-                  className="appearance-none bg-slate-700 text-slate-200 text-xs px-3 py-1.5 rounded-lg border border-slate-600 pr-7 cursor-pointer outline-none hover:bg-slate-600 transition-colors"
-                >
-                  {LANGUAGES.map((l) => (
-                    <option key={l} value={l}>
-                      {l}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400 pointer-events-none" />
-              </div>
+            <div className="relative">
+              <select
+                value={language}
+                onChange={(e) => handleLanguageChange(e.target.value)}
+                className="appearance-none bg-slate-700 text-slate-200 text-xs px-3 py-1.5 rounded-lg border border-slate-600 pr-7 cursor-pointer outline-none hover:bg-slate-600 transition-colors"
+              >
+                {LANGUAGES.map((l) => (
+                  <option key={l} value={l}>{l}</option>
+                ))}
+              </select>
+              <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400 pointer-events-none" />
             </div>
 
             <div className="flex items-center gap-1.5">
-              <div className="flex items-center gap-1.5 text-red-400 text-xs ml-3">
+              <div className="flex items-center gap-1.5 text-red-400 text-xs mr-1">
                 <AlertTriangle className="w-3.5 h-3.5" />
-                {violations}
+                0
               </div>
               <button
-                onClick={() => {
-                  const boilerplate =
-                    BOILERPLATES[language]?.[problem.id] ?? BOILERPLATES[language]?.["default"] ?? "";
-                  setCode(boilerplate);
-                }}
+                onClick={() => setCode(problem?.boilerplates?.[language] ?? "")}
                 className="p-1.5 text-slate-400 hover:text-slate-200 hover:bg-slate-700 rounded-md transition-colors"
                 title="Reset to boilerplate"
               >
@@ -505,24 +435,16 @@ export default function CodingWorkspace() {
             </div>
           </div>
 
-          {/* Code Editor */}
+          {/* Code editor */}
           <div className="flex-1 overflow-hidden flex relative">
-            {/* Line numbers */}
             <div
               className="select-none text-right pr-3 pt-3 pb-3 pl-3 text-slate-600 bg-slate-900 border-r border-slate-700/50 overflow-hidden flex-shrink-0"
-              style={{
-                fontFamily: "monospace",
-                fontSize: "13px",
-                lineHeight: "1.6",
-                minWidth: "48px",
-              }}
+              style={{ fontFamily: "monospace", fontSize: "13px", lineHeight: "1.6", minWidth: "48px" }}
             >
               {Array.from({ length: lineCount }, (_, i) => (
                 <div key={i + 1}>{i + 1}</div>
               ))}
             </div>
-
-            {/* Textarea */}
             <textarea
               ref={textareaRef}
               value={code}
@@ -543,17 +465,12 @@ export default function CodingWorkspace() {
                 }
               }}
               className="flex-1 bg-slate-900 text-slate-100 p-3 resize-none outline-none overflow-auto"
-              style={{
-                fontFamily: "monospace",
-                fontSize: "13px",
-                lineHeight: "1.6",
-                caretColor: "#60a5fa",
-              }}
+              style={{ fontFamily: "monospace", fontSize: "13px", lineHeight: "1.6", caretColor: "#60a5fa" }}
               spellCheck={false}
             />
           </div>
 
-          {/* Bottom Console */}
+          {/* Console */}
           <div className="border-t border-slate-700 flex-shrink-0" style={{ maxHeight: "160px" }}>
             <div className="flex items-center gap-2 px-4 py-2 bg-slate-800 border-b border-slate-700">
               <Terminal className="w-3.5 h-3.5 text-slate-400" />
@@ -576,7 +493,6 @@ export default function CodingWorkspace() {
               <Play className="w-4 h-4" />
               {isRunning ? "Running..." : "Run"}
             </button>
-
             <button
               onClick={handleSubmit}
               disabled={isSubmitting}
@@ -590,43 +506,33 @@ export default function CodingWorkspace() {
         </div>
       </div>
 
-      {/* Webcam preview */}
       <WebcamPreview username={currentUser?.username} />
 
-      {/* Submission Result Modal */}
+      {/* Verdict Modal */}
       {showModal && verdict && (
         <div
           className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
           onClick={(e) => e.target === e.currentTarget && setShowModal(false)}
         >
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
-            {/* Verdict header */}
             <div className={`px-6 py-5 ${verdictConfig[verdict].bg} border-b ${verdictConfig[verdict].border}`}>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  {(() => {
-                    const Icon = verdictConfig[verdict].icon;
-                    return <Icon className={`w-6 h-6 ${verdictConfig[verdict].text}`} />;
-                  })()}
+                  {(() => { const Icon = verdictConfig[verdict].icon; return <Icon className={`w-6 h-6 ${verdictConfig[verdict].text}`} />; })()}
                   <div>
                     <div className={`text-lg ${verdictConfig[verdict].text}`} style={{ fontWeight: 700 }}>
                       {verdictConfig[verdict].label}
                     </div>
-                    <div className="text-slate-500 text-sm">Problem {problem.id} · {problem.title}</div>
+                    <div className="text-slate-500 text-sm">{problem.title}</div>
                   </div>
                 </div>
-                <button
-                  onClick={() => setShowModal(false)}
-                  className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-white/60 rounded-lg transition-colors"
-                >
+                <button onClick={() => setShowModal(false)} className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg">
                   <X className="w-4 h-4" />
                 </button>
               </div>
             </div>
 
-            {/* Details */}
             <div className="px-6 py-5 space-y-4">
-              {/* Test cases */}
               <div>
                 <div className="text-slate-500 text-xs mb-2" style={{ textTransform: "uppercase", letterSpacing: "0.05em" }}>
                   Test Cases
@@ -635,74 +541,43 @@ export default function CodingWorkspace() {
                   {Array.from({ length: 12 }, (_, i) => {
                     const pass = verdict === "Accepted" ? true : i < (verdict === "Wrong Answer" ? 7 : 4);
                     return (
-                      <div
-                        key={i}
-                        className={`w-8 h-8 rounded-lg text-xs flex items-center justify-center ${pass ? "bg-green-100 text-green-700 border border-green-200" : "bg-red-100 text-red-700 border border-red-200"
-                          }`}
-                        style={{ fontWeight: 600 }}
-                      >
+                      <div key={i} className={`w-8 h-8 rounded-lg text-xs flex items-center justify-center ${pass ? "bg-green-100 text-green-700 border border-green-200" : "bg-red-100 text-red-700 border border-red-200"}`} style={{ fontWeight: 600 }}>
                         {i + 1}
                       </div>
                     );
                   })}
                 </div>
-                {verdict !== "Accepted" && (
-                  <p className="text-slate-400 text-xs mt-2">
-                    {verdict === "Wrong Answer" ? "7/12" : verdict === "TLE" ? "4/12" : "0/12"} test cases passed
-                  </p>
-                )}
-                {verdict === "Accepted" && (
-                  <p className="text-green-600 text-xs mt-2">All 12/12 test cases passed</p>
-                )}
+                <p className={`text-xs mt-2 ${verdict === "Accepted" ? "text-green-600" : "text-slate-400"}`}>
+                  {verdict === "Accepted" ? "All 12/12 test cases passed" : verdict === "Wrong Answer" ? "7/12 test cases passed" : "4/12 test cases passed"}
+                </p>
               </div>
 
-              {/* Stats */}
               <div className="grid grid-cols-3 gap-3">
-                <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 text-center">
-                  <div className="text-slate-400 text-xs mb-1">Execution Time</div>
-                  <div className="text-slate-800 text-sm" style={{ fontWeight: 700 }}>
-                    {verdict === "TLE" ? "2.01s" : "0.08s"}
+                {[
+                  { label: "Execution Time", value: verdict === "TLE" ? "2.01s" : "0.08s", sub: `limit: ${problem.timeLimit}` },
+                  { label: "Memory Used", value: verdict === "MLE" ? "512 MB" : "14 MB", sub: `limit: ${problem.memoryLimit}` },
+                  { label: "Score", value: verdict === "Accepted" ? `+${problem.points ?? 0}` : "+0", sub: "pts earned", accent: verdict === "Accepted" },
+                ].map(({ label, value, sub, accent }) => (
+                  <div key={label} className="bg-slate-50 border border-slate-200 rounded-xl p-3 text-center">
+                    <div className="text-slate-400 text-xs mb-1">{label}</div>
+                    <div className={`text-sm ${accent ? "text-green-700" : "text-slate-800"}`} style={{ fontWeight: 700 }}>{value}</div>
+                    <div className="text-slate-400 text-xs">{sub}</div>
                   </div>
-                  <div className="text-slate-400 text-xs">limit: {problem.timeLimit}</div>
-                </div>
-                <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 text-center">
-                  <div className="text-slate-400 text-xs mb-1">Memory Used</div>
-                  <div className="text-slate-800 text-sm" style={{ fontWeight: 700 }}>
-                    {verdict === "MLE" ? "512 MB" : "14 MB"}
-                  </div>
-                  <div className="text-slate-400 text-xs">limit: {problem.memoryLimit}</div>
-                </div>
-                <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 text-center">
-                  <div className="text-slate-400 text-xs mb-1">Score</div>
-                  <div className={`text-sm ${verdict === "Accepted" ? "text-green-700" : "text-slate-400"}`} style={{ fontWeight: 700 }}>
-                    {verdict === "Accepted" ? `+${problem.points}` : "+0"}
-                  </div>
-                  <div className="text-slate-400 text-xs">pts earned</div>
-                </div>
+                ))}
               </div>
 
               {verdict === "Accepted" && (
                 <div className="bg-green-50 border border-green-200 rounded-xl p-3 text-center">
-                  <p className="text-green-700 text-sm" style={{ fontWeight: 500 }}>
-                    🎉 Great job! Problem solved successfully.
-                  </p>
+                  <p className="text-green-700 text-sm" style={{ fontWeight: 500 }}>🎉 Great job! Problem solved successfully.</p>
                 </div>
               )}
             </div>
 
-            {/* Actions */}
             <div className="px-6 pb-5 flex gap-3">
-              <button
-                onClick={() => setShowModal(false)}
-                className="flex-1 px-4 py-2.5 border border-slate-200 text-slate-700 text-sm rounded-lg hover:bg-slate-50 transition-colors"
-              >
+              <button onClick={() => setShowModal(false)} className="flex-1 px-4 py-2.5 border border-slate-200 text-slate-700 text-sm rounded-lg hover:bg-slate-50 transition-colors">
                 Keep Editing
               </button>
-              <button
-                onClick={() => { setShowModal(false); navigate("/student/problems"); }}
-                className="flex-1 px-4 py-2.5 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors"
-                style={{ fontWeight: 500 }}
-              >
+              <button onClick={() => { setShowModal(false); navigate("/student/problems"); }} className="flex-1 px-4 py-2.5 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors" style={{ fontWeight: 500 }}>
                 Back to Problems
               </button>
             </div>

@@ -88,5 +88,18 @@
     "overrides": {
       "vite": "6.3.5"
     }
-  }
+  },
+  "description": "",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ankyagg/Secure-Proctoring.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ankyagg/Secure-Proctoring/issues"
+  },
+  "homepage": "https://github.com/ankyagg/Secure-Proctoring#readme"
 }

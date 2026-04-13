@@ -1,34 +1,50 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
-  Plus,
-  Edit2,
-  Trash2,
-  Search,
-  Code2,
-  FileText,
-  TestTube,
+  Plus, Edit2, Trash2, Search, Code2, FileText, TestTube,
 } from "lucide-react";
-import { adminQuestions } from "../../data/mockData";
 
-type Question = typeof adminQuestions[0];
+const API = "http://localhost:3000/api";
 
-const difficultyConfig = {
-  Easy: "bg-green-50 text-green-700 border-green-200",
-  Medium: "bg-amber-50 text-amber-700 border-amber-200",
-  Hard: "bg-red-50 text-red-700 border-red-200",
+const difficultyConfig: Record<string, string> = {
+  easy:   "bg-green-50 text-green-700 border-green-200",
+  medium: "bg-amber-50 text-amber-700 border-amber-200",
+  hard:   "bg-red-50 text-red-700 border-red-200",
 };
 
 export default function QuestionManagement() {
-  const [questions, setQuestions] = useState(adminQuestions);
-  const [search, setSearch] = useState("");
+  const [questions, setQuestions] = useState<any[]>([]);
+  const [loading, setLoading]     = useState(true);
+  const [search, setSearch]       = useState("");
   const [filterDiff, setFilterDiff] = useState("All");
 
+  useEffect(() => {
+    fetch(`${API}/questions`)
+      .then(res => res.json())
+      .then(data => setQuestions(data))
+      .catch(err => console.error("Failed to load questions:", err))
+      .finally(() => setLoading(false));
+  }, []);
+
   const filtered = questions.filter((q) => {
-    const matchSearch = q.title.toLowerCase().includes(search.toLowerCase()) ||
-      q.category.toLowerCase().includes(search.toLowerCase());
-    const matchDiff = filterDiff === "All" || q.difficulty === filterDiff;
+    const matchSearch =
+      q.title.toLowerCase().includes(search.toLowerCase()) ||
+      (q.category || "").toLowerCase().includes(search.toLowerCase());
+    const matchDiff =
+      filterDiff === "All" ||
+      q.difficulty.toLowerCase() === filterDiff.toLowerCase();
     return matchSearch && matchDiff;
   });
+
+  const handleDelete = async (id: string) => {
+    if (!confirm("Delete this question?")) return;
+    // optimistic UI update
+    setQuestions(questions.filter(q => q.id !== id));
+    // TODO: call DELETE /api/questions/:id when you add that route
+  };
+
+  if (loading) return (
+    <div className="p-6 text-slate-400 text-sm">Loading questions...</div>
+  );
 
   return (
     <div className="p-6 space-y-5">
@@ -38,7 +54,9 @@ export default function QuestionManagement() {
           <h1 className="text-slate-900" style={{ fontWeight: 700, fontSize: "1.4rem" }}>
             Question Bank
           </h1>
-          <p className="text-slate-500 text-sm mt-0.5">{questions.length} problems in the bank</p>
+          <p className="text-slate-500 text-sm mt-0.5">
+            {questions.length} problems in the bank
+          </p>
         </div>
         <button
           onClick={() => window.open("/admin/questions/new", "_blank")}
@@ -81,12 +99,14 @@ export default function QuestionManagement() {
       {/* Stats row */}
       <div className="grid grid-cols-3 gap-3">
         {[
-          { label: "Easy", count: questions.filter(q => q.difficulty === "Easy").length, color: "text-green-600", bg: "bg-green-50 border-green-200" },
-          { label: "Medium", count: questions.filter(q => q.difficulty === "Medium").length, color: "text-amber-600", bg: "bg-amber-50 border-amber-200" },
-          { label: "Hard", count: questions.filter(q => q.difficulty === "Hard").length, color: "text-red-600", bg: "bg-red-50 border-red-200" },
+          { label: "Easy",   color: "text-green-600", bg: "bg-green-50 border-green-200" },
+          { label: "Medium", color: "text-amber-600", bg: "bg-amber-50 border-amber-200" },
+          { label: "Hard",   color: "text-red-600",   bg: "bg-red-50 border-red-200"     },
         ].map((item) => (
           <div key={item.label} className={`border rounded-xl p-4 ${item.bg}`}>
-            <div className={`text-2xl mb-0.5 ${item.color}`} style={{ fontWeight: 700 }}>{item.count}</div>
+            <div className={`text-2xl mb-0.5 ${item.color}`} style={{ fontWeight: 700 }}>
+              {questions.filter(q => q.difficulty === item.label.toLowerCase()).length}
+            </div>
             <div className={`text-sm ${item.color}`}>{item.label} Problems</div>
           </div>
         ))}
@@ -96,7 +116,7 @@ export default function QuestionManagement() {
       <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden">
         <div
           className="grid px-5 py-3 bg-slate-50 border-b border-slate-200 text-xs text-slate-400"
-          style={{ gridTemplateColumns: "1fr 100px 160px 80px 80px 80px 80px 80px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em" }}
+          style={{ gridTemplateColumns: "1fr 100px 160px 80px 80px 80px 80px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em" }}
         >
           <span>Title</span>
           <span>Difficulty</span>
@@ -104,7 +124,6 @@ export default function QuestionManagement() {
           <span>Time</span>
           <span>Memory</span>
           <span>Tests</span>
-          <span>Used In</span>
           <span>Actions</span>
         </div>
 
@@ -112,7 +131,7 @@ export default function QuestionManagement() {
           <div
             key={q.id}
             className="grid px-5 py-4 border-b border-slate-100 last:border-0 items-center hover:bg-slate-50/50 transition-colors"
-            style={{ gridTemplateColumns: "1fr 100px 160px 80px 80px 80px 80px 80px" }}
+            style={{ gridTemplateColumns: "1fr 100px 160px 80px 80px 80px 80px" }}
           >
             <div className="flex items-center gap-2.5">
               <div className="w-7 h-7 bg-slate-100 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -123,40 +142,25 @@ export default function QuestionManagement() {
               </span>
             </div>
 
-            <span className={`text-xs px-2 py-0.5 rounded-full border inline-block w-fit ${difficultyConfig[q.difficulty as keyof typeof difficultyConfig]}`}>
-              {q.difficulty}
+            <span className={`text-xs px-2 py-0.5 rounded-full border inline-block w-fit ${difficultyConfig[q.difficulty]}`}>
+              {q.difficulty.charAt(0).toUpperCase() + q.difficulty.slice(1)}
             </span>
 
-            <span className="text-slate-500 text-xs">{q.category}</span>
-            <span className="text-slate-500 text-xs">{q.timeLimit}</span>
-            <span className="text-slate-500 text-xs">{q.memoryLimit}</span>
+            <span className="text-slate-500 text-xs">{q.category || "—"}</span>
+            <span className="text-slate-500 text-xs">{q.time_limit || "—"}</span>
+            <span className="text-slate-500 text-xs">{q.memory_limit || "—"}</span>
 
             <div className="flex items-center gap-1 text-xs text-slate-500">
               <TestTube className="w-3.5 h-3.5 text-slate-400" />
-              {q.testCases}
+              {q.test_cases?.length ?? "—"}
             </div>
 
-            <span className="text-xs text-slate-500">{q.usedIn} contest{q.usedIn !== 1 ? "s" : ""}</span>
-
             <div className="flex items-center gap-1.5">
-              <button
-                onClick={() => {
-                  const params = new URLSearchParams({
-                    edit: "true",
-                    title: q.title,
-                    difficulty: q.difficulty,
-                    category: q.category,
-                    timeLimit: q.timeLimit,
-                    memoryLimit: q.memoryLimit,
-                  });
-                  window.open(`/admin/questions/new?${params.toString()}`, "_blank");
-                }}
-                className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-              >
+              <button className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
                 <Edit2 className="w-4 h-4" />
               </button>
               <button
-                onClick={() => setQuestions(questions.filter((x) => x.id !== q.id))}
+                onClick={() => handleDelete(q.id)}
                 className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
               >
                 <Trash2 className="w-4 h-4" />
@@ -172,7 +176,6 @@ export default function QuestionManagement() {
           </div>
         )}
       </div>
-
     </div>
   );
 }

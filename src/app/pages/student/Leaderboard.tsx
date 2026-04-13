@@ -1,7 +1,22 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import { Trophy, RefreshCw, ArrowLeft, Medal, Crown } from "lucide-react";
-import { leaderboard, problems } from "../../data/mockData";
+const leaderboard = [
+  { rank: 1, username: "AlgoMaster_X",      avatar: "AM", solved: 5, score: 1100, penalty: 142, isCurrentUser: false },
+  { rank: 2, username: "CodeNinja_99",       avatar: "CN", solved: 5, score: 1100, penalty: 187, isCurrentUser: false },
+  { rank: 3, username: "devstar_priya",      avatar: "DP", solved: 4, score: 900,  penalty: 203, isCurrentUser: false },
+  { rank: 4, username: "you (alex_coder)",   avatar: "AC", solved: 3, score: 600,  penalty: 89,  isCurrentUser: true  },
+  { rank: 5, username: "recursion_king",     avatar: "RK", solved: 3, score: 600,  penalty: 134, isCurrentUser: false },
+  { rank: 6, username: "hash_table_hero",    avatar: "HH", solved: 3, score: 500,  penalty: 156, isCurrentUser: false },
+  { rank: 7, username: "BinaryBoss",         avatar: "BB", solved: 2, score: 400,  penalty: 67,  isCurrentUser: false },
+  { rank: 8, username: "sort_queen",         avatar: "SQ", solved: 2, score: 300,  penalty: 210, isCurrentUser: false },
+  { rank: 9, username: "dp_wizard",          avatar: "DW", solved: 2, score: 300,  penalty: 245, isCurrentUser: false },
+  { rank: 10, username: "graph_guru",        avatar: "GG", solved: 1, score: 100,  penalty: 32,  isCurrentUser: false },
+  { rank: 11, username: "stack_overflow_fan",avatar: "SO", solved: 1, score: 100,  penalty: 78,  isCurrentUser: false },
+  { rank: 12, username: "newbie_coder_22",   avatar: "NC", solved: 0, score: 0,    penalty: 0,   isCurrentUser: false },
+];
+
+const PROBLEM_LABELS = ["A", "B", "C", "D", "E"];
 
 const statusColor = {
   Solved: "bg-green-500",
@@ -167,25 +182,23 @@ export default function Leaderboard() {
             </div>
 
             {/* Problem dots */}
-            <div className="flex items-center gap-1.5">
-              {problems.map((p) => {
-                const isSolved = entry.solved >= problems.indexOf(p) + 1;
-                return (
-                  <div
-                    key={p.id}
-                    className={`w-6 h-6 rounded text-xs flex items-center justify-center ${
-                      isSolved
-                        ? "bg-green-100 text-green-700 border border-green-200"
-                        : "bg-slate-100 text-slate-400 border border-slate-200"
-                    }`}
-                    style={{ fontWeight: 600 }}
-                    title={p.title}
-                  >
-                    {p.id}
-                  </div>
-                );
-              })}
-            </div>
+            {PROBLEM_LABELS.map((label, i) => {
+  const isSolved = entry.solved >= i + 1;
+  return (
+    <div
+      key={label}
+      className={`w-6 h-6 rounded text-xs flex items-center justify-center ${
+        isSolved
+          ? "bg-green-100 text-green-700 border border-green-200"
+          : "bg-slate-100 text-slate-400 border border-slate-200"
+      }`}
+      style={{ fontWeight: 600 }}
+      title={`Problem ${label}`}
+    >
+      {label}
+    </div>
+  );
+})}
 
             {/* Score */}
             <div className="text-right">
