@@ -25,7 +25,7 @@ export const fetchContests = async (): Promise<Contest[]> => {
 };
 
 export async function createContest(data: any) {
-    const ref = await addDoc(contestsCol, { ...data, createdAt: new Date() });
+    const ref = await addDoc(contestsCol, { ...data, created_at: new Date().toISOString() });
     return { id: ref.id, ...data }
 }
 

@@ -1,25 +1,34 @@
 @echo off
 echo ==========================================
-echo   SECURE PROCTORING - STARTUP SCRIPT
+echo   SECURE PROCTORING - ONE-CLICK STARTUP
 echo ==========================================
 echo.
-echo [INFO] Code execution is handled by Wandbox (cloud).
-echo [INFO] No Docker / Judge0 required for development.
-echo.
 
-:: Check for internet connection (ping Wandbox)
-echo [1/2] Checking internet connection to Wandbox...
-ping -n 1 wandbox.org >nul 2>&1
-if %errorlevel% neq 0 (
-    echo [WARNING] Cannot reach wandbox.org - code execution may not work!
-    echo           Check your internet connection.
-    echo.
+:: 1. Check and install Root Dependencies
+if not exist node_modules (
+    echo [1/4] Installing Root Dependencies...
+    call npm install
 ) else (
-    echo [OK] Wandbox is reachable. Code execution will work.
+    echo [1/4] Root Dependencies already installed.
 )
 
-:: Start the Frontend Dev Server
-echo [2/2] Starting Frontend Dev Server...
+:: 2. Check and install Backend Dependencies
+echo [2/4] Checking Backend Dependencies...
+cd backend
+if not exist node_modules (
+    echo [INFO] Missing backend modules. Installing now...
+    call npm install
+) else (
+    echo [INFO] Backend dependencies already installed.
+)
+cd ..
+
+:: 3. Start the Backend Server in a new window
+echo [3/4] Starting Backend Server (Port 3000)...
+start "Proctor Backend" cmd /c "cd backend && npm start"
+
+:: 4. Start the Frontend Dev Server
+echo [4/4] Starting Frontend Dev Server...
 echo The app will open at: http://localhost:5173
 echo.
 npm run dev

@@ -37,28 +37,49 @@ const liveQueue = [
 ];
 
 export default function SubmissionsMonitoring() {
-  const [submissions, setSubmissions] = useState(initialSubmissions);
+  const [submissions, setSubmissions] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch]           = useState("");
   const [filterVerdict, setFilterVerdict] = useState("All");
   const [filterLang, setFilterLang]   = useState("All");
   const [liveEnabled, setLiveEnabled] = useState(true);
-  const [liveIndex, setLiveIndex]     = useState(0);
   const [lastUpdated, setLastUpdated] = useState(new Date());
 
+  const API = "http://localhost:3000/api";
+
+  const fetchSubmissions = async () => {
+    try {
+      const res = await fetch(`${API}/submissions`);
+      const data = await res.json();
+      
+      const formatted = data.map((s: any) => ({
+        id: s.id,
+        user: s.user_email || "Anonymous",
+        problem: s.problem_name || s.problem_id || "Unknown Problem",
+        verdict: s.passed_all ? "Accepted" : "Wrong Answer",
+        time: s.results?.[0]?.time || "0.0s",
+        memory: s.results?.[0]?.memory || "0MB",
+        language: s.language || "Unknown",
+        timestamp: s.timestamp ? new Date(s.timestamp).toLocaleTimeString() : "00:00"
+      }));
+      setSubmissions(formatted);
+      setLastUpdated(new Date());
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
+    fetchSubmissions();
     if (!liveEnabled) return;
-    const interval = setInterval(() => {
-      if (liveIndex < liveQueue.length) {
-        setSubmissions(prev => [liveQueue[liveIndex], ...prev]);
-        setLastUpdated(new Date());
-        setLiveIndex(i => i + 1);
-      }
-    }, 4000);
+    const interval = setInterval(fetchSubmissions, 5000);
     return () => clearInterval(interval);
-  }, [liveEnabled, liveIndex]);
+  }, [liveEnabled]);
 
   const verdicts = ["All", "Accepted", "Wrong Answer", "TLE", "MLE"];
-  const langs    = ["All", "C++", "Java", "Python"];
+  const langs    = ["All", "C++", "Java", "Python", "Javascript"];
 
   const filtered = submissions.filter(s => {
     const matchSearch  = s.user.toLowerCase().includes(search.toLowerCase()) ||

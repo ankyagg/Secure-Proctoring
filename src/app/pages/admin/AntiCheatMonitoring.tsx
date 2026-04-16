@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   ShieldAlert,
   MonitorOff,
@@ -52,16 +52,62 @@ const scoreColor = (score: number) => {
 };
 
 export default function AntiCheatMonitoring() {
-  const [events, setEvents] = useState(antiCheatEvents);
-  const [scores, setScores] = useState(suspicionScores);
+  const [events, setEvents] = useState<any[]>([]);
+  const [scores, setScores] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [filterType, setFilterType] = useState("All");
   const [warnings, setWarnings] = useState<Record<string, boolean>>({});
-  const [dismissed, setDismissed] = useState<Set<number>>(new Set());
+  const [dismissed, setDismissed] = useState<Set<string>>(new Set());
+
+  const API = "http://localhost:3000/api";
+
+  const fetchLogs = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch(`${API}/proctor/logs`);
+      const data = await res.json();
+      
+      // Process events
+      const formattedEvents = data.map((d: any) => ({
+        id: d.id,
+        user: d.user_email || "Anonymous",
+        event: d.type || "Violation",
+        time: d.timestamp ? new Date(d.timestamp).toLocaleTimeString() : "Unknown",
+        details: d.details || "",
+        severity: d.type === "Tab Switch" || d.type === "Multiple Faces" ? "High" : "Medium",
+        count: 1
+      }));
+      setEvents(formattedEvents);
+
+      // Group by user for suspicion scores
+      const userStats: Record<string, any> = {};
+      formattedEvents.forEach((e: any) => {
+        if (!userStats[e.user]) {
+          userStats[e.user] = { user: e.user, score: 0, tabSwitch: 0, fullscreenExit: 0, cameraOff: 0, multiFace: 0, status: "Monitoring" };
+        }
+        const s = userStats[e.user];
+        if (e.event === "Tab Switch") { s.tabSwitch++; s.score += 25; }
+        if (e.event === "Fullscreen Exit") { s.fullscreenExit++; s.score += 15; }
+        if (e.event === "Camera Off") { s.cameraOff++; s.score += 20; }
+        if (e.event === "Multiple Faces") { s.multiFace++; s.score += 30; }
+        s.score = Math.min(100, s.score);
+      });
+      setScores(Object.values(userStats));
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchLogs();
+  }, []);
 
   const eventTypes = ["All", "Tab Switch", "Fullscreen Exit", "Camera Off", "Multiple Faces"];
 
   const filteredEvents = events.filter(
-    (e) => !dismissed.has(e.id) && (filterType === "All" || e.event === filterType)
+    (e) => !dismissed.has(String(e.id)) && (filterType === "All" || e.event === filterType)
   );
 
   const totalFlags = filteredEvents.length;

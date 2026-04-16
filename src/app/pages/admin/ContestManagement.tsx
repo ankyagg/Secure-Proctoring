@@ -104,6 +104,10 @@ export default function ContestManagement() {
   dot: "bg-gray-500"
           }
 
+          const start = c.startTime || c.start_time || "";
+          const end = c.endTime || c.end_time || "";
+          const problemsCount = c.problems || (c.question_ids ? c.question_ids.length : 0);
+
           return (
             <div
               key={c.id}
@@ -119,33 +123,33 @@ export default function ContestManagement() {
               <div>
                 <span className={`inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full border ${s.bg} ${s.text} ${s.border}`}>
                   <span className={`w-1.5 h-1.5 rounded-full ${s.dot} ${c.status === "Live" ? "animate-pulse" : ""}`} />
-                  {c.status}
+                  {c.status || "Live"}
                 </span>
               </div>
 
               <div className="text-xs text-slate-500 space-y-0.5">
                 <div className="flex items-center gap-1.5">
                   <Calendar className="w-3 h-3 text-slate-400" />
-                  {c.startTime.split(" ")[0]}
+                  {start.split(" ")[0]}
                 </div>
                 <div className="flex items-center gap-1.5">
                   <Clock className="w-3 h-3 text-slate-400" />
-                  {c.startTime.split(" ")[1]} – {c.endTime.split(" ")[1]}
+                  {start.split(" ")[1] || "00:00"} – {end.split(" ")[1] || "23:59"}
                 </div>
               </div>
 
               <div className="flex items-center gap-1.5 text-slate-500 text-sm">
                 <BookOpen className="w-3.5 h-3.5 text-slate-400" />
-                {c.problems}
+                {problemsCount}
               </div>
 
               <div className="flex items-center gap-1.5 text-slate-500 text-sm">
                 <Users className="w-3.5 h-3.5 text-slate-400" />
-                {c.participants}
+                {c.participants || 0}
               </div>
 
               <div>
-                {c.antiCheat ? (
+                {c.antiCheat || c.anti_cheat ? (
                   <span className="inline-flex items-center gap-1 text-xs text-green-700 bg-green-50 border border-green-200 rounded-full px-2 py-0.5">
                     <Shield className="w-3 h-3" />
                     On
@@ -165,10 +169,11 @@ export default function ContestManagement() {
                       edit: "true",
                       id: c.id,
                       name: c.name,
-                      startTime: c.startTime,
-                      endTime: c.endTime,
-                      problems: String(c.problems),
-                      antiCheat: typeof c.antiCheat === "object" ? JSON.stringify(c.antiCheat) : String(c.antiCheat),
+                      startTime: start,
+                      endTime: end,
+                      problems: String(problemsCount),
+                      antiCheat: typeof (c.antiCheat || c.anti_cheat) === "object" ? JSON.stringify(c.antiCheat || c.anti_cheat) : String(c.antiCheat || c.anti_cheat),
+                      questionIds: JSON.stringify(c.question_ids || c.questionIds || []),
                     });
                     window.open(`/admin/contests/new?${params.toString()}`, "_blank");
                   }}

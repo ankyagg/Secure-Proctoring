@@ -11,9 +11,10 @@ import {
   Eye,
 } from "lucide-react";
 import { contest } from "../data/mockData";
-import { auth } from "../services/firebase";
+import { auth } from "@/app/services/firebase.js";
 import { onAuthStateChanged } from "firebase/auth";
 import { fetchContests } from "../services/contest";
+import AIProctor from "./AIProctor";
 
 type AntiCheatSettings = {
   enabled: boolean;
@@ -57,7 +58,20 @@ export default function StudentLayout() {
   const [timeRemaining, setTimeRemaining] = useState(6332);
   const [warningCount, setWarningCount] = useState(1);
   const [username, setUsername] = useState("user");
-  const [antiCheat, setAntiCheat] = useState<AntiCheatSettings>(null);
+  const [antiCheat, setAntiCheat] = useState<AntiCheatSettings | null>(() => {
+    // Secure-First: If we are in a contest, default to strict settings until DB overrides them
+    const params = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : "");
+    if (params.get("contestId")) {
+      return {
+        enabled: true,
+        fullscreen: true,
+        tabSwitch: true,
+        webcam: true,
+        faceDetection: true
+      };
+    }
+    return null;
+  });
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -82,9 +96,18 @@ export default function StudentLayout() {
     const cid = params.get("contestId");
     if (cid) {
       fetchContests().then((cs: any[]) => {
-        const found = cs.find((x) => x.id === cid);
-        if (found?.antiCheat && typeof found.antiCheat === "object") {
-          setAntiCheat(found.antiCheat as AntiCheatSettings);
+        const found = cs.find((x) => String(x.id) === String(cid));
+        if (found) {
+          const config = found.antiCheat || found.anti_cheat;
+          if (config && typeof config === "object") {
+            setAntiCheat({
+              enabled: !!config.enabled,
+              fullscreen: config.fullscreen ?? true, // Default to true if enabled
+              tabSwitch: config.tabSwitch ?? true,
+              webcam: config.webcam ?? true,
+              faceDetection: config.faceDetection ?? true
+            });
+          }
         }
       });
     }
@@ -121,7 +144,10 @@ export default function StudentLayout() {
 
           {/* Left */}
           <div className="flex items-center gap-4">
-            <Link to="/student/lobby" className="flex items-center gap-2">
+            <Link 
+              to={`/student/lobby${new URLSearchParams(location.search).get("contestId") ? `?contestId=${new URLSearchParams(location.search).get("contestId")}` : ""}`} 
+              className="flex items-center gap-2"
+            >
               <div className="w-7 h-7 bg-blue-600 rounded-md flex items-center justify-center">
                 <Code2 className="w-4 h-4 text-white" />
               </div>
@@ -142,7 +168,7 @@ export default function StudentLayout() {
             <nav className="hidden md:flex items-center gap-1">
 
               <Link
-                to="/student/problems"
+                to={`/student/problems${new URLSearchParams(location.search).get("contestId") ? `?contestId=${new URLSearchParams(location.search).get("contestId")}` : ""}`}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm ${
                   location.pathname === "/student/problems"
                     ? "bg-blue-50 text-blue-700"
@@ -154,7 +180,7 @@ export default function StudentLayout() {
               </Link>
 
               <Link
-                to="/student/leaderboard"
+                to={`/student/leaderboard${new URLSearchParams(location.search).get("contestId") ? `?contestId=${new URLSearchParams(location.search).get("contestId")}` : ""}`}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm ${
                   location.pathname === "/student/leaderboard"
                     ? "bg-blue-50 text-blue-700"
@@ -221,9 +247,11 @@ export default function StudentLayout() {
           <Outlet />
         </main>
 
-        {/* Webcam */}
-        <WebcamPreview username={username} />
+        {/* AI Monitoring & Watchdog */}
+        <AIProctor />
 
+        {/* Webcam */}
+        {antiCheat?.webcam && <WebcamPreview username={username} />}
       </div>
     </StudentContext.Provider>
   );

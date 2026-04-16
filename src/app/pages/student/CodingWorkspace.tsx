@@ -14,11 +14,14 @@ import {
   Clock,
   Zap,
   X,
+  Mail,
 } from "lucide-react";
 import WebcamPreview from "../../components/WebcamPreview";
 import { useStudentContext } from "../../components/StudentLayout";
-import { db } from "../../services/firebase";
+import { db, auth } from "@/app/services/firebase.js";
 import { doc, getDoc } from "firebase/firestore";
+
+const API_BASE = "http://localhost:3000/api";
 
 const LANGUAGES = ["C++", "Java", "Python"];
 
@@ -120,10 +123,20 @@ export default function CodingWorkspace() {
           navigate("/student/problems");
           return;
         }
-        const data = snap.data() as FirestoreProblem;
+        const rawData = snap.data();
+        const data = {
+          ...rawData,
+          id: snap.id,
+          timeLimit: rawData?.timeLimit || rawData?.time_limit || "1s",
+          memoryLimit: rawData?.memoryLimit || rawData?.memory_limit || "256MB",
+          sampleInput: rawData?.sampleInput || rawData?.sample_input || "",
+          sampleOutput: rawData?.sampleOutput || rawData?.sample_output || "",
+          statement: rawData?.statement || rawData?.description || "",
+        } as unknown as FirestoreProblem;
+
         setProblem(data);
-        setCode(data.boilerplates?.["C++"] ?? "");
-        setCustomInput(data.sampleInput ?? "");
+        setCode(data.boilerplates?.[language] || "");
+        setCustomInput(data.sampleInput || "");
       })
       .catch(console.error)
       .finally(() => setLoadingProblem(false));
@@ -132,14 +145,24 @@ export default function CodingWorkspace() {
   // ── Fullscreen enforcement ────────────────────────────────────────────────
   useEffect(() => {
     if (!antiCheat?.enabled || !antiCheat.fullscreen) return;
+    
+    // Initial check
     if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen().catch(() => {});
+      setShowFullscreenPrompt(true);
+      document.documentElement.requestFullscreen().catch(() => {
+        console.log("Fullscreen request blocked - waiting for user click");
+      });
     }
+
     const onFsChange = () => {
       const inFs = !!document.fullscreenElement;
       setIsFullscreen(inFs);
-      if (!inFs) { setShowFullscreenPrompt(true); addWarning(); }
-      else { setShowFullscreenPrompt(false); }
+      if (!inFs) { 
+        setShowFullscreenPrompt(true); 
+        addWarning(); 
+      } else { 
+        setShowFullscreenPrompt(false); 
+      }
     };
     document.addEventListener("fullscreenchange", onFsChange);
     return () => document.removeEventListener("fullscreenchange", onFsChange);
@@ -190,40 +213,50 @@ export default function CodingWorkspace() {
   };
 
   const handleSubmit = async () => {
-    if (!problem) return;
+    if (!problem || !auth.currentUser) return;
     setIsSubmitting(true);
     setActiveTab("output");
     setOutputText("⏳ Judging your code...");
+    setVerdict(null);
+
+    const queryParams = new URLSearchParams(window.location.search);
+    const contestId = queryParams.get("contestId");
+
     try {
-      const res = await fetch(WANDBOX_URL, {
+      const res = await fetch(`${API_BASE}/submit`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          compiler: WANDBOX_COMPILERS[language],
-          code,
-          stdin: problem.sampleInput ?? "",
+          question_id: id,
+          source_code: code,
+          language_id: language === "C++" ? 54 : language === "Java" ? 62 : 71, // Judge0 IDs
+          user_email: auth.currentUser.email,
+          user_name: currentUser.username,
+          contest_id: contestId
         }),
       });
-      const data = await parseWandbox(res);
-      if (data.compiler_error) {
-        setVerdict("CE");
-        setOutputText(`❌ Compilation Error:\n${data.compiler_error}`);
-      } else if (data.program_output?.trim() === (problem.sampleOutput ?? "").trim()) {
-        setVerdict("Accepted");
-        setOutputText(`✅ Sample test passed!\n\nOutput: ${data.program_output}`);
-      } else {
-        setVerdict("Wrong Answer");
-        setOutputText(
-          `❌ Wrong Answer\n\nExpected:\n${problem.sampleOutput}\n\nGot:\n${data.program_output || "(no output)"}${data.program_error ? `\n\nError:\n${data.program_error}` : ""}`
+
+      const data = await res.json();
+      if (res.ok) {
+        setVerdict(data.passed_all ? "Accepted" : "Wrong Answer");
+        setOutputText(data.passed_all
+          ? `✅ All ${data.total} test cases passed!`
+          : `❌ ${data.passed}/${data.total} test cases passed.`
         );
+        // Show detailed results in modal
+        setVerdictDetails(data);
+        setShowModal(true);
+      } else {
+        setOutputText(`❌ Error: ${data.error || "Submission failed"}`);
       }
-      setShowModal(true);
     } catch (err: unknown) {
-      alert(`❌ Failed: ${err instanceof Error ? err.message : String(err)}`);
+      setOutputText(`❌ Failed: ${err instanceof Error ? err.message : String(err)}`);
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  const [verdictDetails, setVerdictDetails] = useState<any>(null);
 
   // ── Loading / error states ────────────────────────────────────────────────
   if (loadingProblem) {
@@ -239,24 +272,44 @@ export default function CodingWorkspace() {
 
   if (!problem) return null;
 
+  if (showFullscreenPrompt && antiCheat?.fullscreen) {
+    return (
+      <div className="fixed inset-0 z-[9999] bg-slate-900 flex flex-col items-center justify-center gap-6 p-6 text-center">
+        <div className="w-20 h-20 bg-amber-500/10 rounded-full flex items-center justify-center animate-pulse">
+          <AlertTriangle className="w-10 h-10 text-amber-500" />
+        </div>
+        <div className="space-y-2">
+          <h2 className="text-white text-2xl font-bold tracking-tight">Security Protocol Violation</h2>
+          <p className="text-slate-400 text-base max-w-sm mx-auto leading-relaxed">
+            Fullscreen mode is mandatory for this contest. Your interaction has been blocked, and this event has been logged to the examiner.
+          </p>
+        </div>
+        
+        <button
+          onClick={() => {
+            document.documentElement.requestFullscreen()
+              .then(() => setShowFullscreenPrompt(false))
+              .catch((err) => {
+                console.error("Fullscreen failed:", err);
+                alert("Please click anywhere on the page and then try the button again to allow fullscreen.");
+              });
+          }}
+          className="group relative flex items-center gap-3 px-8 py-3.5 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition-all active:scale-95 shadow-lg shadow-blue-500/25"
+        >
+          <Zap className="w-5 h-5 text-blue-200" />
+          Re-enable Fullscreen
+          <div className="absolute inset-0 rounded-xl group-hover:bg-white/10 transition-colors" />
+        </button>
+
+        <p className="text-slate-500 text-[10px] uppercase tracking-[0.2em] mt-4">
+          Attempted Bypass ID: {auth.currentUser?.uid?.slice(0, 8) || "ANON"}
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col h-[calc(100vh-56px)]">
-      {/* Fullscreen overlay */}
-      {showFullscreenPrompt && antiCheat?.fullscreen && (
-        <div className="fixed inset-0 z-50 bg-slate-900/95 flex flex-col items-center justify-center gap-5">
-          <AlertTriangle className="w-12 h-12 text-amber-400" />
-          <h2 className="text-white text-xl font-bold">Fullscreen Required</h2>
-          <p className="text-slate-300 text-sm text-center max-w-xs">
-            This contest requires fullscreen mode. A violation has been recorded.
-          </p>
-          <button
-            onClick={() => document.documentElement.requestFullscreen().catch(() => {})}
-            className="px-6 py-2.5 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700"
-          >
-            Return to Fullscreen
-          </button>
-        </div>
-      )}
 
       <div className="flex flex-1 overflow-hidden">
         {/* ===== LEFT PANEL ===== */}
@@ -265,11 +318,15 @@ export default function CodingWorkspace() {
           <div className="px-5 py-4 border-b border-slate-200">
             <div className="flex items-center gap-2 mb-3">
               <button
-                onClick={() => navigate("/student/problems")}
+                onClick={() => {
+                  const queryParams = new URLSearchParams(window.location.search);
+                  const contestId = queryParams.get("contestId");
+                  navigate(`/student/problems${contestId ? `?contestId=${contestId}` : ""}`);
+                }}
                 className="flex items-center gap-1 text-xs text-slate-400 hover:text-slate-600 transition-colors"
               >
                 <ChevronLeft className="w-3.5 h-3.5" />
-                Problems
+                {new URLSearchParams(window.location.search).get("contestId") ? "Contest Problems" : "Problems"}
               </button>
             </div>
             <div className="flex items-start justify-between gap-3">
@@ -325,7 +382,12 @@ export default function CodingWorkspace() {
                       Constraints
                     </h4>
                     <ul className="space-y-1">
-                      {problem.constraints.split("\n").filter(Boolean).map((c, i) => (
+                      {(typeof problem.constraints === "string" 
+                        ? problem.constraints.split("\n") 
+                        : Array.isArray(problem.constraints) 
+                          ? problem.constraints 
+                          : []
+                      ).filter(Boolean).map((c, i) => (
                         <li key={i} className="text-slate-500 flex items-start gap-2">
                           <span className="mt-1.5 w-1 h-1 bg-slate-400 rounded-full flex-shrink-0" />
                           <code className="text-xs bg-slate-50 border border-slate-200 rounded px-1.5 py-0.5 text-slate-600">
@@ -436,7 +498,15 @@ export default function CodingWorkspace() {
           </div>
 
           {/* Code editor */}
-          <div className="flex-1 overflow-hidden flex relative">
+          <div className="flex-1 overflow-hidden flex relative group">
+            {/* Watermark Overlay */}
+            <div className="absolute inset-0 pointer-events-none z-10 opacity-[0.03] select-none flex flex-wrap gap-12 p-8 overflow-hidden rotate-[-15deg]">
+              {Array.from({ length: 50 }).map((_, i) => (
+                <span key={i} className="text-2xl font-bold whitespace-nowrap">
+                  {auth.currentUser?.email || "Private Content"}
+                </span>
+              ))}
+            </div>
             <div
               className="select-none text-right pr-3 pt-3 pb-3 pl-3 text-slate-600 bg-slate-900 border-r border-slate-700/50 overflow-hidden flex-shrink-0"
               style={{ fontFamily: "monospace", fontSize: "13px", lineHeight: "1.6", minWidth: "48px" }}
@@ -537,19 +607,21 @@ export default function CodingWorkspace() {
                 <div className="text-slate-500 text-xs mb-2" style={{ textTransform: "uppercase", letterSpacing: "0.05em" }}>
                   Test Cases
                 </div>
-                <div className="flex gap-2 flex-wrap">
-                  {Array.from({ length: 12 }, (_, i) => {
-                    const pass = verdict === "Accepted" ? true : i < (verdict === "Wrong Answer" ? 7 : 4);
-                    return (
-                      <div key={i} className={`w-8 h-8 rounded-lg text-xs flex items-center justify-center ${pass ? "bg-green-100 text-green-700 border border-green-200" : "bg-red-100 text-red-700 border border-red-200"}`} style={{ fontWeight: 600 }}>
+                  <div className="flex gap-2 flex-wrap">
+                    {verdictDetails?.results?.map((res: any, i: number) => (
+                      <div
+                        key={i}
+                        className={`w-8 h-8 rounded-lg text-xs flex items-center justify-center ${res.passed ? "bg-green-100 text-green-700 border border-green-200" : "bg-red-100 text-red-700 border border-red-200"}`}
+                        style={{ fontWeight: 600 }}
+                        title={res.status}
+                      >
                         {i + 1}
                       </div>
-                    );
-                  })}
-                </div>
-                <p className={`text-xs mt-2 ${verdict === "Accepted" ? "text-green-600" : "text-slate-400"}`}>
-                  {verdict === "Accepted" ? "All 12/12 test cases passed" : verdict === "Wrong Answer" ? "7/12 test cases passed" : "4/12 test cases passed"}
-                </p>
+                    ))}
+                  </div>
+                  <p className={`text-xs mt-2 ${verdict === "Accepted" ? "text-green-600" : "text-slate-400"}`}>
+                    {verdictDetails ? `${verdictDetails.passed}/${verdictDetails.total} test cases passed` : ""}
+                  </p>
               </div>
 
               <div className="grid grid-cols-3 gap-3">
@@ -577,8 +649,13 @@ export default function CodingWorkspace() {
               <button onClick={() => setShowModal(false)} className="flex-1 px-4 py-2.5 border border-slate-200 text-slate-700 text-sm rounded-lg hover:bg-slate-50 transition-colors">
                 Keep Editing
               </button>
-              <button onClick={() => { setShowModal(false); navigate("/student/problems"); }} className="flex-1 px-4 py-2.5 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors" style={{ fontWeight: 500 }}>
-                Back to Problems
+              <button onClick={() => { 
+                setShowModal(false); 
+                const queryParams = new URLSearchParams(window.location.search);
+                const contestId = queryParams.get("contestId");
+                navigate(`/student/problems${contestId ? `?contestId=${contestId}` : ""}`); 
+              }} className="flex-1 px-4 py-2.5 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors" style={{ fontWeight: 500 }}>
+                Back to {new URLSearchParams(window.location.search).get("contestId") ? "Contest" : "Problems"}
               </button>
             </div>
           </div>

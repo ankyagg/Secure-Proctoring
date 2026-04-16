@@ -21,12 +21,20 @@ export default function AddContest() {
 
   const [form, setForm] = useState({
     name: contestName,
-    startTime: searchParams.get("startTime") ?? "2026-03-10 11:00",
-    endTime: searchParams.get("endTime") ?? "2026-03-10 14:00",
+    startTime: (searchParams.get("startTime") ?? "2026-04-16 10:00").replace(" ", "T"),
+    endTime: (searchParams.get("endTime") ?? "2026-04-16 13:00").replace(" ", "T"),
     problems: Number(searchParams.get("problems")) || 5,
   });
 const [questions, setQuestions] = useState<Question[]>([]);
-const [selectedQuestions, setSelectedQuestions] = useState<string[]>([]);
+const [selectedQuestions, setSelectedQuestions] = useState<string[]>(() => {
+  const qStr = searchParams.get("questionIds");
+  try {
+    if (qStr) return JSON.parse(qStr);
+  } catch (e) {
+    console.error("Failed to parse questionIds", e);
+  }
+  return [];
+});
 
   const [antiCheat, setAntiCheat] = useState(() => {
     const raw = searchParams.get("antiCheat");
@@ -72,15 +80,13 @@ const [selectedQuestions, setSelectedQuestions] = useState<string[]>([]);
 
   // 🔹 Toggle question selection
   const toggleQuestion = (id: string) => {
-  setSelectedQuestions((prev) =>{
-    prev.includes(id)
+    setSelectedQuestions((prev) => {
       const updated = prev.includes(id)
-      ? prev.filter((q) => q !== id)
-      : [...prev, id];
-      console.log("selected:", updated); // ✅ correct place
-    return updated;
-  });
-};
+        ? prev.filter((q) => q !== id)
+        : [...prev, id];
+      return updated;
+    });
+  };
 
   // 🔹 Save contest
   const handleSave = async () => {
@@ -95,10 +101,12 @@ const [selectedQuestions, setSelectedQuestions] = useState<string[]>([]);
     }
 
     const payload = {
-      ...form,
+      name: form.name,
+      start_time: form.startTime,
+      end_time: form.endTime,
       problems: selectedQuestions.length,
-      antiCheat,
-      questionIds: selectedQuestions,
+      anti_cheat: antiCheat,
+      question_ids: selectedQuestions,
     };
     console.log("FINAL PAYLOAD:", payload);
 
@@ -111,13 +119,13 @@ const [selectedQuestions, setSelectedQuestions] = useState<string[]>([]);
         }
         await updateContest(id, payload);
         window.opener?.postMessage(
-          { type: "contest-updated", id },
+          { type: "c-updated", id, updates: payload },
           window.location.origin
         );
       } else {
         const newContest = await createContest(payload);
         window.opener?.postMessage(
-          { type: "contest-added", contest: newContest },
+          { type: "c-added", c: newContest },
           window.location.origin
         );
       }
@@ -167,32 +175,75 @@ const [selectedQuestions, setSelectedQuestions] = useState<string[]>([]);
       {/* Form */}
       <div className="max-w-2xl mx-auto py-10 px-6 space-y-6">
         <div className="bg-white p-6 rounded-xl border space-y-4">
-          <input
-            value={form.name}
-            onChange={(e) =>
-              setForm({ ...form, name: e.target.value })
-            }
-            placeholder="Contest Name"
-            className="w-full border p-2 rounded"
-          />
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Contest Name</label>
+            <input
+              value={form.name}
+              onChange={(e) =>
+                setForm({ ...form, name: e.target.value })
+              }
+              placeholder="e.g. Weekly DSA Championship run #42"
+              className="w-full border p-2 rounded"
+            />
+          </div>
 
-          <input
-            value={form.startTime}
-            onChange={(e) =>
-              setForm({ ...form, startTime: e.target.value })
-            }
-            placeholder="Start Time"
-            className="w-full border p-2 rounded"
-          />
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Start Time</label>
+              <input
+                type="datetime-local"
+                value={form.startTime}
+                onChange={(e) =>
+                  setForm({ ...form, startTime: e.target.value })
+                }
+                placeholder="Start Time"
+                className="w-full border p-2 rounded"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">End Time</label>
+              <input
+                type="datetime-local"
+                value={form.endTime}
+                onChange={(e) =>
+                  setForm({ ...form, endTime: e.target.value })
+                }
+                placeholder="End Time"
+                className="w-full border p-2 rounded"
+              />
+            </div>
+          </div>
+        </div>
 
-          <input
-            value={form.endTime}
-            onChange={(e) =>
-              setForm({ ...form, endTime: e.target.value })
-            }
-            placeholder="End Time"
-            className="w-full border p-2 rounded"
-          />
+        {/* 🔥 Anti Cheat Options */}
+        <div className="bg-white p-6 rounded-xl border">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="font-semibold text-slate-800">Proctoring Options</h2>
+            <label className="flex items-center gap-2 text-sm text-slate-600">
+              <input
+                type="checkbox"
+                checked={antiCheat.enabled}
+                onChange={(e) => setAntiCheat({ ...antiCheat, enabled: e.target.checked })}
+              />
+              Enable Full Proctoring Suite
+            </label>
+          </div>
+          
+          <div className={`grid grid-cols-2 gap-3 transition-opacity ${!antiCheat.enabled ? 'opacity-50 pointer-events-none' : ''}`}>
+            {Object.entries(antiCheat).filter(([k]) => k !== 'enabled').map(([key, value]) => (
+              <label key={key} className="flex items-center gap-2 border p-3 rounded-lg hover:bg-slate-50 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={value as boolean}
+                  onChange={(e) => setAntiCheat({ ...antiCheat, [key]: e.target.checked })}
+                  className="rounded border-slate-300"
+                />
+                <span className="text-sm font-medium text-slate-700 capitalize">
+                  {key.replace(/([A-Z])/g, ' $1').trim()}
+                </span>
+              </label>
+            ))}
+          </div>
         </div>
 
         {/* 🔥 Question Selection */}

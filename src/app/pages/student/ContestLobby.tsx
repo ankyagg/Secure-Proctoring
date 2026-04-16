@@ -18,8 +18,11 @@ type Contest = {
   registeredParticipants?: number;
   problems?: number;
   antiCheat?: { enabled?: boolean };
-  startTime: string;
+  anti_cheat?: { enabled?: boolean };
+  startTime?: string;
+  start_time?: string;
   endTime?: string;
+  end_time?: string;
   status?: string;
 };
 
@@ -42,11 +45,17 @@ export default function ContestLobby() {
 
       const now = new Date();
 
-      const filtered = contests.filter((c) => {
-        if (!c.startTime) return false;
+      const filtered = contests.filter((c: any) => {
+        const sTime = c.start_time || c.startTime;
+        const eTime = c.end_time || c.endTime;
 
-        const start = new Date(c.startTime);
-        const end = c.endTime ? new Date(c.endTime) : null;
+        if (!sTime) return false;
+
+        const startTimeStr = sTime.replace(" ", "T");
+        const endTimeStr = eTime ? eTime.replace(" ", "T") : "";
+
+        const start = new Date(startTimeStr);
+        const end = endTimeStr ? new Date(endTimeStr) : null;
 
         if (isNaN(start.getTime())) return false;
 
@@ -81,7 +90,7 @@ export default function ContestLobby() {
     }
 
     const now = new Date();
-    const start = new Date(selectedContest.startTime);
+    const start = new Date((selectedContest.start_time || selectedContest.startTime || "").replace(" ", "T"));
 
     if (now < start) {
       alert("Contest has not started yet");
@@ -101,6 +110,13 @@ export default function ContestLobby() {
         registeredParticipants:
           (selectedContest.registeredParticipants || 0) + 1
       });
+
+      // Request fullscreen as this is a user-initiated click
+      if (selectedContest.antiCheat?.enabled || selectedContest.anti_cheat?.enabled) {
+        document.documentElement.requestFullscreen().catch(() => {
+          console.log("Fullscreen request failed in Lobby - will retry in Workspace");
+        });
+      }
 
       navigate(`/student/problems?contestId=${selectedContest.id}`);
     } catch (error) {
@@ -159,7 +175,7 @@ export default function ContestLobby() {
           </div>
 
           {/* WARNING */}
-          {selectedContest.antiCheat?.enabled && (
+          {(selectedContest.antiCheat?.enabled || selectedContest.anti_cheat?.enabled) && (
             <div className="bg-amber-50 border p-3 mb-5 rounded">
               <AlertCircle className="inline w-4 h-4 mr-2" />
               Anti-cheat monitoring enabled
@@ -221,7 +237,7 @@ export default function ContestLobby() {
                       {contest.description || "No description"}
                     </p>
                     <p className="text-xs text-slate-400 mt-1">
-                      Starts: {contest.startTime}
+                      Starts: {(contest.start_time || contest.startTime || "").replace("T", " ")}
                     </p>
                   </div>
 

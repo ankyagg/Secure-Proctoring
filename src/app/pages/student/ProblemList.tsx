@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import { CheckCircle2, Circle, Clock, AlertCircle, ChevronRight, Trophy, Zap } from "lucide-react";
+import { auth } from "@/app/services/firebase.js";
 
 const API = "http://localhost:3000/api";
 
@@ -22,28 +23,58 @@ export default function ProblemList() {
   const contestId = searchParams.get("contestId");
 
   const [problems, setProblems] = useState<any[]>([]);
+  const [contestData, setContestData] = useState<any>(null);
   const [loading, setLoading] = useState<boolean>(true);
-const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch(`${API}/questions`)
-      .then(res => res.json())
-      .then((data: any[]) => {
-        // normalize + add default status since it's not in DB
-        const normalized = data.map((q, i) => ({
-          ...q,
-          id: q.id,
-          difficulty: q.difficulty,          // already lowercase from Firestore
-          status: "Unattempted",             // default; replace with real user progress later
-          points: q.points || 0,
-          timeLimit: q.time_limit || "2s",
-          memoryLimit: q.memory_limit || "256MB",
-        }));
+    const fetchData = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const user = auth.currentUser;
+        const [qRes, sRes] = await Promise.all([
+          // 1. Fetch questions (filtered by contest if cid exists)
+          fetch(contestId ? `${API}/contests/${contestId}` : `${API}/questions`).then(res => res.json()),
+          // 2. Fetch submissions for this user
+          user ? fetch(`${API}/submissions?user_email=${user.email}`).then(res => res.json()) : Promise.resolve([])
+        ]);
+
+        if (contestId && qRes) {
+          setContestData(qRes);
+        }
+
+        let qs = contestId ? (qRes.questions || []) : qRes;
+        if (!Array.isArray(qs)) qs = [];
+
+        const subs = Array.isArray(sRes) ? sRes : [];
+
+        // Determine status for each question
+        const normalized = qs.map((q: any) => {
+          const userSubs = subs.filter((s: any) => s.question_id === q.id);
+          const solved = userSubs.some((s: any) => s.passed_all);
+          const attempted = userSubs.length > 0;
+
+          return {
+            ...q,
+            difficulty: q.difficulty || "easy",
+            status: solved ? "Solved" : attempted ? "Attempted" : "Unattempted",
+            points: q.points || 0,
+            timeLimit: q.time_limit || "2s",
+            memoryLimit: q.memory_limit || "256MB",
+          };
+        });
+
         setProblems(normalized);
-      })
-      .catch(() => setError("Failed to load problems. Is the backend running?"))
-      .finally(() => setLoading(false));
-  }, []);
+      } catch (err: any) {
+        setError(err.message || "Failed to load problems");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [contestId]);
 
   const solved   = problems.filter(p => p.status === "Solved").length;
   const attempted = problems.filter(p => p.status === "Attempted").length;
@@ -69,10 +100,10 @@ const [error, setError] = useState<string | null>(null);
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-slate-900 mb-1" style={{ fontWeight: 700, fontSize: "1.4rem" }}>
-            Problem Set
+            {contestData?.name || (contestId ? "Contest Details" : "Problem Set")}
           </h1>
           <p className="text-slate-500 text-sm">
-            Weekly DSA Championship #42 · {problems.length} problems
+            {contestId ? "Active Contest" : "Practice Mode"} · {problems.length} problems
           </p>
         </div>
         <button
@@ -117,7 +148,8 @@ const [error, setError] = useState<string | null>(null);
       {/* Problem List */}
       <div className="space-y-2.5">
         {problems.map((problem, index) => {
-          const diff = difficultyConfig[problem.difficulty as keyof typeof difficultyConfig] || difficultyConfig.easy;
+          const diffKey = (problem.difficulty || 'easy').toLowerCase() as keyof typeof difficultyConfig;
+          const diff = difficultyConfig[diffKey] || difficultyConfig.easy;
           const stat = statusConfig[problem.status as keyof typeof statusConfig] || statusConfig.Unattempted;
           const StatusIcon = stat.icon;
           const label = String.fromCharCode(65 + index); // A, B, C...
