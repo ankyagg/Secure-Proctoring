@@ -26,7 +26,9 @@ export default function AIProctor() {
 
       try {
         // 1. Connect Webcam
-        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { width: 1280, height: 720, frameRate: 30 }
+        });
         videoRef.current.srcObject = stream;
         await videoRef.current.play();
 

@@ -25,22 +25,24 @@ class ProctorGazeDetector {
 
     // Configuration for Human Library
     this.config = {
-      backend: 'webgl',
-      modelBasePath: '/models', // Point to your public/models folder
-      filter: { enabled: true, equalization: false },
+      backend: 'webgpu', // Prefer WebGPU for massive performance boost
+      modelBasePath: 'https://cdn.jsdelivr.net/npm/@vladmandic/human-models/models/',
+      filter: { enabled: true, equalization: true, flip: false }, // Equalization helps with low light
       face: {
         enabled: true,
-        detector: { return: true, rotation: true },
+        detector: { rotation: true, maxDetected: 2, minConfidence: 0.2 }, // Detect up to 2 faces (multiple person detection)
         mesh: { enabled: true },
         iris: { enabled: true },
-        gaze: { enabled: true },    // Enable Eye Tracking
-        emotion: { enabled: false }, // Save CPU
-        description: { enabled: false },
+        description: { enabled: false }, // Disable extra modules for speed
+        emotion: { enabled: false },
+        antispoof: { enabled: true }, // Verify it's a real person
+        liveness: { enabled: true },
       },
-      gesture: { enabled: true },  // Enable Head Gestures
       body: { enabled: false },
       hand: { enabled: false },
       object: { enabled: false },
+      segmentation: { enabled: false },
+      gesture: { enabled: true }, // Keep enabled for specific head motions
       ...options
     };
 
