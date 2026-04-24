@@ -36,10 +36,18 @@ export default function QuestionManagement() {
   });
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Delete this question?")) return;
-    // optimistic UI update
-    setQuestions(questions.filter(q => q.id !== id));
-    // TODO: call DELETE /api/questions/:id when you add that route
+    if (!confirm("Delete this question and all its test cases?")) return;
+    try {
+      const res = await fetch(`${API}/questions/${id}`, { method: "DELETE" });
+      if (res.ok) {
+        setQuestions(questions.filter(q => q.id !== id));
+      } else {
+        alert("Failed to delete question");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Error connecting to server");
+    }
   };
 
   if (loading) return (

@@ -2,7 +2,7 @@ import { useNavigate } from "react-router";
 import { useEffect, useState } from "react";
 import { auth } from "../../services/firebase";
 import {
-  Trophy, Users, Send, TrendingUp, Activity, ArrowRight,
+  Trophy, Users, Send, TrendingUp, Activity, ArrowRight, AlertTriangle,
 } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,

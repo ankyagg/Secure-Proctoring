@@ -41,6 +41,42 @@ app.get('/api/questions/:id', async (req, res) => {
   }
 });
 
+// ── POST /api/questions ────────────────────────────────────
+app.post('/api/questions', async (req, res) => {
+  try {
+    const data = { ...req.body, created_at: new Date().toISOString() };
+    const ref = await db.collection('questions').add(data);
+    res.status(201).json({ id: ref.id, message: 'Question created' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── PUT /api/questions/:id ─────────────────────────────────
+app.put('/api/questions/:id', async (req, res) => {
+  try {
+    await db.collection('questions').doc(req.params.id).update(req.body);
+    res.json({ message: 'Question updated' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── DELETE /api/questions/:id ──────────────────────────────
+app.delete('/api/questions/:id', async (req, res) => {
+  try {
+    const qid = req.params.id;
+    await db.collection('questions').doc(qid).delete();
+    const tcSnap = await db.collection('test_cases').where('question_id', '==', qid).get();
+    const batch = db.batch();
+    tcSnap.docs.forEach(doc => batch.delete(doc.ref));
+    await batch.commit();
+    res.json({ message: 'Question deleted' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ── GET /api/contests ──────────────────────────────────────
 app.get('/api/contests', async (req, res) => {
   try {
@@ -107,6 +143,26 @@ app.post('/api/contests', async (req, res) => {
   }
 });
 
+
+// ── PUT /api/contests/:id ──────────────────────────────────
+app.put('/api/contests/:id', async (req, res) => {
+  try {
+    await db.collection('contests').doc(req.params.id).update(req.body);
+    res.json({ message: 'Contest updated' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── DELETE /api/contests/:id ───────────────────────────────
+app.delete('/api/contests/:id', async (req, res) => {
+  try {
+    await db.collection('contests').doc(req.params.id).delete();
+    res.json({ message: 'Contest deleted' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 // ── GET /api/submissions ───────────────────────────────────
 app.get('/api/submissions', async (req, res) => {

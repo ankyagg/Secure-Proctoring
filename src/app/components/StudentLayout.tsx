@@ -15,6 +15,7 @@ import { auth } from "@/app/services/firebase.js";
 import { onAuthStateChanged } from "firebase/auth";
 import { fetchContests } from "../services/contest";
 import AIProctor from "./AIProctor";
+import Watermark from "./Watermark";
 
 type AntiCheatSettings = {
   enabled: boolean;
@@ -249,6 +250,9 @@ export default function StudentLayout() {
 
         {/* AI Monitoring & Watchdog */}
         <AIProctor />
+
+        {/* User Watermark Overlay */}
+        <Watermark text={username || "User"} />
 
         {/* Webcam */}
         {antiCheat?.webcam && <WebcamPreview username={username} />}

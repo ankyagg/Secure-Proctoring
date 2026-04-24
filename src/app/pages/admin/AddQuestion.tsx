@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useSearchParams } from "react-router";
-import { ArrowLeft, Upload } from "lucide-react";
+import { ArrowLeft, Upload, FileCheck, Loader2 } from "lucide-react";
 import { db } from "../../services/firebase";
-import { collection, addDoc, doc, updateDoc, serverTimestamp } from "firebase/firestore";
+import { collection, addDoc, doc, updateDoc, serverTimestamp, writeBatch } from "firebase/firestore";
+import JSZip from "jszip";
 
 export default function AddQuestion() {
   const [searchParams] = useSearchParams();
@@ -35,6 +36,60 @@ export default function AddQuestion() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Test Case Upload State
+  const [testCases, setTestCases] = useState<{ input: string; output: string }[]>([]);
+  const [parsingZip, setParsingZip] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.name.endsWith(".zip")) {
+      setError("Please upload a .zip file containing test cases.");
+      return;
+    }
+
+    setParsingZip(true);
+    setError(null);
+
+    try {
+      const zip = await JSZip.loadAsync(file);
+      const files = Object.keys(zip.files).filter(f => !zip.files[f].dir);
+      
+      const parsed: Record<string, { input?: string; output?: string }> = {};
+
+      for (const filename of files) {
+        const content = await zip.files[filename].async("string");
+        const base = filename.replace(/\.(in|out|txt)$/, "").replace(/^(input|output)_?/, "");
+        
+        if (!parsed[base]) parsed[base] = {};
+
+        if (filename.includes("input") || filename.endsWith(".in")) {
+          parsed[base].input = content;
+        } else if (filename.includes("output") || filename.endsWith(".out")) {
+          parsed[base].output = content;
+        }
+      }
+
+      const finalCases = Object.values(parsed)
+        .filter(c => c.input !== undefined && c.output !== undefined)
+        .map(c => ({ input: c.input!, output: c.output! }));
+
+      if (finalCases.length === 0) {
+        throw new Error("No matching input/output pairs found in ZIP. Files should be named like '1.in'/'1.out' or 'input1.txt'/'output1.txt'.");
+      }
+
+      setTestCases(finalCases);
+    } catch (err: any) {
+      console.error("ZIP Error:", err);
+      setError(err.message || "Failed to parse ZIP file.");
+    } finally {
+      setParsingZip(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
   const handleSave = async () => {
     if (!form.title.trim()) {
       setError("Problem title is required.");
@@ -52,14 +107,33 @@ export default function AddQuestion() {
     };
 
     try {
+      let qid = editId;
       if (isEdit && editId) {
         await updateDoc(doc(db, "questions", editId), payload);
       } else {
-        await addDoc(collection(db, "questions"), {
+        const ref = await addDoc(collection(db, "questions"), {
           ...payload,
           createdAt: serverTimestamp(),
         });
+        qid = ref.id;
       }
+
+      // Save Test Cases if any
+      if (qid && testCases.length > 0) {
+        const batch = writeBatch(db);
+        testCases.forEach((tc) => {
+          const tcRef = doc(collection(db, "test_cases"));
+          batch.set(tcRef, {
+            question_id: qid,
+            input: tc.input,
+            expected_output: tc.output,
+            is_hidden: false, // Default
+            createdAt: serverTimestamp(),
+          });
+        });
+        await batch.commit();
+      }
+
       setSaved(true);
       setTimeout(() => window.close(), 1200);
     } catch (err: any) {
@@ -233,10 +307,37 @@ export default function AddQuestion() {
 
             <div>
               <label className="block text-sm text-slate-600 mb-1.5" style={{ fontWeight: 500 }}>Test Cases</label>
-              <div className="border-2 border-dashed border-slate-200 rounded-xl p-8 text-center hover:border-blue-300 transition-colors cursor-pointer">
-                <Upload className="w-7 h-7 text-slate-300 mx-auto mb-2" />
-                <p className="text-slate-400 text-sm">Drop .zip file or click to upload</p>
-                <p className="text-slate-300 text-xs mt-1">Each test case: input.txt + expected_output.txt</p>
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileUpload}
+                accept=".zip"
+                className="hidden"
+              />
+              <div 
+                onClick={() => fileInputRef.current?.click()}
+                className={`border-2 border-dashed rounded-xl p-8 text-center transition-all cursor-pointer ${
+                  testCases.length > 0 ? "border-green-300 bg-green-50/30" : "border-slate-200 hover:border-blue-300"
+                }`}
+              >
+                {parsingZip ? (
+                  <div className="flex flex-col items-center">
+                    <Loader2 className="w-7 h-7 text-blue-400 animate-spin mb-2" />
+                    <p className="text-slate-500 text-sm">Processing ZIP...</p>
+                  </div>
+                ) : testCases.length > 0 ? (
+                  <div className="flex flex-col items-center">
+                    <FileCheck className="w-7 h-7 text-green-500 mb-2" />
+                    <p className="text-green-700 text-sm font-medium">{testCases.length} Test Cases Loaded</p>
+                    <p className="text-green-600/60 text-xs mt-1">Click to replace ZIP</p>
+                  </div>
+                ) : (
+                  <>
+                    <Upload className="w-7 h-7 text-slate-300 mx-auto mb-2" />
+                    <p className="text-slate-400 text-sm">Drop .zip file or click to upload</p>
+                    <p className="text-slate-300 text-xs mt-1">Each test case: input.txt + expected_output.txt</p>
+                  </>
+                )}
               </div>
             </div>
           </div>
