@@ -174,14 +174,33 @@ app.get('/api/proctor/logs', async (req, res) => {
 });
 
 app.post('/api/proctor/logs', async (req, res) => {
-  const { user_email, user_name, type, message, screenshot_url } = req.body;
+  const { user_email, user_name, type, message, screenshot_url, contest_id } = req.body;
   try {
+    let query = db.collection('proctor_logs').where('user_email', '==', user_email);
+    if (contest_id) {
+       query = query.where('contest_id', '==', contest_id);
+    }
+    
+    const userLogsSnap = await query.get();
+    let docs = userLogsSnap.docs;
+
+    if (docs.length >= 5) {
+        docs.sort((a, b) => new Date(a.data().timestamp).getTime() - new Date(b.data().timestamp).getTime());
+        const surplusCount = docs.length - 4; // leave 4 docs, since we are adding 1
+        const batch = db.batch();
+        for (let i = 0; i < surplusCount; i++) {
+            batch.delete(docs[i].ref);
+        }
+        await batch.commit();
+    }
+
     const ref = await db.collection('proctor_logs').add({
       user_email,
       user_name,
       type,
       message,
       screenshot_url: screenshot_url || null,
+      contest_id: contest_id || null,
       timestamp: new Date().toISOString()
     });
     res.status(201).json({ id: ref.id });

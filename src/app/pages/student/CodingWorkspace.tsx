@@ -16,9 +16,11 @@ import {
   X,
   Mail,
 } from "lucide-react";
+import Editor from "@monaco-editor/react";
+import Watermark from "../../components/Watermark";
 import WebcamPreview from "../../components/WebcamPreview";
 import { useStudentContext } from "../../components/StudentLayout";
-import { db, auth } from "@/app/services/firebase.js";
+import { db, auth } from "../../services/firebase";
 import { doc, getDoc } from "firebase/firestore";
 
 const API_BASE = "http://localhost:3000/api";
@@ -30,6 +32,12 @@ const WANDBOX_COMPILERS: Record<string, string> = {
   "C++": "gcc-head",
   Java: "openjdk-jdk-21+35",
   Python: "cpython-3.12.3",
+};
+
+const LANGUAGE_MAP: Record<string, string> = {
+  "C++": "cpp",
+  Java: "java",
+  Python: "python",
 };
 
 async function parseWandbox(res: Response): Promise<Record<string, string>> {
@@ -110,8 +118,6 @@ export default function CodingWorkspace() {
   const [isFullscreen, setIsFullscreen] = useState(!!document.fullscreenElement);
   const [showFullscreenPrompt, setShowFullscreenPrompt] = useState(false);
 
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const lineCount = code.split("\n").length;
 
   // ── Fetch problem from Firestore ──────────────────────────────────────────
   useEffect(() => {
@@ -145,7 +151,7 @@ export default function CodingWorkspace() {
   // ── Fullscreen enforcement ────────────────────────────────────────────────
   useEffect(() => {
     if (!antiCheat?.enabled || !antiCheat.fullscreen) return;
-    
+
     // Initial check
     if (!document.fullscreenElement) {
       setShowFullscreenPrompt(true);
@@ -157,11 +163,11 @@ export default function CodingWorkspace() {
     const onFsChange = () => {
       const inFs = !!document.fullscreenElement;
       setIsFullscreen(inFs);
-      if (!inFs) { 
-        setShowFullscreenPrompt(true); 
-        addWarning(); 
-      } else { 
-        setShowFullscreenPrompt(false); 
+      if (!inFs) {
+        setShowFullscreenPrompt(true);
+        addWarning();
+      } else {
+        setShowFullscreenPrompt(false);
       }
     };
     document.addEventListener("fullscreenchange", onFsChange);
@@ -284,7 +290,7 @@ export default function CodingWorkspace() {
             Fullscreen mode is mandatory for this contest. Your interaction has been blocked, and this event has been logged to the examiner.
           </p>
         </div>
-        
+
         <button
           onClick={() => {
             document.documentElement.requestFullscreen()
@@ -356,11 +362,10 @@ export default function CodingWorkspace() {
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`px-3 py-2.5 text-xs capitalize border-b-2 transition-colors -mb-px ${
-                  activeTab === tab
-                    ? "border-blue-600 text-blue-700"
-                    : "border-transparent text-slate-400 hover:text-slate-600"
-                }`}
+                className={`px-3 py-2.5 text-xs capitalize border-b-2 transition-colors -mb-px ${activeTab === tab
+                  ? "border-blue-600 text-blue-700"
+                  : "border-transparent text-slate-400 hover:text-slate-600"
+                  }`}
                 style={{ fontWeight: 500 }}
               >
                 {tab === "input" ? "Custom Input" : tab === "output" ? "Output" : "Statement"}
@@ -369,7 +374,8 @@ export default function CodingWorkspace() {
           </div>
 
           {/* Panel content */}
-          <div className="flex-1 overflow-y-auto p-5 text-sm text-slate-600 leading-relaxed space-y-5">
+          <div className="flex-1 overflow-y-auto p-5 text-sm text-slate-600 leading-relaxed space-y-5 relative">
+            <Watermark />
             {activeTab === "statement" && (
               <>
                 <div>
@@ -382,10 +388,10 @@ export default function CodingWorkspace() {
                       Constraints
                     </h4>
                     <ul className="space-y-1">
-                      {(typeof problem.constraints === "string" 
-                        ? problem.constraints.split("\n") 
-                        : Array.isArray(problem.constraints) 
-                          ? problem.constraints 
+                      {(typeof problem.constraints === "string"
+                        ? problem.constraints.split("\n")
+                        : Array.isArray(problem.constraints)
+                          ? problem.constraints
                           : []
                       ).filter(Boolean).map((c, i) => (
                         <li key={i} className="text-slate-500 flex items-start gap-2">
@@ -499,45 +505,29 @@ export default function CodingWorkspace() {
 
           {/* Code editor */}
           <div className="flex-1 overflow-hidden flex relative group">
-            {/* Watermark Overlay */}
-            <div className="absolute inset-0 pointer-events-none z-10 opacity-[0.03] select-none flex flex-wrap gap-12 p-8 overflow-hidden rotate-[-15deg]">
-              {Array.from({ length: 50 }).map((_, i) => (
-                <span key={i} className="text-2xl font-bold whitespace-nowrap">
-                  {auth.currentUser?.email || "Private Content"}
-                </span>
-              ))}
-            </div>
-            <div
-              className="select-none text-right pr-3 pt-3 pb-3 pl-3 text-slate-600 bg-slate-900 border-r border-slate-700/50 overflow-hidden flex-shrink-0"
-              style={{ fontFamily: "monospace", fontSize: "13px", lineHeight: "1.6", minWidth: "48px" }}
-            >
-              {Array.from({ length: lineCount }, (_, i) => (
-                <div key={i + 1}>{i + 1}</div>
-              ))}
-            </div>
-            <textarea
-              ref={textareaRef}
+            <Watermark />
+            <Editor
+              height="100%"
+              language={LANGUAGE_MAP[language]}
               value={code}
-              onChange={(e) => setCode(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Tab") {
-                  e.preventDefault();
-                  const start = e.currentTarget.selectionStart;
-                  const end = e.currentTarget.selectionEnd;
-                  const newCode = code.substring(0, start) + "    " + code.substring(end);
-                  setCode(newCode);
-                  setTimeout(() => {
-                    if (textareaRef.current) {
-                      textareaRef.current.selectionStart = start + 4;
-                      textareaRef.current.selectionEnd = start + 4;
-                    }
-                  }, 0);
-                }
+              theme="vs-dark"
+              onChange={(value) => setCode(value || "")}
+              options={{
+                fontSize: 13,
+                fontFamily: "monospace",
+                lineHeight: 1.6,
+                minimap: { enabled: false },
+                scrollBeyondLastLine: false,
+                automaticLayout: true,
+                padding: { top: 12, bottom: 12 },
+                readOnly: isSubmitting || isRunning,
+                wordWrap: "on",
+                cursorBlinking: "smooth",
+                smoothScrolling: true,
+                contextmenu: true,
               }}
-              className="flex-1 bg-slate-900 text-slate-100 p-3 resize-none outline-none overflow-auto"
-              style={{ fontFamily: "monospace", fontSize: "13px", lineHeight: "1.6", caretColor: "#60a5fa" }}
-              spellCheck={false}
             />
+
           </div>
 
           {/* Console */}
@@ -607,21 +597,21 @@ export default function CodingWorkspace() {
                 <div className="text-slate-500 text-xs mb-2" style={{ textTransform: "uppercase", letterSpacing: "0.05em" }}>
                   Test Cases
                 </div>
-                  <div className="flex gap-2 flex-wrap">
-                    {verdictDetails?.results?.map((res: any, i: number) => (
-                      <div
-                        key={i}
-                        className={`w-8 h-8 rounded-lg text-xs flex items-center justify-center ${res.passed ? "bg-green-100 text-green-700 border border-green-200" : "bg-red-100 text-red-700 border border-red-200"}`}
-                        style={{ fontWeight: 600 }}
-                        title={res.status}
-                      >
-                        {i + 1}
-                      </div>
-                    ))}
-                  </div>
-                  <p className={`text-xs mt-2 ${verdict === "Accepted" ? "text-green-600" : "text-slate-400"}`}>
-                    {verdictDetails ? `${verdictDetails.passed}/${verdictDetails.total} test cases passed` : ""}
-                  </p>
+                <div className="flex gap-2 flex-wrap">
+                  {verdictDetails?.results?.map((res: any, i: number) => (
+                    <div
+                      key={i}
+                      className={`w-8 h-8 rounded-lg text-xs flex items-center justify-center ${res.passed ? "bg-green-100 text-green-700 border border-green-200" : "bg-red-100 text-red-700 border border-red-200"}`}
+                      style={{ fontWeight: 600 }}
+                      title={res.status}
+                    >
+                      {i + 1}
+                    </div>
+                  ))}
+                </div>
+                <p className={`text-xs mt-2 ${verdict === "Accepted" ? "text-green-600" : "text-slate-400"}`}>
+                  {verdictDetails ? `${verdictDetails.passed}/${verdictDetails.total} test cases passed` : ""}
+                </p>
               </div>
 
               <div className="grid grid-cols-3 gap-3">
@@ -649,11 +639,11 @@ export default function CodingWorkspace() {
               <button onClick={() => setShowModal(false)} className="flex-1 px-4 py-2.5 border border-slate-200 text-slate-700 text-sm rounded-lg hover:bg-slate-50 transition-colors">
                 Keep Editing
               </button>
-              <button onClick={() => { 
-                setShowModal(false); 
+              <button onClick={() => {
+                setShowModal(false);
                 const queryParams = new URLSearchParams(window.location.search);
                 const contestId = queryParams.get("contestId");
-                navigate(`/student/problems${contestId ? `?contestId=${contestId}` : ""}`); 
+                navigate(`/student/problems${contestId ? `?contestId=${contestId}` : ""}`);
               }} className="flex-1 px-4 py-2.5 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors" style={{ fontWeight: 500 }}>
                 Back to {new URLSearchParams(window.location.search).get("contestId") ? "Contest" : "Problems"}
               </button>

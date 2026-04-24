@@ -1,4 +1,4 @@
-import { Outlet, useLocation, Link } from "react-router";
+import { Outlet, useLocation, Link, Navigate } from "react-router";
 import { useState } from "react";
 import {
   Code2,
@@ -23,6 +23,10 @@ const navItems = [
 
 export default function AdminLayout() {
   const location = useLocation();
+
+  if (localStorage.getItem("admin_auth") !== "true") {
+    return <Navigate to="/admin/login" replace />;
+  }
 
   const isActive = (path: string, exact = false) => {
     if (exact) return location.pathname === path;
@@ -67,6 +71,19 @@ export default function AdminLayout() {
             );
           })}
         </nav>
+
+        <div className="px-3 pb-4">
+          <button 
+            onClick={() => {
+              localStorage.removeItem("admin_auth");
+              window.location.href = "/admin/login";
+            }}
+            className="flex w-full items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all text-red-400 hover:bg-slate-800 hover:text-red-300"
+          >
+            <LogOut className="w-4 h-4" />
+            <span className="flex-1 text-left">Logout</span>
+          </button>
+        </div>
 
       </aside>
 

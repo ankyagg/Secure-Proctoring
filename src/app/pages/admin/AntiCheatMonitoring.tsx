@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
+import { fetchContests, type Contest } from "../../services/contest";
 import {
   ShieldAlert,
   MonitorOff,
@@ -12,6 +13,7 @@ import {
   Filter,
   RefreshCw,
   Eye,
+  Mic,
 } from "lucide-react";
 const antiCheatEvents = [
   { id: 1, user: "recursion_king",  event: "Tab Switch",      time: "10:13:22", details: "Switched to external browser tab",  severity: "High",   count: 3 },
@@ -37,6 +39,7 @@ const eventConfig: Record<string, { icon: React.ElementType; color: string; bg: 
   "Fullscreen Exit": { icon: Maximize, color: "text-amber-600", bg: "bg-amber-50", border: "border-amber-200" },
   "Camera Off": { icon: Camera, color: "text-red-600", bg: "bg-red-50", border: "border-red-200" },
   "Multiple Faces": { icon: Users, color: "text-purple-600", bg: "bg-purple-50", border: "border-purple-200" },
+  "Voice Detected": { icon: Mic, color: "text-blue-600", bg: "bg-blue-50", border: "border-blue-200" },
 };
 
 const severityConfig = {
@@ -56,6 +59,8 @@ export default function AntiCheatMonitoring() {
   const [scores, setScores] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterType, setFilterType] = useState("All");
+  const [selectedContest, setSelectedContest] = useState("All");
+  const [contests, setContests] = useState<Contest[]>([]);
   const [warnings, setWarnings] = useState<Record<string, boolean>>({});
   const [dismissed, setDismissed] = useState<Set<string>>(new Set());
 
@@ -74,25 +79,11 @@ export default function AntiCheatMonitoring() {
         event: d.type || "Violation",
         time: d.timestamp ? new Date(d.timestamp).toLocaleTimeString() : "Unknown",
         details: d.details || "",
-        severity: d.type === "Tab Switch" || d.type === "Multiple Faces" ? "High" : "Medium",
-        count: 1
+        severity: d.type === "Voice Detected" ? "Low" : (d.type === "Tab Switch" || d.type === "Multiple Faces" ? "High" : "Medium"),
+        count: 1,
+        contestId: d.contest_id || "Unknown"
       }));
       setEvents(formattedEvents);
-
-      // Group by user for suspicion scores
-      const userStats: Record<string, any> = {};
-      formattedEvents.forEach((e: any) => {
-        if (!userStats[e.user]) {
-          userStats[e.user] = { user: e.user, score: 0, tabSwitch: 0, fullscreenExit: 0, cameraOff: 0, multiFace: 0, status: "Monitoring" };
-        }
-        const s = userStats[e.user];
-        if (e.event === "Tab Switch") { s.tabSwitch++; s.score += 25; }
-        if (e.event === "Fullscreen Exit") { s.fullscreenExit++; s.score += 15; }
-        if (e.event === "Camera Off") { s.cameraOff++; s.score += 20; }
-        if (e.event === "Multiple Faces") { s.multiFace++; s.score += 30; }
-        s.score = Math.min(100, s.score);
-      });
-      setScores(Object.values(userStats));
     } catch (err) {
       console.error(err);
     } finally {
@@ -102,13 +93,35 @@ export default function AntiCheatMonitoring() {
 
   useEffect(() => {
     fetchLogs();
+    fetchContests().then(setContests).catch(console.error);
   }, []);
 
   const eventTypes = ["All", "Tab Switch", "Fullscreen Exit", "Camera Off", "Multiple Faces"];
 
-  const filteredEvents = events.filter(
-    (e) => !dismissed.has(String(e.id)) && (filterType === "All" || e.event === filterType)
-  );
+  const contestEvents = useMemo(() => {
+    return events.filter(e => !dismissed.has(String(e.id)) && (selectedContest === "All" || e.contestId === selectedContest));
+  }, [events, dismissed, selectedContest]);
+
+  const filteredEvents = useMemo(() => {
+    return contestEvents.filter(e => filterType === "All" || e.event === filterType);
+  }, [contestEvents, filterType]);
+
+  useEffect(() => {
+    const userStats: Record<string, any> = {};
+    contestEvents.forEach((e: any) => {
+      if (!userStats[e.user]) {
+        userStats[e.user] = { user: e.user, score: 0, tabSwitch: 0, fullscreenExit: 0, cameraOff: 0, multiFace: 0, voiceDetection: 0, status: "Monitoring" };
+      }
+      const s = userStats[e.user];
+      if (e.event === "Tab Switch") { s.tabSwitch++; s.score += 25; }
+      if (e.event === "Fullscreen Exit") { s.fullscreenExit++; s.score += 15; }
+      if (e.event === "Camera Off") { s.cameraOff++; s.score += 20; }
+      if (e.event === "Multiple Faces") { s.multiFace++; s.score += 30; }
+      if (e.event === "Voice Detected") { s.voiceDetection++; s.score += 10; }
+      s.score = Math.min(100, s.score);
+    });
+    setScores(Object.values(userStats));
+  }, [contestEvents]);
 
   const totalFlags = filteredEvents.length;
   const highSeverity = filteredEvents.filter((e) => e.severity === "High").length;
@@ -143,6 +156,16 @@ export default function AntiCheatMonitoring() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <select
+            value={selectedContest}
+            onChange={(e) => setSelectedContest(e.target.value)}
+            className="px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-600 outline-none hover:bg-slate-50 transition-colors cursor-pointer"
+          >
+            <option value="All">All Contests</option>
+            {contests.map((c) => (
+              <option key={c.id} value={c.id}>{c.name}</option>
+            ))}
+          </select>
           <div className="flex items-center gap-2 px-3 py-1.5 bg-red-50 border border-red-200 rounded-full text-sm text-red-700">
             <AlertTriangle className="w-3.5 h-3.5" />
             {highSeverity} High-Risk Flags
@@ -328,6 +351,11 @@ export default function AntiCheatMonitoring() {
                       {entry.multiFace > 0 && (
                         <span className="text-xs px-2 py-0.5 bg-purple-50 text-purple-600 border border-purple-200 rounded-full">
                           Face ×{entry.multiFace}
+                        </span>
+                      )}
+                      {entry.voiceDetection > 0 && (
+                        <span className="text-xs px-2 py-0.5 bg-blue-50 text-blue-600 border border-blue-200 rounded-full">
+                          Voice ×{entry.voiceDetection}
                         </span>
                       )}
                     </div>

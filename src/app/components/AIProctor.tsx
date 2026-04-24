@@ -1,9 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useStudentContext } from './StudentLayout';
 import { motion, AnimatePresence } from 'motion/react';
-import { AlertCircle, Eye, EyeOff, Mic, MicOff, Keyboard } from 'lucide-react';
-import { auth } from '@/app/services/firebase.js';
-import ProctorGazeDetector from '@/app/services/ProctorGazeDetector';
+import { AlertCircle, Eye, EyeOff, Mic, MicOff, Keyboard, Loader2 } from 'lucide-react';
+import { auth } from '../services/firebase.js';
+import ProctorGazeDetector from '../services/ProctorGazeDetector';
 
 const API = "http://localhost:3000/api";
 
@@ -14,10 +14,13 @@ export default function AIProctor() {
   const [status, setStatus] = useState<'loading' | 'active' | 'error'>('loading');
   const [watchdogState, setWatchdogState] = useState<'happy' | 'suspicious' | 'angry'>('happy');
   const [voiceActive, setVoiceActive] = useState(false);
-  
+  const [proctorDetails, setProctorDetails] = useState({ reason: '', confidence: 1, rawStatus: '' });
+
   // Internal tracking to prevent redundant UI updates
   const lastState = useRef<'happy' | 'suspicious' | 'angry'>('happy');
+  const lastDetails = useRef({ reason: '', confidence: 1, rawStatus: '' });
   const lastViolationTime = useRef(0);
+  const lastVoiceViolationTime = useRef(0);
 
   // Initialize Detector and Webcam
   useEffect(() => {
@@ -43,11 +46,16 @@ export default function AIProctor() {
           detectorRef.current = detector;
           detector.start();
           setStatus('active');
-          
+
           // 3. Start Sync Loop (Bridges the Detector's internal state to React UI)
           const syncLoop = () => {
-            const data = detector.getStatus();
-            
+            type ProctorStatus = {
+              status: 'CHEATING_DETECTED' | 'POSSIBLE_CHEATING' | 'NORMAL';
+              reason: string;
+              confidence: number;
+            };
+            const data = detector.getStatus() as ProctorStatus;
+
             // Map Human statuses to Watchdog states
             let newState: 'happy' | 'suspicious' | 'angry' = 'happy';
             if (data.status === 'CHEATING_DETECTED') {
@@ -60,6 +68,15 @@ export default function AIProctor() {
             if (newState !== lastState.current) {
               setWatchdogState(newState);
               lastState.current = newState;
+            }
+
+            if (
+              data.reason !== lastDetails.current.reason ||
+              data.confidence !== lastDetails.current.confidence ||
+              data.status !== lastDetails.current.rawStatus
+            ) {
+              setProctorDetails({ reason: data.reason, confidence: data.confidence, rawStatus: data.status });
+              lastDetails.current = { reason: data.reason, confidence: data.confidence, rawStatus: data.status };
             }
 
             // Throttled AddWarning / Remote Logging (Faster feedback)
@@ -82,7 +99,7 @@ export default function AIProctor() {
     };
 
     initDetector();
-    
+
     return () => {
       detectorRef.current?.stop();
     };
@@ -127,7 +144,7 @@ export default function AIProctor() {
   useEffect(() => {
     let audioCtx: AudioContext;
     let stream: MediaStream;
-    
+
     const startAudio = async () => {
       try {
         stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -136,13 +153,21 @@ export default function AIProctor() {
         const source = audioCtx.createMediaStreamSource(stream);
         source.connect(analyser);
         analyser.fftSize = 256;
-        
+
         const dataArray = new Uint8Array(analyser.frequencyBinCount);
 
         const checkAudio = () => {
           analyser.getByteFrequencyData(dataArray);
           const average = dataArray.reduce((a, b) => a + b) / dataArray.length;
-          setVoiceActive(average > 35);
+          const isActive = average > 35;
+          setVoiceActive(isActive);
+
+          if (isActive && Date.now() - lastVoiceViolationTime.current > 10000) {
+            logViolation('Voice Detected', 'Audio activity detected in the room');
+            triggerWatchdog('suspicious');
+            lastVoiceViolationTime.current = Date.now();
+          }
+
           requestAnimationFrame(checkAudio);
         };
         checkAudio();
@@ -194,25 +219,42 @@ export default function AIProctor() {
           className="fixed z-50 flex flex-col items-center"
         >
           <motion.div
-            animate={{
-              y: [0, -10, 0],
-              scale: watchdogState === 'happy' ? 1 : watchdogState === 'suspicious' ? 1.1 : 1.2
-            }}
+            animate={
+              status !== 'active' ? { y: 0 } : {
+                y: [0, -10, 0],
+                scale: watchdogState === 'happy' ? 1 : watchdogState === 'suspicious' ? 1.1 : 1.2
+              }}
             transition={{ repeat: Infinity, duration: 2 }}
-            className={`w-16 h-16 rounded-full border-4 shadow-2xl flex items-center justify-center transition-colors duration-300 ${
-              watchdogState === 'happy' ? 'bg-blue-600 border-blue-400' :
-              watchdogState === 'suspicious' ? 'bg-amber-500 border-amber-300' :
-              'bg-red-600 border-red-400'
-            }`}
+            className={`w-16 h-16 rounded-full border-4 shadow-2xl flex items-center justify-center transition-colors duration-300 ${status === 'loading' ? 'bg-slate-500 border-slate-300' :
+              status === 'error' ? 'bg-slate-800 border-slate-600' :
+                watchdogState === 'happy' ? 'bg-blue-600 border-blue-400' :
+                  watchdogState === 'suspicious' ? 'bg-amber-500 border-amber-300' :
+                    'bg-red-600 border-red-400'
+              }`}
           >
-            {watchdogState === 'happy' && <Eye className="text-white w-8 h-8" />}
-            {watchdogState === 'suspicious' && <EyeOff className="text-white w-8 h-8 animate-pulse" />}
-            {watchdogState === 'angry' && <AlertCircle className="text-white w-8 h-8 animate-bounce" />}
+            {status === 'loading' && <Loader2 className="text-white w-8 h-8 animate-spin" />}
+            {status === 'error' && <EyeOff className="text-gray-400 w-8 h-8" />}
+            {status === 'active' && watchdogState === 'happy' && <Eye className="text-white w-8 h-8" />}
+            {status === 'active' && watchdogState === 'suspicious' && <EyeOff className="text-white w-8 h-8 animate-pulse" />}
+            {status === 'active' && watchdogState === 'angry' && <AlertCircle className="text-white w-8 h-8 animate-bounce" />}
           </motion.div>
-          
+
           <div className="mt-2 bg-white/90 backdrop-blur px-3 py-1 rounded text-[10px] font-bold uppercase tracking-wider text-slate-700 shadow-sm border border-slate-200 min-w-[120px] text-center">
-            {watchdogState === 'happy' ? 'Monitoring...' : watchdogState === 'suspicious' ? 'I See You!' : 'Action Required'}
+            {status === 'loading' ? 'Initializing AI...' :
+              status === 'error' ? 'AI Offline' :
+                watchdogState === 'happy' ? 'Monitoring...' : watchdogState === 'suspicious' ? 'I See You!' : 'Action Required'}
           </div>
+
+          {status === 'active' && proctorDetails.rawStatus && (
+            <div className="mt-2 flex flex-col items-center gap-1 w-[150px]">
+              <div className="bg-slate-900/80 backdrop-blur w-full text-center text-white text-[9px] px-2 py-0.5 rounded shadow">
+                {proctorDetails.rawStatus.replace(/_/g, ' ')}
+              </div>
+              <div className="bg-slate-900/80 backdrop-blur w-full text-center text-emerald-400 text-[9px] px-2 py-0.5 rounded shadow whitespace-normal leading-tight">
+                {proctorDetails.reason} ({(proctorDetails.confidence * 100).toFixed(0)}%)
+              </div>
+            </div>
+          )}
 
           <div className="flex gap-2 mt-2">
             <div className={`p-1 rounded transition-colors ${voiceActive ? 'bg-red-100 text-red-600' : 'bg-slate-100 text-slate-400'}`}>

@@ -1,20 +1,20 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import { CheckCircle2, Circle, Clock, AlertCircle, ChevronRight, Trophy, Zap } from "lucide-react";
-import { auth } from "@/app/services/firebase.js";
+import { auth } from "../../services/firebase.js";
 
 const API = "http://localhost:3000/api";
 
 const difficultyConfig = {
-  easy:   { bg: "bg-green-50",  text: "text-green-700",  border: "border-green-200" },
-  medium: { bg: "bg-amber-50",  text: "text-amber-700",  border: "border-amber-200" },
-  hard:   { bg: "bg-red-50",    text: "text-red-700",    border: "border-red-200"   },
+  easy: { bg: "bg-green-50", text: "text-green-700", border: "border-green-200" },
+  medium: { bg: "bg-amber-50", text: "text-amber-700", border: "border-amber-200" },
+  hard: { bg: "bg-red-50", text: "text-red-700", border: "border-red-200" },
 };
 
 const statusConfig = {
-  Solved:      { icon: CheckCircle2, color: "text-green-500", label: "Solved",   bg: "bg-green-50" },
-  Attempted:   { icon: AlertCircle,  color: "text-amber-500", label: "Attempted",bg: "bg-amber-50" },
-  Unattempted: { icon: Circle,       color: "text-slate-300", label: "—",        bg: ""            },
+  Solved: { icon: CheckCircle2, color: "text-green-500", label: "Solved", bg: "bg-green-50" },
+  Attempted: { icon: AlertCircle, color: "text-amber-500", label: "Attempted", bg: "bg-amber-50" },
+  Unattempted: { icon: Circle, color: "text-slate-300", label: "—", bg: "" },
 };
 
 export default function ProblemList() {
@@ -35,9 +35,21 @@ export default function ProblemList() {
         const user = auth.currentUser;
         const [qRes, sRes] = await Promise.all([
           // 1. Fetch questions (filtered by contest if cid exists)
-          fetch(contestId ? `${API}/contests/${contestId}` : `${API}/questions`).then(res => res.json()),
+          fetch(contestId ? `${API}/contests/${contestId}` : `${API}/questions`).then(async res => {
+            if (!res.ok) {
+              const e = await res.json().catch(() => ({}));
+              throw new Error(e.error || 'Failed to initialize contest items');
+            }
+            return res.json();
+          }),
           // 2. Fetch submissions for this user
-          user ? fetch(`${API}/submissions?user_email=${user.email}`).then(res => res.json()) : Promise.resolve([])
+          user ? fetch(`${API}/submissions?user_email=${user.email}`).then(async res => {
+            if (!res.ok) {
+              const e = await res.json().catch(() => ({}));
+              throw new Error(e.error || 'Failed to load submissions');
+            }
+            return res.json();
+          }) : Promise.resolve([])
         ]);
 
         if (contestId && qRes) {
@@ -76,7 +88,7 @@ export default function ProblemList() {
     fetchData();
   }, [contestId]);
 
-  const solved   = problems.filter(p => p.status === "Solved").length;
+  const solved = problems.filter(p => p.status === "Solved").length;
   const attempted = problems.filter(p => p.status === "Attempted").length;
   const totalScore = problems
     .filter(p => p.status === "Solved")
