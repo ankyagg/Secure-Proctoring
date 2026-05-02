@@ -39,8 +39,8 @@ const MONACO_LANGS: Record<string, string> = {
 const WANDBOX_URL = "https://wandbox.org/api/compile.json";
 const WANDBOX_COMPILERS: Record<string, string> = {
   "C++": "gcc-head",
-  Java: "openjdk-jdk-21+35",
-  Python: "cpython-3.12.3",
+  Java: "openjdk-jdk-22+36",
+  Python: "cpython-3.14.0",
 };
 
 async function parseWandbox(res: Response): Promise<Record<string, string>> {

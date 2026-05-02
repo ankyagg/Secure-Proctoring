@@ -4,8 +4,8 @@ require('dotenv').config();
 const WANDBOX_URL = "https://wandbox.org/api/compile.json";
 const WANDBOX_COMPILERS = {
   "54": "gcc-head",       // C++
-  "62": "openjdk-jdk-21+35", // Java
-  "71": "cpython-3.12.3",    // Python
+  "62": "openjdk-jdk-22+36", // Java
+  "71": "cpython-3.14.0",    // Python
 };
 
 async function runCode(sourceCode, languageId, stdin) {
