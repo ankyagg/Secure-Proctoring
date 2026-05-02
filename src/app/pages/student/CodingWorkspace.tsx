@@ -286,17 +286,27 @@ export default function CodingWorkspace() {
       <div className="w-[600px] flex flex-col border-r border-white/5 bg-[#000000] relative">
         
         {/* Workspace Toolbar */}
-        <div className="px-8 h-16 border-b border-white/5 flex items-center justify-between bg-[#050505]">
+        <div className="px-8 h-16 border-b border-white/5 flex items-center justify-between bg-[#050505]/80 backdrop-blur-md sticky top-0 z-50">
+          <div className="flex items-center gap-4">
+            <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center">
+              <TerminalSquare className="w-4 h-4 text-[#0099ff]" />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-[9px] font-bold text-[#525252] uppercase tracking-[0.2em] leading-none mb-1">Workspace</span>
+              <span className="text-[10px] font-bold text-white uppercase tracking-wider">{problem.title}</span>
+            </div>
+          </div>
+          
           <button
             onClick={() => {
               const queryParams = new URLSearchParams(window.location.search);
               const cId = queryParams.get("contestId");
               navigate(cId ? `/student/problems?contestId=${cId}` : "/student/lobby");
             }}
-            className="flex items-center gap-3 px-6 py-3 rounded-2xl text-[#525252] hover:text-white bg-white/5 border border-white/5 transition-all group active:scale-95"
+            className="flex items-center gap-2 h-9 px-4 rounded-lg text-[#525252] hover:text-white bg-white/5 border border-white/5 transition-all group active:scale-95 hover:bg-white/[0.08]"
           >
-            <ChevronLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-            <span className="text-[10px] font-semibold uppercase tracking-wider">Exit</span>
+            <ChevronLeft className="w-3.5 h-3.5 group-hover:-translate-x-0.5 transition-transform" />
+            <span className="text-[9px] font-bold uppercase tracking-[0.15em]">Exit Workspace</span>
           </button>
         </div>
 
@@ -478,9 +488,9 @@ export default function CodingWorkspace() {
             <div className="relative">
               <button 
                 onClick={() => setLangOpen(!langOpen)}
-                className="flex items-center gap-3 px-6 py-3 rounded-xl bg-black border border-white/10 text-white text-[13px] font-semibold uppercase tracking-wider hover:bg-white hover:text-black transition-all shadow-2xl group"
+                className="flex items-center gap-2.5 h-10 px-5 rounded-xl bg-black border border-white/10 text-white text-[11px] font-bold uppercase tracking-[0.15em] hover:bg-white hover:text-black transition-all shadow-2xl group"
               >
-                <Binary className="w-4 h-4 text-[#0099ff]" />
+                <Binary className="w-3.5 h-3.5 text-[#0099ff]" />
                 {language}
                 <ChevronDown className={`w-3 h-3 transition-transform duration-500 ${langOpen ? 'rotate-180' : ''}`} />
               </button>
@@ -525,20 +535,20 @@ export default function CodingWorkspace() {
             <div className="hidden lg:flex items-center gap-6">
                <div className="flex -space-x-3">
                   {[1,2,3].map(i => (
-                    <div key={i} className="w-10 h-10 rounded-xl bg-black border border-white/5 flex items-center justify-center text-[10px] font-semibold text-[#2a2a2a] shadow-2xl">
+                    <div key={i} className="w-9 h-9 rounded-lg bg-black border border-white/5 flex items-center justify-center text-[10px] font-bold text-[#2a2a2a] shadow-2xl">
                       {i}
                     </div>
                   ))}
                </div>
-               <span className="text-[10px] font-semibold text-[#2a2a2a] uppercase tracking-wider">History</span>
+               <span className="text-[9px] font-bold text-[#2a2a2a] uppercase tracking-[0.15em]">History</span>
             </div>
           </div>
 
           <div className="flex items-center gap-6">
             {timeLeft !== null && (
-              <div className={`flex items-center gap-3 px-8 py-3 rounded-xl border transition-all duration-700 ${timeLeft < 300000 ? 'bg-rose-500/10 border-rose-500/20 text-rose-500 animate-pulse' : 'bg-[#0099ff]/5 border-[#0099ff]/10 text-[#0099ff]'}`}>
-                <Clock className="w-4 h-4" />
-                <span className="text-[13px] font-semibold tabular-nums tracking-widest">{formatTime(timeLeft)}</span>
+              <div className={`flex items-center gap-2.5 h-10 px-6 rounded-xl border transition-all duration-700 ${timeLeft < 300000 ? 'bg-rose-500/10 border-rose-500/20 text-rose-500 animate-pulse' : 'bg-[#0099ff]/5 border-[#0099ff]/10 text-[#0099ff]'}`}>
+                <Clock className="w-3.5 h-3.5" />
+                <span className="text-[12px] font-bold tabular-nums tracking-[0.2em]">{formatTime(timeLeft)}</span>
               </div>
             )}
             
@@ -547,18 +557,18 @@ export default function CodingWorkspace() {
             <button
               onClick={handleRun}
               disabled={isRunning || isSubmitting}
-              className="group flex items-center gap-3 px-8 py-3 rounded-xl text-[12px] font-semibold uppercase tracking-wider text-[#525252] hover:text-white bg-white/5 border border-white/5 hover:border-[#0099ff]/50 transition-all shadow-2xl active:scale-95 disabled:opacity-20"
+              className="group flex items-center gap-2.5 h-10 px-6 rounded-xl text-[11px] font-bold uppercase tracking-[0.15em] text-[#525252] hover:text-white bg-white/5 border border-white/5 hover:border-[#0099ff]/50 transition-all shadow-2xl active:scale-95 disabled:opacity-20"
             >
-              <Play className={`w-3.5 h-3.5 ${isRunning ? 'animate-spin' : 'text-[#0099ff]'}`} />
+              <Play className={`w-3 h-3 ${isRunning ? 'animate-spin' : 'text-[#0099ff]'}`} />
               Run Code
             </button>
 
             <button
               onClick={handleSubmit}
               disabled={isRunning || isSubmitting}
-              className="group flex items-center gap-4 px-10 py-3 rounded-xl text-[12px] font-semibold uppercase tracking-wider text-white transition-all bg-[#0099ff] hover:bg-white hover:text-black shadow-[0_20px_50px_-10px_rgba(0,153,255,0.4)] disabled:opacity-20 active:scale-95"
+              className="group flex items-center gap-3 h-10 px-8 rounded-xl text-[11px] font-bold uppercase tracking-[0.15em] text-white transition-all bg-[#0099ff] hover:bg-white hover:text-black shadow-[0_20px_50px_-10px_rgba(0,153,255,0.4)] disabled:opacity-20 active:scale-95"
             >
-              {isSubmitting ? <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+              {isSubmitting ? <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Send className="w-3 h-3" />}
               Submit
             </button>
           </div>
@@ -592,10 +602,10 @@ export default function CodingWorkspace() {
           />
           
           {/* Neural Guard Overlay */}
-          <div className="absolute top-10 right-10 z-30 pointer-events-none">
+          <div className="absolute bottom-10 right-10 z-30 pointer-events-none">
              <div className="flex items-center gap-3 px-6 py-3 rounded-full bg-black/80 border border-[#0099ff]/20 backdrop-blur-xl shadow-2xl">
-                <div className="w-2 h-2 rounded-full bg-[#0099ff] animate-ping" />
-                <span className="text-[9px] font-semibold text-[#0099ff] uppercase tracking-wider">Anti-Cheat Active</span>
+                <div className="w-1.5 h-1.5 rounded-full bg-[#0099ff] animate-pulse" />
+                <span className="text-[8px] font-bold text-[#0099ff] uppercase tracking-[0.2em]">Anti-Cheat Active</span>
              </div>
           </div>
         </div>

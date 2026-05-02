@@ -95,7 +95,7 @@ export default function ContestLobby() {
               Leaderboard
             </div>
             <h1 className="text-4xl md:text-7xl font-semibold tracking-tight leading-[0.85] uppercase mb-7">
-              Join a <br />
+              Browse <br />
               <span className="text-[#0099ff] italic">Challenges.</span>
             </h1>
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-10">

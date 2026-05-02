@@ -13,7 +13,8 @@ import {
   Cpu,
   RefreshCw,
   Terminal,
-  Layers
+  Layers,
+  ChevronRight
 } from "lucide-react";
 import Editor from "@monaco-editor/react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -275,7 +276,7 @@ export default function SubmissionsMonitoring() {
               <div className="flex-1 relative bg-black">
                 <Editor
                   height="100%"
-                  language={MONACO_LANGS[langMap[selectedSubmission.language_id] || "Python"]}
+                  language={MONACO_LANGS[langMap[Number(selectedSubmission.language_id)] || "Python"]}
                   theme="vs-dark"
                   value={selectedSubmission.source_code}
                   options={{

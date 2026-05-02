@@ -302,18 +302,24 @@ app.post('/api/submit', async (req, res) => {
     // Save submission to Appwrite
     const submissionDoc = await databases.createDocument(DATABASE_ID, 'submissions', sdk.ID.unique(), {
       question_id,
+      user_id: user_id || actualEmail || 'ANONYMOUS',
+      status: passed_all ? 'passed' : 'failed',
+      language: String(language || 'C++'),
+      code: actualCode,
+      timestamp: new Date().toISOString(),
+      
+      // Optional/Additional fields
       question_title: qDoc.title || '',
       contest_id: contest_id || null,
-      user_email: actualEmail || null,
-      user_name: user_name || (actualEmail ? actualEmail.split('@')[0] : 'anonymous'),
+      user_email: actualEmail || 'anonymous@node',
+      user_name: user_name || (actualEmail ? actualEmail.split('@')[0] : 'ANON'),
       source_code: actualCode,
       language_id: String(actualLang),
       passed_count: passed,
       total_count: total,
       passed_all,
       points: passed_all ? (qDoc.points || 100) : 0,
-      results: JSON.stringify(results),
-      timestamp: new Date().toISOString()
+      results: JSON.stringify(results)
     });
 
     res.json({

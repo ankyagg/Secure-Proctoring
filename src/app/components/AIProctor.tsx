@@ -43,6 +43,22 @@ export default function AIProctor() {
     fetchUser();
   }, []);
 
+  const pendingSnapshot = useRef<string | null>(null);
+
+  const captureFrame = () => {
+    if (videoRef.current && videoRef.current.readyState >= 2) {
+      const canvas = document.createElement('canvas');
+      canvas.width  = 640;
+      canvas.height = 480;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
+        return canvas.toDataURL('image/jpeg', 0.5); // Lower quality for speed/size
+      }
+    }
+    return null;
+  };
+
   useEffect(() => {
     if (initedRef.current || !videoRef.current || !webcamStream || !antiCheat?.enabled) return;
     initedRef.current = true;
@@ -74,10 +90,19 @@ export default function AIProctor() {
         syncTimer = setInterval(() => {
           const data = detector.getStatus();
           let newState: 'happy' | 'suspicious' | 'angry' = 'happy';
+          
           if (data.status === 'CHEATING_DETECTED') {
             newState = 'angry';
           } else if (data.status === 'POSSIBLE_CHEATING') {
             newState = 'suspicious';
+            // PRE-CAPTURE: Take a snapshot NOW while it's suspicious
+            // This ensures we catch them in the act, even if confirm takes 300ms
+            if (!pendingSnapshot.current) {
+              pendingSnapshot.current = captureFrame();
+            }
+          } else {
+            // All clear - reset pending
+            pendingSnapshot.current = null;
           }
 
           if (newState !== lastState.current || data.reason !== lastReason.current) {
@@ -88,10 +113,13 @@ export default function AIProctor() {
           }
 
           if (data.status === 'CHEATING_DETECTED' && Date.now() - lastViolationTime.current > 5000) {
-            captureAndLog(data.reason, `Confidence: ${(data.confidence * 100).toFixed(0)}%`);
+            // USE PENDING IF AVAILABLE, otherwise capture now
+            const evidence = pendingSnapshot.current || captureFrame();
+            addWarningRef.current(data.reason, `Confidence: ${(data.confidence * 100).toFixed(0)}%`, evidence);
             lastViolationTime.current = Date.now();
+            pendingSnapshot.current = null; // reset
           }
-        }, 200);
+        }, 100); // Faster sync loop
       } catch (err) {
         console.error("AI Initialization Failed:", err);
         setProctorStatus('error');
@@ -108,17 +136,7 @@ export default function AIProctor() {
   }, [webcamStream]);
 
   const captureAndLog = (type: string, details: string) => {
-    let screenshot: string | null = null;
-    if (videoRef.current && videoRef.current.readyState >= 2) {
-      const canvas = document.createElement('canvas');
-      canvas.width  = 640;
-      canvas.height = 480;
-      const ctx = canvas.getContext('2d');
-      if (ctx) {
-        ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
-        screenshot = canvas.toDataURL('image/jpeg', 0.6); // Lower quality to save space
-      }
-    }
+    const screenshot = captureFrame();
     addWarningRef.current(type, details, screenshot);
   };
 

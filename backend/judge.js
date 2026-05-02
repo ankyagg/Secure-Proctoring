@@ -40,8 +40,8 @@ async function judgeSubmission(sourceCode, languageId, testCases) {
   for (const tc of testCases) {
     try {
       const output = await runCode(sourceCode, languageId, tc.input);
-      const actual = (output.stdout || '').trim();
-      const expected = tc.expected_output.trim();
+      const actual = (output.stdout || '').trim().replace(/\r\n/g, '\n').replace(/\n\s+/g, '\n').replace(/\s+\n/g, '\n');
+      const expected = tc.expected_output.trim().replace(/\r\n/g, '\n').replace(/\n\s+/g, '\n').replace(/\s+\n/g, '\n');
       const passed = actual === expected;
 
       results.push({

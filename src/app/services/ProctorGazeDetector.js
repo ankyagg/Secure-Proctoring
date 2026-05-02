@@ -19,11 +19,11 @@ import Human from '@vladmandic/human';
 // ─── Tuning Constants (RADIANS) ──────────────────────────────────────────────
 const CHEAT_YAW = 0.25;   // ~31° left/right turn → cheating
 const CHEAT_PITCH = 0.35;   // ~26° up/down nod → cheating
-const SUSTAIN_MS = 500;    // must persist 500ms before confirmed
-const NOFACE_MS = 1000;   // face absent 1s before flagging
-const ALPHA = 0.35;   // EMA smoothing (higher = more responsive, more noise)
-const CAL_MS = 4000;   // calibration window
-const DETECT_INTERVAL = 120; // ms between detection runs (~8 FPS)
+const SUSTAIN_MS = 300;    // faster confirmation
+const NOFACE_MS = 800;    // faster face-absent check
+const ALPHA = 0.45;   // more responsive smoothing
+const CAL_MS = 3000;   // shorter calibration
+const DETECT_INTERVAL = 100; // ms between detection runs (~10 FPS)
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default class ProctorGazeDetector {
