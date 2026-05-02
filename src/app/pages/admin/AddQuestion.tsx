@@ -63,13 +63,14 @@ export default function AddQuestion() {
 
       for (const filename of files) {
         const content = await zip.files[filename].async("string");
-        const base = filename.replace(/\.(in|out|txt)$/, "").replace(/^(input|output)_?/, "");
+        const basename = filename.split('/').pop() || "";
+        const base = basename.replace(/\.(in|out|txt)$/, "").replace(/^(input|output)_?/, "");
         
         if (!parsed[base]) parsed[base] = {};
 
-        if (filename.includes("input") || filename.endsWith(".in")) {
+        if (basename.includes("input") || basename.endsWith(".in")) {
           parsed[base].input = content;
-        } else if (filename.includes("output") || filename.endsWith(".out")) {
+        } else if (basename.includes("output") || basename.endsWith(".out")) {
           parsed[base].output = content;
         }
       }
@@ -157,16 +158,23 @@ export default function AddQuestion() {
       if (isEdit && editId) {
         await databases.updateDocument(APPWRITE_DB_ID, "questions", editId, payload);
       } else {
-        const ref = await databases.createDocument(APPWRITE_DB_ID, "questions", ID.unique(), {
-          ...payload,
-          createdAt: new Date().toISOString(),
-          created_at: new Date().toISOString(), // snake_case support
-        });
+        const ref = await databases.createDocument(APPWRITE_DB_ID, "questions", ID.unique(), payload);
         qid = ref.$id;
       }
 
       // Save Test Cases if any
       if (qid && testCases.length > 0) {
+        // Simpler approach for the query
+        const { Query } = await import("appwrite");
+        if (isEdit) {
+          const old = await databases.listDocuments(APPWRITE_DB_ID, "test_cases", [
+            Query.equal("question_id", qid)
+          ]);
+          for (const doc of old.documents) {
+            await databases.deleteDocument(APPWRITE_DB_ID, "test_cases", doc.$id);
+          }
+        }
+
         // Appwrite client doesn't support batch out of the box so we iterate
         for (const tc of testCases) {
           await databases.createDocument(APPWRITE_DB_ID, "test_cases", ID.unique(), {
@@ -174,7 +182,6 @@ export default function AddQuestion() {
             input: tc.input,
             expected_output: tc.output,
             is_hidden: false,
-            createdAt: new Date().toISOString(),
           });
         }
       }

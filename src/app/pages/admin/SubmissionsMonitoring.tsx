@@ -181,8 +181,13 @@ export default function SubmissionsMonitoring() {
           ) : filtered.map((sub, index) => {
             const verdict = sub.passed_all ? "Accepted" : "Wrong Answer";
             const vc = verdictConfig[verdict] || verdictConfig.CE;
-            const lang = langMap[sub.language_id] || "Unknown";
-            const results = sub.results ? JSON.parse(sub.results) : [];
+            const lang = langMap[Number(sub.language_id)] || "Unknown";
+            let results = [];
+            try {
+              results = sub.results ? JSON.parse(sub.results) : [];
+            } catch (e) {
+              console.error("Result parse error", e);
+            }
             const time = results[0]?.time || "0.0s";
 
             return (

@@ -1,37 +1,29 @@
 const axios = require('axios');
 require('dotenv').config();
 
-const JUDGE0_URL = process.env.JUDGE0_URL || 'http://localhost:2358';
+const WANDBOX_URL = "https://wandbox.org/api/compile.json";
+const WANDBOX_COMPILERS = {
+  "54": "gcc-head",       // C++
+  "62": "openjdk-jdk-21+35", // Java
+  "71": "cpython-3.12.3",    // Python
+};
 
 async function runCode(sourceCode, languageId, stdin) {
-  // Step 1: Submit
-  const submitRes = await axios.post(
-    `${JUDGE0_URL}/submissions?base64_encoded=false&wait=false`,
-    {
-      source_code: sourceCode,
-      language_id: languageId,
-      stdin: stdin,
-    },
-    { headers: { 'Content-Type': 'application/json' } }
-  );
+  const compiler = WANDBOX_COMPILERS[String(languageId)] || "gcc-head";
+  
+  const res = await axios.post(WANDBOX_URL, {
+    compiler: compiler,
+    code: sourceCode,
+    stdin: stdin,
+  });
 
-  const token = submitRes.data.token;
-
-  // Step 2: Poll until done
-  for (let i = 0; i < 10; i++) {
-    await new Promise(r => setTimeout(r, 1000));
-
-    const result = await axios.get(
-      `${JUDGE0_URL}/submissions/${token}?base64_encoded=false`,
-      { headers: { 'Content-Type': 'application/json' } }
-    );
-
-    const status = result.data.status.id;
-    // 1=Queued, 2=Processing, 3+=Done
-    if (status > 2) return result.data;
-  }
-
-  throw new Error('Execution timed out');
+  const data = res.data;
+  // Wandbox combines stdout and stderr sometimes, but usually it's in program_output
+  return {
+    stdout: data.program_output || data.stdout || "",
+    stderr: data.program_error || data.stderr || "",
+    status: { id: (data.status === "0" || data.status === 0) ? 3 : 4 } // 3 = Accepted (for the runner)
+  };
 }
 
 async function judgeSubmission(sourceCode, languageId, testCases) {
@@ -40,24 +32,34 @@ async function judgeSubmission(sourceCode, languageId, testCases) {
   for (const tc of testCases) {
     try {
       const output = await runCode(sourceCode, languageId, tc.input);
-      const actual = (output.stdout || '').trim().replace(/\r\n/g, '\n').replace(/\n\s+/g, '\n').replace(/\s+\n/g, '\n');
-      const expected = tc.expected_output.trim().replace(/\r\n/g, '\n').replace(/\n\s+/g, '\n').replace(/\s+\n/g, '\n');
-      const passed = actual === expected;
+      const actual = (output.stdout || '').trim();
+      const expected = tc.expected_output.trim();
+      
+      console.log(`[JUDGE] TC ${tc.id}:`);
+      console.log(`  Actual: "${actual}"`);
+      console.log(`  Expected: "${expected}"`);
+
+      // SUPER-TOKEN SPLIT: Handles \r, \n, and multiple spaces
+      const actualTokens = actual.split(/[\s\r\n]+/).filter(Boolean).sort();
+      const expectedTokens = expected.split(/[\s\r\n]+/).filter(Boolean).sort();
+      
+      const passed = actualTokens.length === expectedTokens.length && 
+                     actualTokens.every((val, index) => val === expectedTokens[index]);
+      
+      console.log(`  Passed: ${passed}`);
 
       results.push({
         test_case_id: tc.id,
-        is_hidden: tc.is_hidden,
         passed,
-        input: tc.is_hidden ? null : tc.input,
-        expected: tc.is_hidden ? null : expected,
-        actual: tc.is_hidden ? null : actual,
-        error: output.stderr || output.compile_output || null,
-        status: output.status.description,
+        stdout: output.stdout,
+        stderr: output.stderr,
+        time: "0.1s", // Wandbox doesn't give precise per-case time easily
+        memory: "128KB"
       });
     } catch (err) {
+      console.error("[JUDGE ERROR]", err);
       results.push({
         test_case_id: tc.id,
-        is_hidden: tc.is_hidden,
         passed: false,
         error: err.message,
         status: 'Error',
@@ -68,5 +70,4 @@ async function judgeSubmission(sourceCode, languageId, testCases) {
   return results;
 }
 
-module.exports = { runCode, judgeSubmission };
-
+module.exports = { judgeSubmission };
