@@ -1,93 +1,122 @@
 import { useState, useEffect } from "react";
 import {
-  Plus, Edit2, Trash2, Search, Code2, FileText, TestTube,
+  Plus, Edit2, Trash2, Search, Code2, FileText, TestTube, Zap, Layers, Cpu, Database
 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { useNavigate } from "react-router";
 
-const API = "http://localhost:3000/api";
-
-const difficultyConfig: Record<string, string> = {
-  easy:   "bg-green-50 text-green-700 border-green-200",
-  medium: "bg-amber-50 text-amber-700 border-amber-200",
-  hard:   "bg-red-50 text-red-700 border-red-200",
+const difficultyConfig: Record<string, { bg: string, text: string, border: string }> = {
+  easy:   { bg: "bg-emerald-500/10", text: "text-emerald-400", border: "border-emerald-500/20" },
+  medium: { bg: "bg-blue-500/10", text: "text-blue-400", border: "border-blue-500/20" },
+  hard:   { bg: "bg-rose-500/10", text: "text-rose-400", border: "border-rose-500/20" },
 };
 
 export default function QuestionManagement() {
+  const navigate = useNavigate();
   const [questions, setQuestions] = useState<any[]>([]);
   const [loading, setLoading]     = useState(true);
   const [search, setSearch]       = useState("");
   const [filterDiff, setFilterDiff] = useState("All");
 
   useEffect(() => {
-    fetch(`${API}/questions`)
-      .then(res => res.json())
-      .then(data => setQuestions(data))
-      .catch(err => console.error("Failed to load questions:", err))
-      .finally(() => setLoading(false));
+    import("../../services/appwrite").then(({ databases, APPWRITE_DB_ID }) => {
+      databases.listDocuments(APPWRITE_DB_ID, 'questions')
+        .then(res => {
+          setQuestions(res.documents.map((d: any) => ({
+            ...d,
+            id: d.$id,
+            time_limit: d.timeLimit,
+            memory_limit: d.memoryLimit
+          })));
+        })
+        .catch(err => console.error("Failed to load questions from Appwrite:", err))
+        .finally(() => setLoading(false));
+    });
   }, []);
 
   const filtered = questions.filter((q) => {
     const matchSearch =
-      q.title.toLowerCase().includes(search.toLowerCase()) ||
+      (q.title || "").toLowerCase().includes(search.toLowerCase()) ||
       (q.category || "").toLowerCase().includes(search.toLowerCase());
     const matchDiff =
       filterDiff === "All" ||
-      q.difficulty.toLowerCase() === filterDiff.toLowerCase();
+      (q.difficulty || "").toLowerCase() === filterDiff.toLowerCase();
     return matchSearch && matchDiff;
   });
 
   const handleDelete = async (id: string) => {
     if (!confirm("Delete this question?")) return;
-    // optimistic UI update
-    setQuestions(questions.filter(q => q.id !== id));
-    // TODO: call DELETE /api/questions/:id when you add that route
+    try {
+      const { databases, APPWRITE_DB_ID } = await import("../../services/appwrite");
+      await databases.deleteDocument(APPWRITE_DB_ID, 'questions', id);
+      setQuestions(questions.filter(q => q.id !== id));
+    } catch (err) {
+      console.error("Failed to delete question:", err);
+      alert("Failed to delete question.");
+    }
   };
 
   if (loading) return (
-    <div className="p-6 text-slate-400 text-sm">Loading questions...</div>
+    <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4 bg-[#000000]">
+      <motion.div 
+        animate={{ rotate: 360 }}
+        transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
+        className="w-12 h-12 border-2 border-[#0099ff]/20 border-t-[#0099ff] rounded-full"
+      />
+      <p className="text-[#a6a6a6] text-[10px] font-black uppercase tracking-[0.3em]">Loading Questions...</p>
+    </div>
   );
 
   return (
-    <div className="p-6 space-y-5">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+    <div className="space-y-12 animate-in fade-in slide-in-from-bottom-8 duration-1000 bg-[#000000] text-white p-8 min-h-screen font-sans selection:bg-[#0099ff]/30">
+      {/* Header Section */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
         <div>
-          <h1 className="text-slate-900" style={{ fontWeight: 700, fontSize: "1.4rem" }}>
-            Question Bank
-          </h1>
-          <p className="text-slate-500 text-sm mt-0.5">
-            {questions.length} problems in the bank
+          <motion.div 
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="flex items-center gap-4 mb-3"
+          >
+            <div className="w-1.5 h-10 bg-[#0099ff] rounded-full shadow-[0_0_20px_rgba(0,153,255,0.6)]" />
+            <h1 className="text-5xl font-black tracking-[-0.05em] uppercase">
+              Question <span className="text-[#0099ff]">Bank</span>
+            </h1>
+          </motion.div>
+          <p className="text-[#a6a6a6] text-sm font-medium tracking-wide">
+            Managing <span className="text-white font-bold">{questions.length}</span> coding questions.
           </p>
         </div>
+        
         <button
-          onClick={() => window.open("/admin/questions/new", "_blank")}
-          className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
-          style={{ fontWeight: 500 }}
+          onClick={() => navigate("/admin/questions/new")}
+          className="group relative flex items-center gap-3 px-8 py-4 bg-[#0099ff] text-white text-[11px] font-black uppercase tracking-[0.2em] rounded-full hover:scale-105 active:scale-95 transition-all shadow-[0_0_40px_rgba(0,153,255,0.2)] overflow-hidden"
         >
-          <Plus className="w-4 h-4" />
-          Add Question
+          <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
+          <Plus className="w-4 h-4 relative z-10" />
+          <span className="relative z-10">Add New Question</span>
         </button>
       </div>
 
-      {/* Filters */}
-      <div className="flex items-center gap-3">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+      {/* Filters & Search */}
+      <div className="flex flex-col md:flex-row items-center gap-6">
+        <div className="relative group flex-1 w-full">
+          <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#525252] group-focus-within:text-[#0099ff] transition-colors" />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by title or category..."
-            className="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-lg text-sm outline-none focus:border-blue-400 transition-all"
+            placeholder="Search by title, category, or ID..."
+            className="w-full pl-14 pr-8 py-4 bg-[#090909] border border-white/5 rounded-2xl text-sm font-bold tracking-tight text-white outline-none focus:border-[#0099ff]/50 focus:ring-4 focus:ring-[#0099ff]/5 transition-all placeholder:text-[#525252]"
           />
         </div>
-        <div className="flex gap-1.5">
+        <div className="flex gap-2 p-1.5 bg-[#090909] border border-white/5 rounded-2xl">
           {["All", "Easy", "Medium", "Hard"].map((d) => (
             <button
               key={d}
               onClick={() => setFilterDiff(d)}
-              className={`px-3 py-2 rounded-lg text-sm transition-colors ${
+              className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-[0.15em] transition-all ${
                 filterDiff === d
-                  ? "bg-blue-600 text-white"
-                  : "bg-white border border-slate-200 text-slate-500 hover:bg-slate-50"
+                  ? "bg-[#0099ff] text-white shadow-[0_0_20px_rgba(0,153,255,0.3)]"
+                  : "text-[#525252] hover:text-[#a6a6a6] hover:bg-white/5"
               }`}
             >
               {d}
@@ -96,85 +125,106 @@ export default function QuestionManagement() {
         </div>
       </div>
 
-      {/* Stats row */}
-      <div className="grid grid-cols-3 gap-3">
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         {[
-          { label: "Easy",   color: "text-green-600", bg: "bg-green-50 border-green-200" },
-          { label: "Medium", color: "text-amber-600", bg: "bg-amber-50 border-amber-200" },
-          { label: "Hard",   color: "text-red-600",   bg: "bg-red-50 border-red-200"     },
+          { label: "Total", count: questions.length, icon: Database, color: "text-[#0099ff]", border: "border-[#0099ff]/20", bg: "bg-[#0099ff]/5" },
+          { label: "Easy", count: questions.filter(q => q.difficulty?.toLowerCase() === "easy").length, icon: Zap, color: "text-emerald-400", border: "border-emerald-500/20", bg: "bg-emerald-500/5" },
+          { label: "Medium", count: questions.filter(q => q.difficulty?.toLowerCase() === "medium").length, icon: Layers, color: "text-blue-400", border: "border-blue-500/20", bg: "bg-blue-500/5" },
+          { label: "Hard", count: questions.filter(q => q.difficulty?.toLowerCase() === "hard").length, icon: Cpu, color: "text-rose-400", border: "border-rose-500/20", bg: "bg-rose-500/5" },
         ].map((item) => (
-          <div key={item.label} className={`border rounded-xl p-4 ${item.bg}`}>
-            <div className={`text-2xl mb-0.5 ${item.color}`} style={{ fontWeight: 700 }}>
-              {questions.filter(q => q.difficulty === item.label.toLowerCase()).length}
-            </div>
-            <div className={`text-sm ${item.color}`}>{item.label} Problems</div>
+          <div key={item.label} className={`relative group border ${item.border} rounded-3xl p-8 ${item.bg} overflow-hidden hover:shadow-[0_0_30px_rgba(0,0,0,0.5)] transition-all`}>
+             <div className="relative z-10">
+                <item.icon className={`w-8 h-8 ${item.color} mb-4 opacity-40`} />
+                <div className="text-5xl font-black text-white tracking-[-0.05em] mb-1">
+                  {item.count}
+                </div>
+                <div className={`text-[10px] font-black uppercase tracking-[0.25em] ${item.color}`}>
+                  {item.label} Questions
+                </div>
+             </div>
           </div>
         ))}
       </div>
 
-      {/* Table */}
-      <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden">
+      {/* Bank Table */}
+      <div className="bg-[#090909] border border-white/10 rounded-[2.5rem] overflow-hidden shadow-2xl">
         <div
-          className="grid px-5 py-3 bg-slate-50 border-b border-slate-200 text-xs text-slate-400"
-          style={{ gridTemplateColumns: "1fr 100px 160px 80px 80px 80px 80px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em" }}
+          className="grid px-10 py-6 bg-white/[0.02] border-b border-white/5 text-[10px] font-black text-[#525252] uppercase tracking-[0.25em]"
+          style={{ gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr 0.8fr" }}
         >
-          <span>Title</span>
+          <span>Problem Title</span>
           <span>Difficulty</span>
           <span>Category</span>
-          <span>Time</span>
+          <span>Time Limit</span>
           <span>Memory</span>
-          <span>Tests</span>
-          <span>Actions</span>
+          <span className="text-right">Actions</span>
         </div>
 
-        {filtered.map((q) => (
-          <div
-            key={q.id}
-            className="grid px-5 py-4 border-b border-slate-100 last:border-0 items-center hover:bg-slate-50/50 transition-colors"
-            style={{ gridTemplateColumns: "1fr 100px 160px 80px 80px 80px 80px" }}
-          >
-            <div className="flex items-center gap-2.5">
-              <div className="w-7 h-7 bg-slate-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                <FileText className="w-3.5 h-3.5 text-slate-400" />
-              </div>
-              <span className="text-slate-800 text-sm" style={{ fontWeight: 500 }}>
-                {q.title}
-              </span>
-            </div>
-
-            <span className={`text-xs px-2 py-0.5 rounded-full border inline-block w-fit ${difficultyConfig[q.difficulty]}`}>
-              {q.difficulty.charAt(0).toUpperCase() + q.difficulty.slice(1)}
-            </span>
-
-            <span className="text-slate-500 text-xs">{q.category || "—"}</span>
-            <span className="text-slate-500 text-xs">{q.time_limit || "—"}</span>
-            <span className="text-slate-500 text-xs">{q.memory_limit || "—"}</span>
-
-            <div className="flex items-center gap-1 text-xs text-slate-500">
-              <TestTube className="w-3.5 h-3.5 text-slate-400" />
-              {q.test_cases?.length ?? "—"}
-            </div>
-
-            <div className="flex items-center gap-1.5">
-              <button className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
-                <Edit2 className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => handleDelete(q.id)}
-                className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+        <div className="divide-y divide-white/5">
+          <AnimatePresence>
+            {filtered.map((q, index) => (
+              <motion.div
+                key={q.id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ delay: index * 0.03 }}
+                className="grid px-10 py-8 items-center hover:bg-white/[0.02] transition-all group/row"
+                style={{ gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr 0.8fr" }}
               >
-                <Trash2 className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-        ))}
+                <div className="flex items-center gap-5">
+                  <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center group-hover/row:border-[#0099ff]/40 transition-all group-hover/row:scale-110">
+                    <FileText className="w-6 h-6 text-[#525252] group-hover/row:text-[#0099ff] transition-colors" />
+                  </div>
+                  <div>
+                    <span className="text-white text-lg font-black tracking-[-0.03em] uppercase group-hover/row:text-[#0099ff] transition-colors">
+                      {q.title}
+                    </span>
+                    <div className="text-[9px] text-[#525252] font-bold uppercase tracking-[0.2em] mt-1.5 flex items-center gap-2">
+                      <span className="text-[#333]">ID:</span> {q.id?.slice(0, 12)}
+                    </div>
+                  </div>
+                </div>
 
-        {filtered.length === 0 && (
-          <div className="text-center py-12 text-slate-400">
-            <Code2 className="w-8 h-8 mx-auto mb-3 opacity-30" />
-            <p className="text-sm">No questions found</p>
-          </div>
-        )}
+                <div>
+                  <span className={`text-[9px] font-black uppercase tracking-[0.15em] px-4 py-2 rounded-full border ${difficultyConfig[q.difficulty?.toLowerCase()]?.bg || "bg-white/5"} ${difficultyConfig[q.difficulty?.toLowerCase()]?.text || "text-white"} ${difficultyConfig[q.difficulty?.toLowerCase()]?.border || "border-white/10"}`}>
+                    {q.difficulty}
+                  </span>
+                </div>
+
+                <span className="text-[#a6a6a6] text-[10px] font-bold uppercase tracking-[0.2em]">{q.category || "General"}</span>
+                <span className="text-white font-black text-xs tracking-widest">{q.time_limit || "2"}s</span>
+                <span className="text-white font-black text-xs tracking-widest">{q.memory_limit || "256"}MB</span>
+
+                <div className="flex items-center justify-end gap-4">
+                  <button 
+                    onClick={() => navigate(`/admin/questions/new?edit=true&id=${q.id}`)}
+                    className="p-3.5 bg-white/5 border border-white/10 text-[#525252] hover:text-white hover:border-[#0099ff]/50 hover:bg-[#0099ff]/10 rounded-2xl transition-all shadow-xl active:scale-90"
+                  >
+                    <Edit2 className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => handleDelete(q.id)}
+                    className="p-3.5 bg-white/5 border border-white/10 text-[#525252] hover:text-rose-500 hover:border-rose-500/50 hover:bg-rose-500/10 rounded-2xl transition-all shadow-xl active:scale-90"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              </motion.div>
+            ))}
+          </AnimatePresence>
+
+          {filtered.length === 0 && (
+            <div className="flex flex-col items-center justify-center py-32 text-center">
+              <div className="w-20 h-20 bg-white/5 border border-white/10 rounded-[2.5rem] flex items-center justify-center mb-8">
+                <Code2 className="w-10 h-10 text-[#525252] opacity-30" />
+              </div>
+              <h3 className="text-2xl font-black text-white tracking-tight uppercase mb-2">No Questions Found</h3>
+              <p className="text-[#525252] text-[10px] font-black uppercase tracking-[0.25em] max-w-xs">No questions match your search parameters.</p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

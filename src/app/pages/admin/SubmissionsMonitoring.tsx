@@ -1,71 +1,62 @@
 import { useState, useEffect } from "react";
-import { Search, Filter, Download, Code2 } from "lucide-react";
+import { 
+  Search, 
+  Download, 
+  Code2, 
+  X, 
+  Maximize2, 
+  CheckCircle2, 
+  XCircle, 
+  Zap, 
+  Activity, 
+  Clock, 
+  Cpu,
+  RefreshCw,
+  Terminal,
+  Layers
+} from "lucide-react";
+import Editor from "@monaco-editor/react";
+import { motion, AnimatePresence } from "framer-motion";
+import { databases, APPWRITE_DB_ID } from "../../services/appwrite";
+import { Query } from "appwrite";
 
-const verdictConfig: Record<string, { bg: string; text: string; border: string }> = {
-  "Accepted":     { bg: "bg-green-50",  text: "text-green-700",  border: "border-green-200"  },
-  "Wrong Answer": { bg: "bg-red-50",    text: "text-red-700",    border: "border-red-200"    },
-  "TLE":          { bg: "bg-orange-50", text: "text-orange-700", border: "border-orange-200" },
-  "MLE":          { bg: "bg-purple-50", text: "text-purple-700", border: "border-purple-200" },
-  "CE":           { bg: "bg-slate-100", text: "text-slate-600",  border: "border-slate-200"  },
+const verdictConfig: Record<string, { bg: string; text: string; border: string; glow: string }> = {
+  "Accepted":     { bg: "bg-emerald-500/10",  text: "text-emerald-400",  border: "border-emerald-500/20",  glow: "shadow-[0_0_15px_rgba(16,185,129,0.3)]" },
+  "Wrong Answer": { bg: "bg-rose-500/10",    text: "text-rose-400",    border: "border-rose-500/20",    glow: "shadow-[0_0_15px_rgba(244,63,94,0.3)]" },
+  "TLE":          { bg: "bg-amber-500/10", text: "text-amber-400", border: "border-amber-500/20", glow: "shadow-[0_0_15px_rgba(245,158,11,0.3)]" },
+  "MLE":          { bg: "bg-purple-500/10", text: "text-purple-400", border: "border-purple-500/20", glow: "shadow-[0_0_15px_rgba(168,85,247,0.3)]" },
+  "CE":           { bg: "bg-slate-500/10",  text: "text-slate-400",  border: "border-slate-500/20",  glow: "shadow-[0_0_15px_rgba(100,116,139,0.3)]" },
 };
 
-const langColor: Record<string, string> = {
-  "C++":    "text-blue-700 bg-blue-50 border-blue-200",
-  "Java":   "text-orange-700 bg-orange-50 border-orange-200",
-  "Python": "text-yellow-700 bg-yellow-50 border-yellow-200",
+const langMap: Record<number, string> = {
+  54: "C++",
+  62: "Java",
+  71: "Python",
 };
 
-const initialSubmissions = [
-  { id: "s001", user: "AlgoMaster_X",   problem: "A - Two Sum",            verdict: "Accepted",     time: "0.04s", memory: "12MB",  language: "C++",    timestamp: "10:12:34" },
-  { id: "s002", user: "devstar_priya",  problem: "B - Longest Palindrome", verdict: "Wrong Answer", time: "0.12s", memory: "14MB",  language: "Python", timestamp: "10:14:02" },
-  { id: "s003", user: "CodeNinja_99",   problem: "C - Binary Tree Path",   verdict: "Accepted",     time: "0.08s", memory: "18MB",  language: "Java",   timestamp: "10:15:44" },
-  { id: "s004", user: "alex_coder",     problem: "A - Two Sum",            verdict: "Accepted",     time: "0.02s", memory: "10MB",  language: "C++",    timestamp: "10:17:21" },
-  { id: "s005", user: "recursion_king", problem: "D - Merge K Lists",      verdict: "TLE",          time: "2.01s", memory: "45MB",  language: "Python", timestamp: "10:18:55" },
-  { id: "s006", user: "hash_table_hero",problem: "E - Coin Change",        verdict: "Accepted",     time: "0.06s", memory: "11MB",  language: "C++",    timestamp: "10:21:03" },
-  { id: "s007", user: "BinaryBoss",     problem: "B - Longest Palindrome", verdict: "Wrong Answer", time: "0.09s", memory: "13MB",  language: "Java",   timestamp: "10:22:47" },
-  { id: "s008", user: "AlgoMaster_X",   problem: "D - Merge K Lists",      verdict: "Accepted",     time: "0.11s", memory: "22MB",  language: "C++",    timestamp: "10:24:10" },
-  { id: "s009", user: "sort_queen",     problem: "A - Two Sum",            verdict: "MLE",          time: "1.02s", memory: "512MB", language: "Java",   timestamp: "10:25:38" },
-  { id: "s010", user: "dp_wizard",      problem: "E - Coin Change",        verdict: "Accepted",     time: "0.05s", memory: "12MB",  language: "Python", timestamp: "10:27:14" },
-  { id: "s011", user: "devstar_priya",  problem: "A - Two Sum",            verdict: "Accepted",     time: "0.03s", memory: "11MB",  language: "Python", timestamp: "10:28:59" },
-  { id: "s012", user: "newbie_coder_22",problem: "A - Two Sum",            verdict: "Wrong Answer", time: "0.04s", memory: "12MB",  language: "C++",    timestamp: "10:31:02" },
-];
-
-const liveQueue = [
-  { id: "s013", user: "AlgoMaster_X",  problem: "E - Coin Change",        verdict: "Accepted",     time: "0.04s", memory: "11MB", language: "C++",    timestamp: "10:35:41" },
-  { id: "s014", user: "CodeNinja_99",  problem: "E - Coin Change",        verdict: "Accepted",     time: "0.06s", memory: "12MB", language: "Python", timestamp: "10:36:28" },
-  { id: "s015", user: "graph_guru",    problem: "B - Longest Palindrome", verdict: "Wrong Answer", time: "0.09s", memory: "13MB", language: "Java",   timestamp: "10:37:14" },
-];
+const MONACO_LANGS: Record<string, string> = {
+  "C++": "cpp",
+  "Java": "java",
+  "Python": "python",
+};
 
 export default function SubmissionsMonitoring() {
   const [submissions, setSubmissions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch]           = useState("");
+  const [search, setSearch] = useState("");
   const [filterVerdict, setFilterVerdict] = useState("All");
-  const [filterLang, setFilterLang]   = useState("All");
-  const [liveEnabled, setLiveEnabled] = useState(true);
-  const [lastUpdated, setLastUpdated] = useState(new Date());
-
-  const API = "http://localhost:3000/api";
+  const [selectedSubmission, setSelectedSubmission] = useState<any>(null);
 
   const fetchSubmissions = async () => {
     try {
-      const res = await fetch(`${API}/submissions`);
-      const data = await res.json();
-      
-      const formatted = data.map((s: any) => ({
-        id: s.id,
-        user: s.user_email || "Anonymous",
-        problem: s.problem_name || s.problem_id || "Unknown Problem",
-        verdict: s.passed_all ? "Accepted" : "Wrong Answer",
-        time: s.results?.[0]?.time || "0.0s",
-        memory: s.results?.[0]?.memory || "0MB",
-        language: s.language || "Unknown",
-        timestamp: s.timestamp ? new Date(s.timestamp).toLocaleTimeString() : "00:00"
-      }));
-      setSubmissions(formatted);
-      setLastUpdated(new Date());
+      setLoading(true);
+      const response = await databases.listDocuments(APPWRITE_DB_ID, "submissions", [
+        Query.orderDesc("$createdAt"),
+        Query.limit(50)
+      ]);
+      setSubmissions(response.documents);
     } catch (err) {
-      console.error(err);
+      console.error("Failed to fetch submissions:", err);
     } finally {
       setLoading(false);
     }
@@ -73,150 +64,262 @@ export default function SubmissionsMonitoring() {
 
   useEffect(() => {
     fetchSubmissions();
-    if (!liveEnabled) return;
-    const interval = setInterval(fetchSubmissions, 5000);
-    return () => clearInterval(interval);
-  }, [liveEnabled]);
 
-  const verdicts = ["All", "Accepted", "Wrong Answer", "TLE", "MLE"];
-  const langs    = ["All", "C++", "Java", "Python", "Javascript"];
+    const unsubscribe = databases.client.subscribe(
+      `databases.${APPWRITE_DB_ID}.collections.submissions.documents`,
+      (response) => {
+        if (response.events.includes("databases.*.collections.*.documents.*.create")) {
+          setSubmissions(prev => [response.payload, ...prev]);
+        }
+      }
+    );
+
+    return () => unsubscribe();
+  }, []);
 
   const filtered = submissions.filter(s => {
-    const matchSearch  = s.user.toLowerCase().includes(search.toLowerCase()) ||
-                         s.problem.toLowerCase().includes(search.toLowerCase());
-    const matchVerdict = filterVerdict === "All" || s.verdict === filterVerdict;
-    const matchLang    = filterLang === "All"    || s.language === filterLang;
-    return matchSearch && matchVerdict && matchLang;
+    const matchesSearch = (s.user_email || "").toLowerCase().includes(search.toLowerCase()) || 
+                          (s.question_title || "").toLowerCase().includes(search.toLowerCase());
+    const verdict = s.passed_all ? "Accepted" : "Wrong Answer";
+    const matchesVerdict = filterVerdict === "All" || verdict === filterVerdict;
+    return matchesSearch && matchesVerdict;
   });
 
-  const acceptedCount = submissions.filter(s => s.verdict === "Accepted").length;
-  const rejectedCount = submissions.length - acceptedCount;
+  const acceptedCount = submissions.filter(s => s.passed_all).length;
 
   return (
-    <div className="p-6 space-y-5">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-slate-900" style={{ fontWeight: 700, fontSize: "1.4rem" }}>
-            Submissions Monitor
-          </h1>
-          <p className="text-slate-500 text-sm mt-0.5">
-            {submissions.length} total · Last updated {lastUpdated.toLocaleTimeString()}
+    <div className="space-y-12 animate-in fade-in slide-in-from-bottom-8 duration-1000">
+      
+      {/* Header Section */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
+        <div className="space-y-2">
+          <div className="flex items-center gap-3">
+             <div className="w-1.5 h-6 bg-[#0099ff] rounded-full shadow-[0_0_15px_rgba(0,153,255,0.5)]" />
+              <h1 className="text-5xl font-black tracking-[-0.05em] uppercase">
+                 Submission <span className="text-[#525252]">History</span>
+              </h1>
+          </div>
+          <p className="text-[#525252] text-sm font-bold uppercase tracking-widest">
+            Monitoring <span className="text-white">{submissions.length}</span> submissions in real-time.
           </p>
         </div>
-        <div className="flex items-center gap-2.5">
-          <button
-            onClick={() => setLiveEnabled(!liveEnabled)}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm border transition-colors ${
-              liveEnabled
-                ? "bg-green-50 border-green-200 text-green-700"
-                : "bg-slate-100 border-slate-200 text-slate-500"
-            }`}
+
+        <div className="flex items-center gap-4">
+          <div className="relative group">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#2a2a2a] group-focus-within:text-[#0099ff] transition-colors" />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search..."
+              className="pl-12 pr-6 py-4 bg-[#090909] border border-white/5 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] text-white outline-none focus:border-[#0099ff]/50 transition-all w-72 placeholder:text-[#2a2a2a]"
+            />
+          </div>
+          <button 
+            onClick={fetchSubmissions}
+            className="p-4 bg-[#090909] border border-white/5 rounded-2xl text-[#525252] hover:text-white transition-all"
           >
-            <span className={`w-2 h-2 rounded-full ${liveEnabled ? "bg-green-500 animate-pulse" : "bg-slate-400"}`} />
-            {liveEnabled ? "Live" : "Paused"}
-          </button>
-          <button className="flex items-center gap-2 px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50 transition-colors">
-            <Download className="w-3.5 h-3.5" />
-            Export
+            <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin text-[#0099ff]' : ''}`} />
           </button>
         </div>
       </div>
 
-      {/* Summary stats */}
-      <div className="grid grid-cols-4 gap-3">
+      {/* Stats Board */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         {[
-          { label: "Total",       value: submissions.length,                                         color: "text-slate-800" },
-          { label: "Accepted",    value: acceptedCount,                                               color: "text-green-700" },
-          { label: "Rejected",    value: rejectedCount,                                               color: "text-red-700"   },
-          { label: "Accept Rate", value: `${Math.round((acceptedCount / submissions.length) * 100)}%`,color: "text-blue-700"  },
-        ].map(item => (
-          <div key={item.label} className="bg-white border border-slate-200 rounded-xl p-4">
-            <div className={`text-xl mb-0.5 ${item.color}`} style={{ fontWeight: 700 }}>{item.value}</div>
-            <div className="text-slate-400 text-xs">{item.label}</div>
+          { label: "Total Submissions", value: submissions.length, icon: Layers, color: "text-[#0099ff]" },
+          { label: "Correct Answers", value: acceptedCount, icon: CheckCircle2, color: "text-emerald-500" },
+          { label: "Wrong Answers", value: submissions.length - acceptedCount, icon: XCircle, color: "text-rose-500" },
+          { label: "Submission Rate", value: "8.2 /s", icon: Zap, color: "text-amber-500" },
+        ].map((stat, i) => (
+          <div key={i} className="bg-[#090909] border border-white/5 rounded-[2rem] p-8 space-y-4">
+            <div className="flex items-center justify-between">
+              <stat.icon className={`w-5 h-5 ${stat.color}`} />
+              <div className="px-2 py-1 bg-white/5 rounded-lg text-[8px] font-black uppercase tracking-widest text-[#2a2a2a]">System</div>
+            </div>
+            <div>
+              <div className="text-3xl font-black tracking-tight">{stat.value}</div>
+              <div className="text-[10px] font-bold text-[#2a2a2a] uppercase tracking-widest mt-1">{stat.label}</div>
+            </div>
           </div>
         ))}
       </div>
 
       {/* Filters */}
-      <div className="flex items-center gap-3 flex-wrap">
-        <div className="relative flex-1 min-w-48 max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-          <input
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            placeholder="Search user or problem..."
-            className="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-lg text-sm outline-none focus:border-blue-400 transition-all"
-          />
-        </div>
-        <div className="flex items-center gap-2">
-          <Filter className="w-4 h-4 text-slate-400" />
-          <div className="flex gap-1">
-            {verdicts.map(v => (
-              <button key={v} onClick={() => setFilterVerdict(v)}
-                className={`px-2.5 py-1.5 rounded-lg text-xs transition-colors ${
-                  filterVerdict === v ? "bg-blue-600 text-white" : "bg-white border border-slate-200 text-slate-500 hover:bg-slate-50"
-                }`}>{v}</button>
-            ))}
-          </div>
-        </div>
-        <div className="flex gap-1">
-          {langs.map(l => (
-            <button key={l} onClick={() => setFilterLang(l)}
-              className={`px-2.5 py-1.5 rounded-lg text-xs transition-colors ${
-                filterLang === l ? "bg-slate-800 text-white" : "bg-white border border-slate-200 text-slate-500 hover:bg-slate-50"
-              }`}>{l}</button>
-          ))}
-        </div>
+      <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+        {["All", "Accepted", "Wrong Answer", "TLE", "CE"].map(v => (
+          <button 
+            key={v}
+            onClick={() => setFilterVerdict(v)}
+            className={`px-8 py-3.5 rounded-2xl text-[9px] font-black uppercase tracking-[0.2em] transition-all whitespace-nowrap border ${
+              filterVerdict === v ? "bg-[#0099ff] text-white border-[#0099ff]/50 shadow-[0_0_20px_rgba(0,153,255,0.2)]" : "bg-[#090909] text-[#525252] border-white/5 hover:text-white"
+            }`}
+          >
+            {v}
+          </button>
+        ))}
       </div>
 
-      {/* Table */}
-      <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden">
-        <div className="grid px-5 py-3 bg-slate-50 border-b border-slate-200 text-xs text-slate-400"
-          style={{ gridTemplateColumns: "52px 180px 1fr 130px 80px 80px 90px 80px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em" }}>
-          <span>#</span><span>Participant</span><span>Problem</span>
-          <span>Verdict</span><span>Time</span><span>Memory</span>
-          <span>Language</span><span>Submitted</span>
+      {/* Main Table */}
+      <div className="bg-[#090909] border border-white/5 rounded-[2.5rem] overflow-hidden shadow-2xl">
+        <div className="grid px-10 py-6 bg-white/[0.02] border-b border-white/5 text-[9px] font-black text-[#2a2a2a] uppercase tracking-[0.3em]"
+          style={{ gridTemplateColumns: "1.5fr 1.5fr 1fr 1fr 1fr 0.5fr" }}>
+          <span>Student Name</span>
+          <span>Problem Title</span>
+          <span>Result</span>
+          <span>Execution Time</span>
+          <span>Time</span>
+          <span className="text-right">Inspect</span>
         </div>
-        <div className="divide-y divide-slate-100">
-          {filtered.map((sub, idx) => {
-            const vc = verdictConfig[sub.verdict] ?? verdictConfig["CE"];
+
+        <div className="divide-y divide-white/5">
+          {loading && submissions.length === 0 ? (
+            <div className="py-32 flex flex-col items-center justify-center gap-4">
+              <div className="w-8 h-8 border-2 border-[#0099ff] border-t-transparent rounded-full animate-spin" />
+              <span className="text-[10px] font-black text-[#525252] uppercase tracking-[0.2em]">Loading Submissions...</span>
+            </div>
+          ) : filtered.map((sub, index) => {
+            const verdict = sub.passed_all ? "Accepted" : "Wrong Answer";
+            const vc = verdictConfig[verdict] || verdictConfig.CE;
+            const lang = langMap[sub.language_id] || "Unknown";
+            const results = sub.results ? JSON.parse(sub.results) : [];
+            const time = results[0]?.time || "0.0s";
+
             return (
-              <div key={sub.id}
-                className={`grid px-5 py-3.5 items-center hover:bg-slate-50/50 transition-colors ${idx === 0 && liveEnabled && liveIndex > 0 ? "bg-blue-50/40" : ""}`}
-                style={{ gridTemplateColumns: "52px 180px 1fr 130px 80px 80px 90px 80px" }}>
-                <span className="text-slate-400 text-xs">{submissions.length - submissions.indexOf(sub)}</span>
-                <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 bg-slate-100 rounded-full flex items-center justify-center text-xs text-slate-600 flex-shrink-0" style={{ fontWeight: 600 }}>
-                    {sub.user.substring(0, 2).toUpperCase()}
+              <motion.div
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: index * 0.02 }}
+                key={sub.$id}
+                className="grid px-10 py-8 items-center hover:bg-white/[0.01] transition-all group/row cursor-pointer"
+                style={{ gridTemplateColumns: "1.5fr 1.5fr 1fr 1fr 1fr 0.5fr" }}
+                onClick={() => setSelectedSubmission(sub)}
+              >
+                <div className="flex items-center gap-5">
+                  <div className="w-12 h-12 rounded-2xl bg-[#000000] border border-white/5 flex items-center justify-center group-hover/row:border-[#0099ff]/30 transition-all">
+                    <span className="text-[10px] font-black text-[#525252]">{sub.user_email.charAt(0).toUpperCase()}</span>
                   </div>
-                  <span className="text-slate-700 text-xs truncate" style={{ fontWeight: 500 }}>{sub.user}</span>
+                  <div>
+                    <div className="text-white text-base font-black tracking-[-0.02em] uppercase group-hover/row:text-[#0099ff] transition-colors">
+                      {sub.user_email.split('@')[0]}
+                    </div>
+                    <div className="text-[9px] text-[#2a2a2a] font-bold uppercase tracking-widest mt-1">ID: {sub.$id.slice(-6)}</div>
+                  </div>
                 </div>
-                <span className="text-slate-600 text-xs">{sub.problem}</span>
-                <span className={`text-xs px-2.5 py-1 rounded-full border inline-block w-fit ${vc.bg} ${vc.text} ${vc.border}`}>
-                  {sub.verdict}
-                </span>
-                <span className="text-slate-500 text-xs">{sub.time}</span>
-                <span className="text-slate-500 text-xs">{sub.memory}</span>
-                <span className={`text-xs px-2 py-0.5 rounded-full border inline-block w-fit ${langColor[sub.language] ?? ""}`}>
-                  {sub.language}
-                </span>
-                <span className="text-slate-400 text-xs" style={{ fontFamily: "monospace" }}>{sub.timestamp}</span>
-              </div>
+
+                <div className="text-sm font-black text-[#a6a6a6] uppercase tracking-tight truncate max-w-[200px]">
+                  {sub.question_title}
+                </div>
+
+                <div>
+                  <span className={`inline-flex items-center gap-2.5 text-[9px] font-black uppercase tracking-[0.2em] px-4 py-2 rounded-full border ${vc.bg} ${vc.text} ${vc.border} ${vc.glow}`}>
+                    <span className={`w-1.5 h-1.5 rounded-full ${vc.text.replace('text-', 'bg-')}`} />
+                    {verdict}
+                  </span>
+                </div>
+
+                <div className="flex flex-col gap-1.5">
+                   <div className="flex items-center gap-2.5 text-[10px] font-bold text-white uppercase tracking-widest">
+                      <Clock className="w-3.5 h-3.5 text-[#525252]" />
+                      {time}
+                   </div>
+                   <div className="text-[9px] font-black text-[#2a2a2a] uppercase tracking-widest">ENV: {lang}</div>
+                </div>
+
+                <div className="text-[10px] font-bold text-[#525252] uppercase tracking-widest">
+                  {new Date(sub.$createdAt).toLocaleTimeString()}
+                </div>
+
+                <div className="flex justify-end">
+                  <ChevronRight className="w-5 h-5 text-[#2a2a2a] group-hover/row:text-white transition-all group-hover/row:translate-x-1" />
+                </div>
+              </motion.div>
             );
           })}
         </div>
-        {filtered.length === 0 && (
-          <div className="text-center py-12 text-slate-400">
-            <Code2 className="w-8 h-8 mx-auto mb-3 opacity-30" />
-            <p className="text-sm">No submissions match the current filters</p>
-          </div>
-        )}
       </div>
-      <p className="text-xs text-slate-400 text-center">
-        Showing {filtered.length} of {submissions.length} submissions
-        {liveEnabled && " · Live updates every 4 seconds"}
-      </p>
+
+      {/* Submission Inspector */}
+      <AnimatePresence>
+        {selectedSubmission && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/90 backdrop-blur-2xl flex items-center justify-center z-[100] p-8"
+            onClick={() => setSelectedSubmission(null)}
+          >
+            <motion.div 
+              initial={{ scale: 0.95, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 20 }}
+              className="bg-[#090909] border border-white/10 rounded-[3rem] w-full max-w-6xl h-[85vh] overflow-hidden flex flex-col shadow-[0_0_100px_rgba(0,0,0,1)]"
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="p-10 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
+                <div className="flex items-center gap-6">
+                  <div className="w-16 h-16 rounded-[2rem] bg-[#0099ff]/10 border border-[#0099ff]/20 flex items-center justify-center">
+                    <Terminal className="w-8 h-8 text-[#0099ff]" />
+                  </div>
+                  <div>
+                    <h2 className="text-3xl font-black uppercase tracking-tight">{selectedSubmission.question_title}</h2>
+                    <p className="text-[10px] font-bold text-[#525252] uppercase tracking-[0.3em] mt-1">
+                      Submitted by <span className="text-white">{selectedSubmission.user_email}</span>
+                    </p>
+                  </div>
+                </div>
+                <button onClick={() => setSelectedSubmission(null)} className="p-4 bg-white/5 rounded-2xl hover:bg-white/10 transition-all">
+                  <X className="w-6 h-6 text-[#525252]" />
+                </button>
+              </div>
+
+              <div className="flex-1 relative bg-black">
+                <Editor
+                  height="100%"
+                  language={MONACO_LANGS[langMap[selectedSubmission.language_id] || "Python"]}
+                  theme="vs-dark"
+                  value={selectedSubmission.source_code}
+                  options={{
+                    readOnly: true,
+                    fontSize: 14,
+                    minimap: { enabled: true },
+                    padding: { top: 40, left: 40 },
+                    automaticLayout: true,
+                    scrollBeyondLastLine: false,
+                    lineNumbersMinChars: 3,
+                  }}
+                />
+              </div>
+
+              <div className="px-10 py-6 border-t border-white/5 bg-white/[0.02] flex items-center justify-between">
+                <div className="flex gap-10">
+                  <div className="flex flex-col gap-1">
+                    <span className="text-[8px] font-black text-[#525252] uppercase tracking-[0.2em]">Result</span>
+                    <span className={`text-[10px] font-black uppercase tracking-widest ${selectedSubmission.passed_all ? 'text-emerald-400' : 'text-rose-400'}`}>
+                      {selectedSubmission.passed_all ? 'Accepted' : 'Wrong Answer'}
+                    </span>
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <span className="text-[8px] font-black text-[#525252] uppercase tracking-[0.2em]">Language</span>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-white">{langMap[selectedSubmission.language_id]}</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-4">
+                  <button className="px-6 py-3 bg-[#0099ff] text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-2xl hover:scale-105 active:scale-95 transition-all">
+                    Download Source
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <style>{`
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.05); border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(0, 153, 255, 0.3); }
+      `}</style>
     </div>
   );
 }

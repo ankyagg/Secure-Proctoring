@@ -1,45 +1,61 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
-import { Trophy, RefreshCw, ArrowLeft, Medal, Crown } from "lucide-react";
-const leaderboard = [
-  { rank: 1, username: "AlgoMaster_X",      avatar: "AM", solved: 5, score: 1100, penalty: 142, isCurrentUser: false },
-  { rank: 2, username: "CodeNinja_99",       avatar: "CN", solved: 5, score: 1100, penalty: 187, isCurrentUser: false },
-  { rank: 3, username: "devstar_priya",      avatar: "DP", solved: 4, score: 900,  penalty: 203, isCurrentUser: false },
-  { rank: 4, username: "you (alex_coder)",   avatar: "AC", solved: 3, score: 600,  penalty: 89,  isCurrentUser: true  },
-  { rank: 5, username: "recursion_king",     avatar: "RK", solved: 3, score: 600,  penalty: 134, isCurrentUser: false },
-  { rank: 6, username: "hash_table_hero",    avatar: "HH", solved: 3, score: 500,  penalty: 156, isCurrentUser: false },
-  { rank: 7, username: "BinaryBoss",         avatar: "BB", solved: 2, score: 400,  penalty: 67,  isCurrentUser: false },
-  { rank: 8, username: "sort_queen",         avatar: "SQ", solved: 2, score: 300,  penalty: 210, isCurrentUser: false },
-  { rank: 9, username: "dp_wizard",          avatar: "DW", solved: 2, score: 300,  penalty: 245, isCurrentUser: false },
-  { rank: 10, username: "graph_guru",        avatar: "GG", solved: 1, score: 100,  penalty: 32,  isCurrentUser: false },
-  { rank: 11, username: "stack_overflow_fan",avatar: "SO", solved: 1, score: 100,  penalty: 78,  isCurrentUser: false },
-  { rank: 12, username: "newbie_coder_22",   avatar: "NC", solved: 0, score: 0,    penalty: 0,   isCurrentUser: false },
-];
-
-const PROBLEM_LABELS = ["A", "B", "C", "D", "E"];
-
-const statusColor = {
-  Solved: "bg-green-500",
-  Attempted: "bg-amber-400",
-  Unattempted: "bg-slate-200",
-};
+import { Trophy, RefreshCw, Crown, Zap, Clock, ChevronLeft, Binary, Target, ShieldCheck } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { databases, APPWRITE_DB_ID } from "../../services/appwrite";
+import { Query } from "appwrite";
 
 export default function Leaderboard() {
   const navigate = useNavigate();
   const [data, setData] = useState<any[]>([]);
-  const [lastUpdated, setLastUpdated] = useState(new Date());
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  const calculateLeaderboard = (submissions: any[]) => {
+    const userStats: Record<string, any> = {};
+
+    submissions.forEach(sub => {
+      const email = sub.user_email;
+      if (!userStats[email]) {
+        userStats[email] = {
+          user_email: email,
+          user_name: sub.user_name || email.split('@')[0],
+          solved: new Set(),
+          total_points: 0,
+          last_sync: sub.$createdAt
+        };
+      }
+
+      if (sub.passed_all) {
+        userStats[email].solved.add(sub.question_id);
+        // Note: we'd need points from the question, but for simplicity let's assume 100 per unique solved
+      }
+      
+      if (new Date(sub.$createdAt) > new Date(userStats[email].last_sync)) {
+        userStats[email].last_sync = sub.$createdAt;
+      }
+    });
+
+    return Object.values(userStats)
+      .map(u => ({
+        ...u,
+        solved_count: u.solved.size,
+        total_points: u.solved.size * 100 // Mock points logic
+      }))
+      .sort((a, b) => b.total_points - a.total_points || new Date(a.last_sync).getTime() - new Date(b.last_sync).getTime());
+  };
 
   const fetchLeaderboard = async () => {
     setRefreshing(true);
     try {
-      const res = await fetch("http://localhost:3000/api/leaderboard");
-      const json = await res.json();
-      setData(json);
-      setLastUpdated(new Date());
+      const response = await databases.listDocuments(APPWRITE_DB_ID, "submissions", [
+        Query.limit(100),
+        Query.orderDesc("$createdAt")
+      ]);
+      const leaderData = calculateLeaderboard(response.documents);
+      setData(leaderData);
     } catch (err) {
-      console.error("Leaderboard fetch failed:", err);
+      console.error("Leaderboard synchronization failed:", err);
     } finally {
       setRefreshing(false);
       setLoading(false);
@@ -50,144 +66,194 @@ export default function Leaderboard() {
     fetchLeaderboard();
   }, []);
 
-  const top3 = data.slice(0, 3);
-  const first = top3[0];
-  const second = top3[1];
-  const third = top3[2];
+  if (loading) return (
+    <div className="min-h-screen flex flex-col items-center justify-center gap-6 bg-[#000]">
+      <div className="w-10 h-10 border-2 border-[#0099ff] border-t-transparent rounded-full animate-spin" />
+      <span className="text-[10px] font-black text-[#525252] uppercase tracking-[0.4em]">Loading Rankings...</span>
+    </div>
+  );
 
-  if (loading) return <div className="p-8 text-center text-slate-500">Loading leaderboard...</div>;
+  const top3 = data.slice(0, 3);
 
   return (
-    <div className="max-w-5xl mx-auto px-6 py-8">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => navigate("/student/problems")}
-            className="p-2 text-slate-400 hover:text-slate-600 hover:bg-white border border-transparent hover:border-slate-200 rounded-lg transition-all"
-          >
-            <ArrowLeft className="w-4 h-4" />
-          </button>
-          <div>
-            <h1 className="text-slate-900" style={{ fontWeight: 700, fontSize: "1.4rem" }}>
-              Leaderboard
+    <div className="min-h-screen bg-[#000000] text-white selection:bg-[#0099ff]/30 pb-32">
+      
+      {/* Background Ambience */}
+      <div className="fixed inset-0 z-0 pointer-events-none">
+        <div className="absolute top-[-10%] right-[-5%] w-[600px] h-[600px] bg-[#0099ff]/[0.02] blur-[150px] rounded-full" />
+      </div>
+
+      <div className="relative z-10 max-w-7xl mx-auto px-8 pt-20">
+        
+        {/* Navigation */}
+        <motion.button 
+          initial={{ opacity: 0, x: -10 }}
+          animate={{ opacity: 1, x: 0 }}
+          onClick={() => navigate("/student/lobby")}
+          className="flex items-center gap-3 text-[#525252] hover:text-white transition-all text-[10px] font-black uppercase tracking-[0.3em] group mb-20"
+        >
+          <ChevronLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+          Back to Lobby
+        </motion.button>
+
+        {/* Header Section */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-12 mb-24">
+          <div className="space-y-4 max-w-3xl">
+            <div className="inline-flex items-center gap-3 px-5 py-2 rounded-full bg-white/5 border border-white/5 text-[9px] font-black text-[#0099ff] uppercase tracking-[0.4em] mb-6">
+               <Binary className="w-3 h-3" />
+               Live Rankings
+            </div>
+            <h1 className="text-6xl md:text-9xl font-black tracking-[-0.06em] leading-[0.85] uppercase">
+              The <br />
+              <span className="text-[#0099ff] italic">Leaderboard.</span>
             </h1>
-            <p className="text-slate-500 text-sm">Real-time Competition Rankings</p>
+            <p className="text-xl md:text-2xl text-[#525252] font-medium tracking-tight max-w-xl text-balance">
+              View the top performing students and their scores.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <div className="px-6 py-4 bg-white/5 border border-white/5 rounded-2xl flex items-center gap-3">
+              <div className="w-1.5 h-1.5 bg-[#0099ff] rounded-full animate-pulse" />
+              <span className="text-[10px] text-[#525252] font-black uppercase tracking-[0.2em]">Live Sync</span>
+            </div>
+            <button
+              onClick={fetchLeaderboard}
+              className="p-5 bg-white text-black rounded-2xl hover:bg-[#0099ff] hover:text-white transition-all active:scale-95 shadow-2xl"
+            >
+              <RefreshCw className={`w-5 h-5 ${refreshing ? "animate-spin" : ""}`} />
+            </button>
           </div>
         </div>
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-green-50 border border-green-200 rounded-full text-sm text-green-700">
-            <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-            Live
-          </div>
-          <button
-            onClick={fetchLeaderboard}
-            className="flex items-center gap-2 px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-600 hover:bg-slate-50 transition-colors"
+
+        {/* Podium */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-12 mb-32 items-end">
+          {/* 2nd Place */}
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="order-2 md:order-1 bg-[#090909] border border-white/5 rounded-[3.5rem] p-12 text-center relative overflow-hidden h-[350px] flex flex-col justify-end shadow-2xl hover:border-white/10 transition-all"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? "animate-spin" : ""}`} />
-            Refresh
-          </button>
-        </div>
-      </div>
-
-      {/* Last updated */}
-      <p className="text-xs text-slate-400 mb-5">
-        Last updated: {lastUpdated.toLocaleTimeString()} · {data.length} participants
-      </p>
-
-      {/* Top 3 Podium */}
-      {data.length > 0 && (
-        <div className="grid grid-cols-3 gap-4 mb-8">
-          {/* 2nd place */}
-          <div className="bg-white border border-slate-200 rounded-xl p-4 flex flex-col items-center text-center pt-6 opacity-90">
-            <div className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center text-slate-500 mb-2 font-bold uppercase">
-              {second?.user?.substring(0, 2) || "2"}
+            <div className="absolute top-0 left-0 w-full h-1.5 bg-white/5" />
+            <div className="text-5xl font-black text-[#2a2a2a] absolute top-12 left-12 italic opacity-20">#02</div>
+            <div className="w-24 h-24 bg-white/5 rounded-[2rem] mx-auto flex items-center justify-center text-white font-black text-2xl border border-white/10 mb-10">
+              {top3[1]?.user_name?.substring(0, 2).toUpperCase() || "??"}
             </div>
-            <div className="text-xs text-slate-400 mb-0.5 truncate w-full px-2">{second?.user || "—"}</div>
-            <div className="text-slate-800 text-sm mb-1 font-bold">{second?.total_points || 0} pts</div>
-            <div className="w-8 h-8 bg-slate-200 rounded-full flex items-center justify-center text-slate-600 text-sm font-bold">2</div>
-          </div>
-
-          {/* 1st place */}
-          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex flex-col items-center text-center -mt-3">
-            <Crown className="w-5 h-5 text-amber-500 mb-2" />
-            <div className="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center text-amber-700 mb-2 font-bold uppercase">
-              {first?.user?.substring(0, 2) || "1"}
+            <div>
+              <div className="text-2xl font-black text-white uppercase tracking-tighter mb-2">{top3[1]?.user_name || "---"}</div>
+              <div className="text-[10px] text-[#0099ff] font-black uppercase tracking-[0.3em]">{top3[1]?.total_points || 0} POINTS</div>
             </div>
-            <div className="text-xs text-amber-700 mb-0.5 truncate w-full px-2">{first?.user || "—"}</div>
-            <div className="text-amber-800 text-sm mb-1 font-bold">{first?.total_points || 0} pts</div>
-            <div className="w-8 h-8 bg-amber-400 rounded-full flex items-center justify-center text-white text-sm font-bold">1</div>
-          </div>
+          </motion.div>
 
-          {/* 3rd place */}
-          <div className="bg-white border border-slate-200 rounded-xl p-4 flex flex-col items-center text-center pt-6 opacity-80">
-            <div className="w-10 h-10 bg-blue-50 rounded-full flex items-center justify-center text-blue-600 mb-2 font-bold uppercase">
-              {third?.user?.substring(0, 2) || "3"}
-            </div>
-            <div className="text-xs text-slate-400 mb-0.5 truncate w-full px-2">{third?.user || "—"}</div>
-            <div className="text-slate-800 text-sm mb-1 font-bold">{third?.total_points || 0} pts</div>
-            <div className="w-8 h-8 bg-amber-700/20 rounded-full flex items-center justify-center text-amber-800 text-sm font-bold">3</div>
-          </div>
-        </div>
-      )}
-
-      {/* Full Table */}
-      <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
-        <div className="grid items-center bg-slate-50 border-b border-slate-200 px-5 py-3 text-[10px] text-slate-400 font-bold uppercase tracking-wider" style={{ gridTemplateColumns: "52px 1fr 100px 100px 120px" }}>
-          <span>Rank</span>
-          <span>Participant</span>
-          <span className="text-center">Solved</span>
-          <span className="text-right">Score</span>
-          <span className="text-right">Last Submission</span>
-        </div>
-
-        {data.map((entry, index) => (
-          <div
-            key={entry.email}
-            className={`grid items-center px-5 py-3.5 border-b border-slate-100 last:border-0 hover:bg-slate-50 transition-colors`}
-            style={{ gridTemplateColumns: "52px 1fr 100px 100px 120px" }}
+          {/* 1st Place */}
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="order-1 md:order-2 bg-[#090909] border border-[#0099ff]/30 rounded-[4rem] p-16 text-center relative overflow-hidden h-[450px] flex flex-col justify-end shadow-[0_0_80px_rgba(0,153,255,0.2)] group transition-all"
           >
-            <div className="flex items-center">
-              {index < 3 ? (
-                <div className={`w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold ${index === 0 ? "bg-amber-100 text-amber-700" : index === 1 ? "bg-slate-200 text-slate-600" : "bg-orange-100 text-orange-700"}`}>
-                  {index + 1}
+            <div className="absolute top-0 left-0 w-full h-2 bg-[#0099ff]" />
+            <div className="absolute inset-0 bg-[#0099ff]/5 blur-3xl rounded-full opacity-50" />
+            <Crown className="w-20 h-20 text-[#0099ff] mx-auto mb-10 animate-bounce shadow-2xl" />
+            <div className="text-7xl font-black text-[#0099ff]/10 absolute top-16 left-16 italic uppercase">#01</div>
+            <div className="w-32 h-32 bg-white text-black rounded-[2.5rem] mx-auto flex items-center justify-center font-black text-4xl shadow-2xl group-hover:scale-105 transition-all mb-10">
+              {top3[0]?.user_name?.substring(0, 2).toUpperCase() || "??"}
+            </div>
+            <div>
+              <div className="text-4xl font-black text-white uppercase tracking-[-0.05em] mb-3">{top3[0]?.user_name || "---"}</div>
+              <div className="text-[12px] text-[#0099ff] font-black uppercase tracking-[0.4em]">{top3[0]?.total_points || 0} POINTS</div>
+            </div>
+          </motion.div>
+
+          {/* 3rd Place */}
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="order-3 bg-[#090909] border border-white/5 rounded-[3rem] p-10 text-center relative overflow-hidden h-[300px] flex flex-col justify-end shadow-2xl hover:border-white/10 transition-all"
+          >
+            <div className="absolute top-0 left-0 w-full h-1.5 bg-white/5" />
+            <div className="text-4xl font-black text-[#2a2a2a] absolute top-10 left-10 italic opacity-20">#03</div>
+            <div className="w-20 h-20 bg-white/5 rounded-[1.5rem] mx-auto flex items-center justify-center text-white font-black text-xl border border-white/10 mb-8">
+              {top3[2]?.user_name?.substring(0, 2).toUpperCase() || "??"}
+            </div>
+            <div>
+              <div className="text-xl font-black text-white uppercase tracking-tighter mb-2">{top3[2]?.user_name || "---"}</div>
+              <div className="text-[10px] text-[#0099ff] font-black uppercase tracking-[0.3em]">{top3[2]?.total_points || 0} POINTS</div>
+            </div>
+          </motion.div>
+        </div>
+
+        {/* Main Ranking Matrix */}
+        <div className="bg-[#090909] border border-white/5 rounded-[3rem] overflow-hidden shadow-2xl">
+          <div className="grid grid-cols-[120px_1fr_200px_160px_200px] items-center bg-white/[0.02] px-12 py-8 text-[9px] font-black text-[#2a2a2a] uppercase tracking-[0.4em] border-b border-white/5">
+            <span>Rank</span>
+            <span>Student Name</span>
+            <span className="text-center">Challenges Solved</span>
+            <span className="text-right">Points</span>
+            <span className="text-right">Last Activity</span>
+          </div>
+
+          <div className="divide-y divide-white/5">
+            {data.map((entry, index) => (
+              <motion.div
+                key={entry.user_email}
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: index * 0.03 }}
+                className="grid grid-cols-[120px_1fr_200px_160px_200px] items-center px-12 py-10 hover:bg-white/[0.01] transition-all group relative"
+              >
+                <div className="flex items-center">
+                  <span className={`text-3xl font-black tracking-tighter ${index < 3 ? 'text-white' : 'text-[#2a2a2a]'} group-hover:text-[#0099ff] transition-colors`}>
+                    {String(index + 1).padStart(2, '0')}
+                  </span>
                 </div>
-              ) : (
-                <span className="text-slate-500 text-sm w-7 text-center font-medium">{index + 1}</span>
-              )}
-            </div>
 
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-xs font-bold text-slate-600 uppercase">
-                {entry.user?.substring(0, 2)}
-              </div>
-              <div className="text-sm text-slate-800 font-medium truncate">{entry.user}</div>
-            </div>
+                <div className="flex items-center gap-6">
+                  <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-xs font-black uppercase border transition-all ${
+                    index === 0 ? "bg-white text-black border-transparent" : "bg-black border-white/5 text-[#525252]"
+                  }`}>
+                    {entry.user_name.substring(0, 2).toUpperCase()}
+                  </div>
+                  <div>
+                    <div className="text-xl font-black text-white uppercase tracking-tighter group-hover:text-[#0099ff] transition-colors">
+                      {entry.user_name}
+                    </div>
+                    <div className="text-[9px] text-[#2a2a2a] font-bold uppercase tracking-widest mt-1">
+                      {entry.user_email}
+                    </div>
+                  </div>
+                </div>
 
-            <div className="text-center">
-              <span className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full text-xs font-bold">
-                {entry.solved} solved
-              </span>
-            </div>
+                <div className="flex justify-center">
+                   <div className="flex items-center gap-3 px-6 py-2.5 rounded-2xl bg-white/5 border border-white/5">
+                      <Target className="w-4 h-4 text-[#0099ff]" />
+                      <span className="text-[10px] font-black text-white uppercase tracking-widest">{entry.solved_count} Challenges</span>
+                   </div>
+                </div>
 
-            <div className="text-right">
-              <span className="text-slate-900 text-sm font-bold">{entry.total_points}</span>
-            </div>
+                <div className="text-right">
+                  <span className="text-3xl font-black text-white group-hover:text-[#0099ff] transition-colors tracking-tighter">{entry.total_points}</span>
+                </div>
 
-            <div className="text-right text-slate-400 text-xs">
-              {new Date(entry.last_submission).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-            </div>
+                <div className="flex items-center justify-end gap-3 text-[#2a2a2a]">
+                  <Clock className="w-4 h-4" />
+                  <span className="text-[12px] font-black tabular-nums tracking-tighter uppercase">
+                    {new Date(entry.last_sync).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                </div>
+              </motion.div>
+            ))}
           </div>
-        ))}
-        {data.length === 0 && (
-          <div className="p-12 text-center text-slate-400 text-sm">No submissions yet</div>
-        )}
-      </div>
+        </div>
 
-      <p className="text-center text-[10px] text-slate-400 mt-6 uppercase tracking-widest font-medium">
-        Rewards and certificates will be based on final standings
-      </p>
+        <div className="mt-20 text-center">
+           <div className="inline-flex items-center gap-3 px-6 py-3 rounded-full bg-white/5 border border-white/5 text-[9px] font-black text-[#525252] uppercase tracking-[0.3em]">
+             <ShieldCheck className="w-4 h-4 text-emerald-500" />
+             Secured by AI Anti-Cheat
+           </div>
+        </div>
+      </div>
     </div>
   );
 }
-

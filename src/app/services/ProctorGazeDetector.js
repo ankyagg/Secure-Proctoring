@@ -1,277 +1,263 @@
 /**
- * ProctorGazeDetector.js
- * Optimized Real-Time Proctoring Module using @vladmandic/human
- * 
- * DESIGN PRINCIPLES:
- * 1. Client-Side Only: Heavylifting done via WebGL/WebGPU in the browser.
- * 2. Adaptive Calibration: Uses 5-point calibration to define user-specific gaze boundaries.
- * 3. Sustained Logic: Minimizes noise by ignoring brief glances (<4.5s).
- * 4. Production Performance: Implements frame-skipping and requestAnimationFrame.
+ * ProctorGazeDetector.js — Performance-Optimized Production Build
+ *
+ * VALUES: face.rotation.angle.yaw/pitch/roll are in RADIANS (confirmed from source)
+ *         0.52 rad ≈ 30°, 0.79 rad ≈ 45°
+ *
+ * MODELS NEEDED (minimal set for rotation tracking):
+ *   blazeface (526KB) — face detection (bounding box)
+ *   facemesh  (1.4MB) — 468-point mesh → required for rotation calculation
+ *   That's it. Everything else is disabled.
+ *
+ * PERFORMANCE:
+ *   Detection runs at ~8 FPS (every 120ms) instead of 60fps.
+ *   Total model footprint: ~2MB vs 15MB+ with all models.
  */
 
 import Human from '@vladmandic/human';
 
-class ProctorGazeDetector {
-  /**
-   * @param {HTMLVideoElement} videoElement - Existing webcam video stream
-   * @param {Object} options - Configuration overrides
-   */
-  constructor(videoElement, options = {}) {
+// ─── Tuning Constants (RADIANS) ──────────────────────────────────────────────
+const CHEAT_YAW = 0.25;   // ~31° left/right turn → cheating
+const CHEAT_PITCH = 0.35;   // ~26° up/down nod → cheating
+const SUSTAIN_MS = 500;    // must persist 500ms before confirmed
+const NOFACE_MS = 1000;   // face absent 1s before flagging
+const ALPHA = 0.35;   // EMA smoothing (higher = more responsive, more noise)
+const CAL_MS = 4000;   // calibration window
+const DETECT_INTERVAL = 120; // ms between detection runs (~8 FPS)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export default class ProctorGazeDetector {
+  constructor(videoElement) {
     this.video = videoElement;
     this.human = null;
-    this.isRunning = false;
-    this.rafId = null;
-    this.frameCount = 0;
+    this.running = false;
+    this.loopTimer = null;
 
-    // Configuration for Human Library
-    this.config = {
-      backend: 'webgpu', // Prefer WebGPU for massive performance boost
-      modelBasePath: 'https://cdn.jsdelivr.net/npm/@vladmandic/human-models/models/',
-      filter: { enabled: true, equalization: true, flip: false }, // Equalization helps with low light
+    // Calibration
+    this.calSamples = [];
+    this.center = null;
+    this.calStart = null;
+    this.calibrated = false;
+
+    // Smoothed values (start at null to initialize from first frame)
+    this.smooth = null;
+
+    // Timing
+    this.violationSince = null;
+    this.noFaceSince = null;
+    this.locked = false;  // hysteresis: once cheating confirmed, stays locked
+
+    // Output
+    this.state = {
+      status: 'INITIALIZING',
+      reason: 'Loading models...',
+      confidence: 1.0,
+      timestamp: Date.now(),
+    };
+  }
+
+  async init() {
+    const config = {
+      backend: 'webgl',
+      modelBasePath: 'https://vladmandic.github.io/human-models/models/',
+      filter: { enabled: false },  // disable image filters for speed
       face: {
         enabled: true,
-        detector: { rotation: true, maxDetected: 2, minConfidence: 0.2 }, // Detect up to 2 faces (multiple person detection)
-        mesh: { enabled: true },
-        iris: { enabled: true },
-        description: { enabled: false }, // Disable extra modules for speed
+        detector: {
+          rotation: true,
+          maxDetected: 3,
+          minConfidence: 0.5,
+        },
+        mesh: { enabled: true },      // REQUIRED for rotation angles
+        iris: { enabled: false },
+        description: { enabled: false },
         emotion: { enabled: false },
-        antispoof: { enabled: true }, // Verify it's a real person
-        liveness: { enabled: true },
+        antispoof: { enabled: false },
+        liveness: { enabled: false },
       },
       body: { enabled: false },
       hand: { enabled: false },
-      object: { enabled: false },
+      object: { enabled: false },      // disabled for speed — phone detection removed
+      gesture: { enabled: false },
       segmentation: { enabled: false },
-      gesture: { enabled: true }, // Keep enabled for specific head motions
-      ...options
     };
 
-    // Internal State
-    this.state = {
-      status: 'GENUINE_EXAM',
-      confidence: 1.0,
-      reason: 'Standard exam behavior',
-      timestamp: Date.now()
-    };
-
-    // Gaze Logic Tracking
-    this.lastOnScreenTime = Date.now();
-    this.offScreenStartTime = null;
-    this.violationThrottles = {
-      multiFace: 0,
-      lookingAway: 0
-    };
-
-    // Calibration Data
-    this.calibration = {
-      isCalibrated: false,
-      points: {
-        center: null,
-        topLeft: null,
-        topRight: null,
-        bottomLeft: null,
-        bottomRight: null
-      },
-      thresholds: {
-        yaw: 0.30,   // More sensitive (approx 17 degrees)
-        pitch: 0.20  // More sensitive
-      }
-    };
+    this.human = new Human(config);
+    await this.human.load();
+    await this.human.warmup();
+    console.log('[ProctorGaze] Models loaded (blazeface + facemesh only)');
+    this._set('GENUINE_EXAM', 'Shield ready', 1.0);
   }
 
-  /**
-   * Initialize the Human library and warmup the models
-   */
-  async init() {
-    try {
-      this.human = new Human(this.config);
-      await this.human.load();
-      await this.human.warmup(); // Prevents initial frame lag
-      console.log('ProctorGazeDetector: Human Library Initialized');
-      return true;
-    } catch (err) {
-      console.error('ProctorGazeDetector Init Failed:', err);
-      return false;
-    }
-  }
-
-  /**
-   * Sets calibration for a specific point.
-   * Call this when student looks at markers on screen.
-   * @param {string} pointName - 'center', 'topLeft', 'topRight', etc.
-   */
-  async calibratePoint(pointName) {
-    if (!this.human) return;
-    const result = await this.human.detect(this.video);
-    if (result.face && result.face.length > 0) {
-      const face = result.face[0];
-      this.calibration.points[pointName] = {
-        yaw: face.rotation.angle.yaw,
-        pitch: face.rotation.angle.pitch,
-        roll: face.rotation.angle.roll
-      };
-      
-      console.log(`Calibrated ${pointName}:`, this.calibration.points[pointName]);
-      
-      // Auto-calculate thresholds if center and at least one corner exists
-      if (this.calibration.points.center && (this.calibration.points.topLeft || this.calibration.points.bottomRight)) {
-        this._autoTuneThresholds();
-        this.calibration.isCalibrated = true;
-      }
-    }
-  }
-
-  _autoTuneThresholds() {
-    const center = this.calibration.points.center;
-    // Calculate adaptive bounds based on the delta between center and nearest corner
-    // This allows for different laptop angles and screen sizes
-    this.calibration.thresholds.yaw = 0.45; // Default adaptive buffer
-    this.calibration.thresholds.pitch = 0.30;
-  }
-
-  /**
-   * Start the real-time monitoring loop
-   */
   start() {
-    if (this.isRunning) return;
-    this.isRunning = true;
-    this._detectionLoop();
+    if (this.running) return;
+    this.running = true;
+    this.calStart = null;
+    this.calibrated = false;
+    this.calSamples = [];
+    this.smooth = null;
+    this._scheduleNext();
   }
 
   stop() {
-    this.isRunning = false;
-    if (this.rafId) cancelAnimationFrame(this.rafId);
+    this.running = false;
+    if (this.loopTimer) clearTimeout(this.loopTimer);
   }
 
-  async _detectionLoop() {
-    if (!this.isRunning) return;
-    this.frameCount++;
-
-    // MAX ACCURACY: Process every single frame (no skipping)
-    if (this.frameCount % 1 === 0) {
-      const result = await this.human.detect(this.video);
-      
-      // Debug log (can be seen in browser console)
-      if (result.face && result.face[0]) {
-          const { yaw, pitch } = result.face[0].rotation.angle;
-          console.log(`[Proctor AI] Face Detect: yaw=${yaw.toFixed(2)}, pitch=${pitch.toFixed(2)}`);
-      } else {
-          console.log(`[Proctor AI] No face detected`);
-      }
-
-      this._analyzeBehavior(result);
-    }
-
-    this.rafId = requestAnimationFrame(() => this._detectionLoop());
-  }
-
-  _analyzeBehavior(result) {
-    const faces = result.face || [];
-    let currentStatus = 'GENUINE_EXAM';
-    let currentReason = 'Standard exam behavior';
-    let currentConfidence = 1.0;
-
-    // 1. Multiple Faces Detection
-    if (faces.length > 1) {
-      currentStatus = 'CHEATING_DETECTED';
-      currentReason = 'Multiple faces detected in frame';
-      currentConfidence = 0.95;
-    } 
-    // 2. Head Rotation / Gaze Detection
-    else if (faces.length === 1) {
-      const face = faces[0];
-      const { yaw, pitch } = face.rotation.angle;
-      const gaze = face.gaze || { bearing: 0, strength: 0 };
-      
-      // Compare head rotation default/calibrated
-      const isLookingAwayRotation = this._isLookingOffScreen(yaw, pitch);
-      
-      // NEW: Iris deviation (Strength > 0.4 usually means eyes are at extreme edge)
-      // EXPERT TWEAK: Gaze strength values from Human v3
-      // 0.05 - 0.15: Natural movement
-      // > 0.15: Noticeable look away (Trigger I SEE YOU)
-      // > 0.40: Extreme look away (Trigger VIOLATION)
-      const isStrictRotation = this._isLookingOffScreen(yaw, pitch);
-      // Gaze strength > 0.25 is suspicious (0.15 was too sensitive)
-      const isStrictGaze = Math.abs(gaze.strength) > 0.25;
-
-      if (isStrictRotation || isStrictGaze) {
-        if (!this.offScreenStartTime) {
-          this.offScreenStartTime = Date.now();
-          // DEBUG: Log why it's triggering
-          console.log(`[Proctor AI] Suspicion: rotation=${isStrictRotation}, gaze=${isStrictGaze}, str=${gaze.strength.toFixed(2)}`);
-        }
-        
-        const duration = (Date.now() - this.offScreenStartTime) / 1000;
-
-        // Any deviation longer than 1.5s is a RED violation (0.5s was too sensitive)
-        if (duration > 1.5) {
-          currentStatus = 'CHEATING_DETECTED';
-          currentReason = isStrictRotation ? 'Head Rotation (Confirmed)' : 'Sustained Side-Gaze (Confirmed)';
-          currentConfidence = 0.95;
-        } else {
-          currentStatus = 'POSSIBLE_CHEATING';
-          currentReason = 'I See You!';
-          currentConfidence = 0.60;
-        }
-      } else {
-        this.offScreenStartTime = null;
-      }
-    } 
-    // 3. Face Missing
-    else if (faces.length === 0) {
-      // Allow for very brief blinks or light shifts
-      if (!this.offScreenStartTime) this.offScreenStartTime = Date.now();
-      const absenceTime = (Date.now() - this.offScreenStartTime) / 1000;
-      
-      if (absenceTime > 1.5) { // Faster reaction to missing face
-        currentStatus = 'POSSIBLE_CHEATING';
-        currentReason = 'No face detected in video feed';
-        currentConfidence = 0.90;
-      }
-    }
-
-    this.state = {
-      status: currentStatus,
-      confidence: currentConfidence,
-      reason: currentReason,
-      timestamp: Date.now()
-    };
-  }
-
-  _isLookingOffScreen(yaw, pitch) {
-    // If calibrated, use center-normalized delta
-    if (this.calibration.isCalibrated) {
-      const deltaYaw = Math.abs(yaw - this.calibration.points.center.yaw);
-      const deltaPitch = Math.abs(pitch - this.calibration.points.center.pitch);
-      return deltaYaw > this.calibration.thresholds.yaw || deltaPitch > this.calibration.thresholds.pitch;
-    }
-    // Balanced Defaults (~18-20 degrees)
-    return Math.abs(yaw) > 0.35 || Math.abs(pitch) > 0.28;
-  }
-
-  /**
-   * Returns current detection payload, ready for WebSocket delivery
-   * @returns {Object}
-   */
   getStatus() {
     return { ...this.state };
   }
+
+  // ─── Throttled Detection Loop (~8 FPS) ──────────────────────────────────
+
+  _scheduleNext() {
+    if (!this.running) return;
+    this.loopTimer = setTimeout(() => this._tick(), DETECT_INTERVAL);
+  }
+
+  async _tick() {
+    if (!this.running) return;
+    try {
+      const result = await this.human.detect(this.video);
+      this._analyze(result);
+    } catch (e) {
+      // swallow — don't crash the loop
+    }
+    this._scheduleNext();
+  }
+
+  // ─── Core Analysis ─────────────────────────────────────────────────────
+
+  _analyze(result) {
+    const now = Date.now();
+    const faces = result.face || [];
+
+    // ── Face Count ────────────────────────────────────────────────────────
+    const real = faces.filter(f => (f.faceScore ?? f.score ?? 0) > 0.5);
+
+    if (real.length > 1) {
+      return this._set('CHEATING_DETECTED', `Multiple people (${real.length})`, 0.97);
+    }
+
+    // ── No Face ──────────────────────────────────────────────────────────
+    if (real.length === 0) {
+      if (!this.noFaceSince) this.noFaceSince = now;
+      if (now - this.noFaceSince > NOFACE_MS) {
+        this.violationSince = null;
+        return this._set('CHEATING_DETECTED', 'BREACH: Look back at the screen!', 0.90);
+      }
+      return this._set('POSSIBLE_CHEATING', 'Face not visible', 0.6);
+    }
+    this.noFaceSince = null;
+
+    // ── Get Rotation ─────────────────────────────────────────────────────
+    const face = real[0];
+    const angle = face.rotation?.angle;
+    if (!angle) {
+      // No rotation data yet (mesh still loading) — don't flag
+      return this._set('GENUINE_EXAM', 'Shield Active', 1.0);
+    }
+
+    const rawYaw = angle.yaw ?? 0;
+    const rawPitch = angle.pitch ?? 0;
+
+    // Initialize smooth from first frame (avoids bias toward 0)
+    if (!this.smooth) {
+      this.smooth = { yaw: rawYaw, pitch: rawPitch };
+    }
+
+    // EMA smoothing
+    this.smooth.yaw = ALPHA * rawYaw + (1 - ALPHA) * this.smooth.yaw;
+    this.smooth.pitch = ALPHA * rawPitch + (1 - ALPHA) * this.smooth.pitch;
+
+    // ── Calibration ──────────────────────────────────────────────────────
+    if (!this.calibrated) {
+      if (!this.calStart) this.calStart = now;
+      const elapsed = now - this.calStart;
+      const pct = Math.min(Math.round((elapsed / CAL_MS) * 100), 99);
+
+      this.calSamples.push({ yaw: this.smooth.yaw, pitch: this.smooth.pitch });
+
+      if (elapsed < CAL_MS) {
+        return this._set('GENUINE_EXAM', `Calibrating... ${pct}%`, 1.0);
+      }
+
+      // Median center
+      const yaws = this.calSamples.map(s => s.yaw).sort((a, b) => a - b);
+      const pitches = this.calSamples.map(s => s.pitch).sort((a, b) => a - b);
+      const mid = Math.floor(yaws.length / 2);
+      this.center = { yaw: yaws[mid], pitch: pitches[mid] };
+      this.calibrated = true;
+      this.calSamples = [];
+
+      const dY = (this.center.yaw * 180 / Math.PI).toFixed(1);
+      const dP = (this.center.pitch * 180 / Math.PI).toFixed(1);
+      console.log(`[ProctorGaze] Calibrated center: yaw=${dY}° pitch=${dP}°`);
+      return this._set('GENUINE_EXAM', 'Shield Active', 1.0);
+    }
+
+    // ── Head Turn Detection (with hysteresis) ────────────────────────────
+    const dYaw = Math.abs(this.smooth.yaw - this.center.yaw);
+    const dPitch = Math.abs(this.smooth.pitch - this.center.pitch);
+
+    const overThreshold = dYaw > CHEAT_YAW || dPitch > CHEAT_PITCH;
+    // To unlock, values must drop to 65% of threshold (clear return to center)
+    const backToSafe = dYaw < CHEAT_YAW * 0.65 && dPitch < CHEAT_PITCH * 0.65;
+
+    if (this.locked) {
+      // Currently in violation — STAY locked until user clearly returns
+      if (backToSafe) {
+        this.locked = false;
+        this.violationSince = null;
+        // fall through to "All Clear" below
+      } else {
+        // Still looking away — keep showing warning
+        const dir = this._dir(
+          this.smooth.yaw - this.center.yaw,
+          this.smooth.pitch - this.center.pitch
+        );
+        return this._set('CHEATING_DETECTED', `Looking ${dir} — face the screen!`, 0.95);
+      }
+    } else if (overThreshold) {
+      // Not yet locked — start / continue the sustain timer
+      if (!this.violationSince) this.violationSince = now;
+      if (now - this.violationSince >= SUSTAIN_MS) {
+        this.locked = true;  // LOCK IT — won't clear until backToSafe
+        const dir = this._dir(
+          this.smooth.yaw - this.center.yaw,
+          this.smooth.pitch - this.center.pitch
+        );
+        return this._set('CHEATING_DETECTED', `Looking ${dir} — face the screen!`, 0.95);
+      }
+      return this._set('POSSIBLE_CHEATING', 'Head movement detected', 0.65);
+    }
+
+    // ── All Clear ────────────────────────────────────────────────────────
+    this.violationSince = null;
+    // Very slow drift correction
+    this.center.yaw = this.center.yaw * 0.998 + this.smooth.yaw * 0.002;
+    this.center.pitch = this.center.pitch * 0.998 + this.smooth.pitch * 0.002;
+    return this._set('GENUINE_EXAM', 'Shield Active', 1.0);
+  }
+
+  // ─── Helpers ───────────────────────────────────────────────────────────
+
+  _dir(yaw, pitch) {
+    const l = yaw < -0.15, r = yaw > 0.15;
+    const u = pitch > 0.15, d = pitch < -0.15;
+    if (l && u) return 'upper-left';
+    if (r && u) return 'upper-right';
+    if (l && d) return 'lower-left';
+    if (r && d) return 'lower-right';
+    if (l) return 'left';
+    if (r) return 'right';
+    if (u) return 'up';
+    if (d) return 'down';
+    return 'away';
+  }
+
+  _set(status, reason, confidence) {
+    this.state = { status, reason, confidence, timestamp: Date.now() };
+    return this.state;
+  }
 }
-
-export default ProctorGazeDetector;
-
-/** 
- * EXAMPLE WEB-SOCKET INTEGRATION:
- * 
- * const detector = new ProctorGazeDetector(myVideoElement);
- * await detector.init();
- * detector.start();
- * 
- * setInterval(() => {
- *   const data = detector.getStatus();
- *   if (data.status !== 'GENUINE_EXAM') {
- *     socket.send(JSON.stringify(data));
- *   }
- * }, 5000); // Send audit heartbeat every 5s
- */

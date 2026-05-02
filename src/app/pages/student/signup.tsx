@@ -1,110 +1,161 @@
 import { useState } from "react";
-import { createUserWithEmailAndPassword } from "firebase/auth";
 import { useNavigate } from "react-router";
-import { doc, setDoc } from "firebase/firestore";
-import { auth, db } from "../../services/firebase";
+import { account, ID, databases, APPWRITE_DB_ID } from "../../services/appwrite";
+import { motion } from "framer-motion";
+import { Shield, ArrowRight, User, Mail, Lock, ChevronLeft, Binary, ShieldCheck } from "lucide-react";
 
 export default function Signup() {
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
-  const [loading, setLoading] = useState<boolean>(false);
   const [username, setUsername] = useState<string>("");
+  const [loading, setLoading] = useState<boolean>(false);
   const navigate = useNavigate();
 
-const handleSignup = async (e: React.FormEvent) => {
-  e.preventDefault();
-  setLoading(true);
+  const handleSignup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const userId = ID.unique();
+      await account.create(userId, email, password, username);
+      
+      // Create user profile in Database
+      await databases.createDocument(APPWRITE_DB_ID, 'users', userId, {
+        username: username,
+        email: email,
+        score: 0,
+        id: userId,
+        created_at: new Date().toISOString()
+      });
 
-  try {
-    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-
-    const user = userCredential.user;
-
-    await setDoc(doc(db, "users", user.uid), {
-      email: user.email,
-      createdAt: new Date(),
-      contestsEntered: []
-    });
-
-    alert("Signup successful!");
-    navigate("/student/lobby");
-
-  } catch (error) {
-    if (error instanceof Error) {
-      alert(error.message);
-    } else {
-      alert("Something went wrong!");
+      await account.createEmailPasswordSession(email, password);
+      navigate("/student/lobby");
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "Registration failed");
+    } finally {
+      setLoading(false);
     }
-  } finally {
-    setLoading(false);
-  }
-};
+  };
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 font-sans">
-      <div className="w-full max-w-md p-8 space-y-6 bg-white rounded-2xl shadow-xl border border-gray-100">
-        <div className="text-center">
-          <h2 className="text-3xl font-extrabold text-gray-900">
-            Create Account
-          </h2>
-          <p className="mt-2 text-sm text-gray-500">
-            Join us today! It only takes a minute.
-          </p>
-        </div>
+    <div className="min-h-screen flex flex-col bg-[#000000] text-white selection:bg-[#0099ff]/30 overflow-hidden font-sans">
+      
+      {/* Background Ambience */}
+      <div className="fixed inset-0 z-0 pointer-events-none">
+        <div className="absolute bottom-[-10%] left-[-5%] w-[600px] h-[600px] bg-[#0099ff]/[0.02] blur-[150px] rounded-full" />
+      </div>
 
-        <form className="mt-8 space-y-4" onSubmit={handleSignup}>
-            <div>
-  <label className="block text-sm font-medium text-gray-700 ml-1">
-    Username
-  </label>
-  <input
-    type="text"
-    placeholder="alex_coder"
-    value={username}
-    onChange={(e) => setUsername(e.target.value)}
-    className="mt-1 block w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg"
-    required
-  />
-</div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 ml-1">
-              Email Address
-            </label>
-            <input
-              type="email"
-              placeholder="name@company.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="mt-1 block w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg text-gray-900 focus:ring-blue-500 focus:border-blue-500"
-              required
-            />
+      <div className="relative z-10 flex-1 flex flex-col items-center justify-center p-8">
+        
+        {/* Navigation */}
+        <motion.button 
+          initial={{ opacity: 0, x: -10 }}
+          animate={{ opacity: 1, x: 0 }}
+          onClick={() => navigate("/")}
+          className="absolute top-12 left-12 flex items-center gap-3 text-[#525252] hover:text-white transition-all text-[10px] font-black uppercase tracking-[0.3em] group"
+        >
+          <ChevronLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+          Go Back
+        </motion.button>
+
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.95, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+          className="w-full max-w-xl bg-[#090909] border border-white/5 rounded-[4rem] p-16 shadow-[0_0_100px_rgba(0,0,0,1)] relative overflow-hidden"
+        >
+          <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-transparent via-[#0099ff]/50 to-transparent" />
+          
+          <div className="text-center space-y-10 mb-16">
+            <div className="flex justify-center">
+               <div className="w-24 h-24 bg-white border border-white/10 rounded-[2.5rem] flex items-center justify-center shadow-[0_30px_60px_-15px_rgba(255,255,255,0.2)]">
+                  <User className="w-12 h-12 text-black" />
+               </div>
+            </div>
+            <div className="space-y-4">
+              <div className="inline-flex items-center gap-3 px-5 py-2 rounded-full bg-white/5 border border-white/5 text-[9px] font-black text-[#0099ff] uppercase tracking-[0.4em]">
+                 <Binary className="w-3 h-3" />
+                 Create Your Account
+              </div>
+              <h2 className="text-5xl font-black text-white tracking-[-0.06em] uppercase leading-none">
+                Join <span className="text-[#0099ff]">Now.</span>
+              </h2>
+              <p className="text-[#525252] text-[10px] font-black uppercase tracking-[0.3em]">
+                Sign up to start your journey.
+              </p>
+            </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 ml-1">
-              Password
-            </label>
-            <input
-              type="password"
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="mt-1 block w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg text-gray-900 focus:ring-blue-500 focus:border-blue-500"
-              required
-            />
+          <form className="space-y-6" onSubmit={handleSignup}>
+            <div className="space-y-3">
+              <label className="text-[10px] font-black text-[#2a2a2a] uppercase tracking-[0.4em] ml-2">Username</label>
+              <div className="relative group">
+                <User className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-[#2a2a2a] group-focus-within:text-[#0099ff] transition-colors" />
+                <input
+                  type="text"
+                  placeholder="CHOOSE_A_USERNAME"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  className="w-full pl-16 pr-8 py-5 bg-[#000000] border border-white/5 rounded-3xl text-white placeholder:text-[#2a2a2a] focus:outline-none focus:border-[#0099ff]/50 transition-all font-black text-[11px] uppercase tracking-[0.2em]"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <label className="text-[10px] font-black text-[#2a2a2a] uppercase tracking-[0.4em] ml-2">Email Address</label>
+              <div className="relative group">
+                <Mail className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-[#2a2a2a] group-focus-within:text-[#0099ff] transition-colors" />
+                <input
+                  type="email"
+                  placeholder="YOUR@EMAIL.COM"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full pl-16 pr-8 py-5 bg-[#000000] border border-white/5 rounded-3xl text-white placeholder:text-[#2a2a2a] focus:outline-none focus:border-[#0099ff]/50 transition-all font-black text-[11px] uppercase tracking-[0.2em]"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <label className="text-[10px] font-black text-[#2a2a2a] uppercase tracking-[0.4em] ml-2">Password</label>
+              <div className="relative group">
+                <Lock className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-[#2a2a2a] group-focus-within:text-[#0099ff] transition-colors" />
+                <input
+                  type="password"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full pl-16 pr-8 py-5 bg-[#000000] border border-white/5 rounded-3xl text-white placeholder:text-[#2a2a2a] focus:outline-none focus:border-[#0099ff]/50 transition-all font-black text-[11px] uppercase tracking-[0.2em]"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="pt-4">
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full py-6 px-8 bg-[#0099ff] hover:bg-white text-white hover:text-black rounded-3xl text-[11px] font-black uppercase tracking-[0.3em] shadow-[0_20px_50px_-10px_rgba(0,153,255,0.4)] transition-all duration-500 flex items-center justify-center gap-3 group disabled:opacity-50 active:scale-[0.98]"
+              >
+                {loading ? "Creating Account..." : "Get Started"}
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              </button>
+            </div>
+          </form>
+
+          <div className="mt-12 flex items-start gap-4 p-6 bg-white/[0.02] border border-white/5 rounded-3xl">
+             <ShieldCheck className="w-5 h-5 text-[#0099ff] flex-shrink-0" />
+             <p className="text-[9px] text-[#525252] font-black uppercase tracking-[0.2em] leading-relaxed">
+               We use AI monitoring to keep contests fair. Please play by the rules.
+             </p>
           </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full flex justify-center py-3 px-4 rounded-lg text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
-          >
-            {loading ? "Creating Account..." : "Sign Up"}
-          </button>
-        </form>
-
-        <p className="text-center text-xs text-gray-400">
-          By signing up, you agree to our Terms & Privacy Policy.
-        </p>
+          <div className="mt-12 text-center">
+            <p className="text-[10px] font-black text-[#525252] uppercase tracking-[0.4em]">
+                Sign In
+            </p>
+          </div>
+        </motion.div>
       </div>
     </div>
   );

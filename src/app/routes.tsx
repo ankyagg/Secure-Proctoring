@@ -21,6 +21,7 @@ import SubmissionsMonitoring from "./pages/admin/SubmissionsMonitoring";
 import AntiCheatMonitoring from "./pages/admin/AntiCheatMonitoring";
 import AddQuestion from "./pages/admin/AddQuestion";
 import AddContest from "./pages/admin/AddContest";
+import AdminProtectedRoute from "./pages/admin/AdminProtectedRoute";
 
 export const router = createBrowserRouter([
 
@@ -52,21 +53,19 @@ export const router = createBrowserRouter([
     path: "/admin",
     element: <AdminLayout />,
     children: [
-
-      { index: true, element: <AdminDashboard /> },
-
-      { path: "contests", element: <ContestManagement /> },
-
-      { path: "questions", element: <QuestionManagement /> },
-
-      { path: "submissions", element: <SubmissionsMonitoring /> },
-
-      { path: "anticheat", element: <AntiCheatMonitoring /> },
-
-      { path: "questions/new", element: <AddQuestion /> },
-
-      { path: "contests/new", element: <AddContest /> }
-
+      {
+        path: "",
+        element: <AdminProtectedRoute />,
+        children: [
+          { index: true, element: <AdminDashboard /> },
+          { path: "contests", element: <ContestManagement /> },
+          { path: "questions", element: <QuestionManagement /> },
+          { path: "submissions", element: <SubmissionsMonitoring /> },
+          { path: "anticheat", element: <AntiCheatMonitoring /> },
+          { path: "questions/new", element: <AddQuestion /> },
+          { path: "contests/new", element: <AddContest /> }
+        ]
+      }
     ]
   }
 

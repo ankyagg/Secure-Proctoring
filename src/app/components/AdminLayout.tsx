@@ -1,7 +1,6 @@
-import { Outlet, useLocation, Link } from "react-router";
-import { useState } from "react";
+import { Outlet, useLocation, Link, useNavigate } from "react-router";
+import { useState, useEffect } from "react";
 import {
-  Code2,
   LayoutDashboard,
   Trophy,
   HelpCircle,
@@ -11,77 +10,166 @@ import {
   ChevronRight,
   Bell,
   Settings,
+  Sun,
+  Moon,
+  Command,
+  BookOpen,
+  BarChart3,
+  Menu,
+  ChevronLeft
 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
-const navItems = [
-  { path: "/admin", label: "Overview", icon: LayoutDashboard, exact: true },
-  { path: "/admin/contests", label: "Contests", icon: Trophy },
-  { path: "/admin/questions", label: "Questions", icon: HelpCircle },
-  { path: "/admin/submissions", label: "Submissions", icon: Send },
-  { path: "/admin/anticheat", label: "Anti-Cheat", icon: ShieldAlert },
+const menuItems = [
+  { name: "Dashboard", path: "/admin", icon: LayoutDashboard },
+  { name: "Questions", path: "/admin/questions", icon: BookOpen },
+  { name: "Contests", path: "/admin/contests", icon: Trophy },
+  { name: "Anti-Cheat", path: "/admin/anticheat", icon: ShieldAlert },
+  { name: "Submissions", path: "/admin/submissions", icon: BarChart3 },
 ];
 
 export default function AdminLayout() {
+  const [isCollapsed, setIsCollapsed] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const [theme, setTheme] = useState(() => localStorage.getItem("theme") || "dark");
 
-  const isActive = (path: string, exact = false) => {
-    if (exact) return location.pathname === path;
-    return location.pathname.startsWith(path);
-  };
+  useEffect(() => {
+    if (theme === "dark") {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+    localStorage.setItem("theme", theme);
+  }, [theme]);
+
+  const toggleTheme = () => setTheme(t => t === "dark" ? "light" : "dark");
 
   return (
-    <div className="min-h-screen bg-slate-50 flex">
-
+    <div className="flex h-screen bg-[#000000] text-white font-sans selection:bg-[#0099ff]/30 overflow-hidden">
+      
       {/* Sidebar */}
-      <aside className="w-60 bg-slate-900 flex flex-col flex-shrink-0 sticky top-0 h-screen">
-
-        <div className="px-5 py-4 border-b border-slate-700/60">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
-              <Code2 className="w-5 h-5 text-white" />
+      <motion.aside
+        initial={false}
+        animate={{ width: isCollapsed ? 100 : 280 }}
+        className="relative flex flex-col bg-[#090909] border-r border-white/5 z-50 shadow-[20px_0_50px_rgba(0,0,0,0.5)] transition-all duration-500 ease-in-out"
+      >
+        {/* Brand Section */}
+        <div className="h-24 flex items-center px-8 border-b border-white/5">
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 bg-[#0099ff] rounded-xl flex items-center justify-center shadow-[0_0_20px_rgba(0,153,255,0.4)]">
+              <Command className="w-5 h-5 text-white" />
             </div>
-            <div>
-              <div className="text-white text-sm font-semibold">CodeArena</div>
-              <div className="text-slate-400 text-xs">Admin Panel</div>
-            </div>
+            {!isCollapsed && (
+              <motion.div
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="flex flex-col"
+              >
+                <span className="text-lg font-black tracking-[-0.05em] uppercase leading-none">Proctor</span>
+                <span className="text-[9px] font-bold text-[#525252] uppercase tracking-[0.3em] mt-1.5">Admin v4.0</span>
+              </motion.div>
+            )}
           </div>
         </div>
 
-        <nav className="flex-1 px-3 py-4 space-y-0.5">
-          {navItems.map(({ path, label, icon: Icon, exact }) => {
-            const active = isActive(path, exact);
+        {/* Navigation */}
+        <nav className="flex-1 py-8 px-4 space-y-2 overflow-y-auto custom-scrollbar">
+          {menuItems.map((item) => {
+            const isActive = location.pathname === item.path;
+            const Icon = item.icon;
             return (
               <Link
-                key={path}
-                to={path}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all ${
-                  active
-                    ? "bg-blue-600 text-white"
-                    : "text-slate-400 hover:text-white hover:bg-slate-800"
+                key={item.path}
+                to={item.path}
+                className={`flex items-center gap-3 px-4 py-3.5 rounded-xl text-[11px] font-black uppercase tracking-[0.2em] transition-all group ${
+                  isActive
+                    ? "bg-[#0099ff] text-white shadow-[0_10px_20px_rgba(0,153,255,0.3)]"
+                    : "text-[#525252] hover:text-white hover:bg-white/5"
                 }`}
               >
-                <Icon className="w-4 h-4" />
-                <span className="flex-1">{label}</span>
-                {active && <ChevronRight className="w-3 h-3 opacity-70" />}
+                <Icon className={`w-4 h-4 transition-transform group-hover:scale-110 ${isActive ? 'text-white' : 'text-[#525252]'}`} />
+                {!isCollapsed && (
+                  <motion.span 
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="flex-1"
+                  >
+                    {item.name}
+                  </motion.span>
+                )}
+                {isActive && !isCollapsed && <ChevronRight className="w-3 h-3 opacity-50" />}
               </Link>
             );
           })}
         </nav>
+        
+        {/* Toggle Collapse */}
+        <button 
+          onClick={() => setIsCollapsed(!isCollapsed)}
+          className="absolute -right-3 top-28 w-6 h-6 bg-[#0099ff] rounded-full flex items-center justify-center border border-black shadow-xl z-50 text-white hover:scale-110 transition-all"
+        >
+          {isCollapsed ? <ChevronRight className="w-3 h-3" /> : <ChevronLeft className="w-3 h-3" />}
+        </button>
 
-      </aside>
+        <div className="px-4 py-6 border-t border-white/5">
+            <Link
+                to="/"
+                className="flex items-center gap-3 px-4 py-3.5 rounded-xl text-[11px] font-black uppercase tracking-[0.2em] text-[#525252] hover:text-white hover:bg-white/5 transition-all"
+              >
+                <LogOut className="w-4 h-4" />
+                {!isCollapsed && <span>Exit Admin</span>}
+              </Link>
+        </div>
 
-      {/* Main */}
-      <div className="flex-1 flex flex-col min-w-0">
-        <header className="bg-white border-b border-slate-200 px-6 py-3 flex items-center justify-between h-14">
-          <div className="text-slate-400 text-xs">CodeArena Admin</div>
-          <div className="flex items-center gap-2">
-            <Bell className="w-4 h-4 text-slate-500" />
-            <Settings className="w-4 h-4 text-slate-500" />
+      </motion.aside>
+
+      {/* Main Area */}
+      <div className="flex-1 flex flex-col min-w-0 relative">
+        <header className="bg-[#0a0a0a] border-b border-white/5 px-10 flex items-center justify-between h-24 z-40">
+          <div className="flex flex-col">
+            <h1 className="text-2xl font-black text-white tracking-[-0.05em] uppercase leading-none">
+              {menuItems.find(item => item.path === location.pathname)?.name || 'Admin Core'}
+            </h1>
+            <p className="text-[9px] font-bold text-[#525252] uppercase tracking-[0.3em] mt-2">Administrative Control Panel</p>
+          </div>
+          
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#0099ff]/5 border border-[#0099ff]/10">
+               <div className="w-1.5 h-1.5 bg-[#0099ff] rounded-full animate-pulse shadow-[0_0_10px_#0099ff]" />
+               <span className="text-[9px] font-black text-[#0099ff] uppercase tracking-[0.3em]">System Online</span>
+            </div>
+
+            <div className="flex items-center gap-3 bg-white/5 border border-white/5 p-1.5 rounded-2xl">
+              <button className="p-2.5 rounded-xl hover:bg-white/5 text-[#525252] hover:text-white transition-all">
+                <Bell className="w-4 h-4" />
+              </button>
+              <button onClick={toggleTheme} className="p-2.5 rounded-xl hover:bg-white/5 text-[#525252] hover:text-white transition-all">
+                {theme === 'light' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
+              </button>
+              <button className="p-2.5 rounded-xl hover:bg-white/5 text-[#525252] hover:text-white transition-all">
+                <Settings className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="h-10 w-px bg-white/5" />
+
+            <div className="flex items-center gap-4">
+              <div className="flex flex-col items-end">
+                <span className="text-[10px] font-black text-white uppercase tracking-tighter">ANIKET WALANJ</span>
+                 <span className="text-[8px] font-bold text-[#0099ff] uppercase tracking-[0.2em]">Administrator</span>
+              </div>
+              <div className="w-10 h-10 rounded-2xl bg-white border border-white/10 flex items-center justify-center shadow-2xl">
+                <span className="font-black text-black text-[10px]">AW</span>
+              </div>
+            </div>
           </div>
         </header>
 
-        <main className="flex-1 overflow-auto">
-          <Outlet />
+        <main className="flex-1 overflow-auto relative custom-scrollbar bg-[#0a0a0a]">
+          <div className="p-10">
+            <Outlet />
+          </div>
         </main>
       </div>
     </div>

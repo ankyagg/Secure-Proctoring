@@ -1,11 +1,12 @@
-import { useState } from "react";
-import { useSearchParams } from "react-router";
-import { ArrowLeft, Upload } from "lucide-react";
-import { db } from "../../services/firebase";
-import { collection, addDoc, doc, updateDoc, serverTimestamp } from "firebase/firestore";
+import { useState, useEffect } from "react";
+import { useSearchParams, useNavigate } from "react-router";
+import { ArrowLeft, Upload, Save, X, Info } from "lucide-react";
+import { ID } from "appwrite";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function AddQuestion() {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const isEdit = searchParams.get("edit") === "true";
   const editId = searchParams.get("id") ?? null;
 
@@ -22,6 +23,7 @@ export default function AddQuestion() {
     sampleInput: "",
     sampleOutput: "",
     explanation: "",
+    points: 100,
   });
 
   const [boilerplates, setBoilerplates] = useState<Record<string, string>>({
@@ -35,6 +37,38 @@ export default function AddQuestion() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (isEdit && editId) {
+      import("../../services/appwrite").then(({ databases, APPWRITE_DB_ID }) => {
+        databases.getDocument(APPWRITE_DB_ID, "questions", editId).then((doc) => {
+          setForm({
+            title: doc.title || "",
+            difficulty: doc.difficulty || "Medium",
+            category: doc.category || "",
+            timeLimit: doc.timeLimit || "2s",
+            memoryLimit: doc.memoryLimit || "256MB",
+            statement: doc.statement || "",
+            constraints: doc.constraints || "",
+            inputFormat: doc.inputFormat || "",
+            outputFormat: doc.outputFormat || "",
+            sampleInput: doc.sampleInput || "",
+            sampleOutput: doc.sampleOutput || "",
+            explanation: doc.explanation || "",
+            points: doc.points || 100,
+          });
+          if (doc.boilerplates) {
+            try {
+              setBoilerplates(JSON.parse(doc.boilerplates));
+            } catch(e){}
+          }
+        }).catch(err => {
+          console.error("Failed to fetch document for editing:", err);
+          setError("Failed to fetch existing question data.");
+        });
+      });
+    }
+  }, [isEdit, editId]);
+
   const handleSave = async () => {
     if (!form.title.trim()) {
       setError("Problem title is required.");
@@ -47,24 +81,26 @@ export default function AddQuestion() {
 
     const payload = {
       ...form,
-      boilerplates,
-      updatedAt: serverTimestamp(),
+      points: Number(form.points),
+      boilerplates: JSON.stringify(boilerplates),
+      updatedAt: new Date().toISOString(),
     };
 
     try {
+      const { databases, APPWRITE_DB_ID } = await import("../../services/appwrite");
       if (isEdit && editId) {
-        await updateDoc(doc(db, "questions", editId), payload);
+        await databases.updateDocument(APPWRITE_DB_ID, "questions", editId, payload);
       } else {
-        await addDoc(collection(db, "questions"), {
+        await databases.createDocument(APPWRITE_DB_ID, "questions", ID.unique(), {
           ...payload,
-          createdAt: serverTimestamp(),
+          createdAt: new Date().toISOString(),
         });
       }
       setSaved(true);
-      setTimeout(() => window.close(), 1200);
+      setTimeout(() => navigate("/admin/questions"), 1200);
     } catch (err: any) {
-      console.error("Firebase error:", err);
-      setError("Failed to save question. Check your Firebase config and rules.");
+      console.error("Appwrite error:", err);
+      setError("Failed to save question. Check your Appwrite config and rules.");
     } finally {
       setSaving(false);
     }
@@ -77,289 +113,314 @@ export default function AddQuestion() {
     rows: number = 3,
     mono: boolean = false
   ) => (
-    <div>
-      <label className="block text-sm text-slate-600 mb-1.5" style={{ fontWeight: 500 }}>
+    <div className="space-y-2">
+      <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-[#525252]">
         {label}
       </label>
       <textarea
         value={form[key]}
         onChange={(e) => setForm({ ...form, [key]: e.target.value })}
         rows={rows}
-        className={`w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm outline-none focus:border-blue-500 transition-all resize-none ${mono ? "text-xs" : ""}`}
-        style={mono ? { fontFamily: "monospace" } : {}}
+        className={`w-full px-5 py-4 bg-[#090909] border border-white/5 rounded-2xl text-sm font-bold tracking-tight text-white outline-none focus:border-[#0099ff]/50 focus:ring-4 focus:ring-[#0099ff]/5 transition-all resize-none placeholder:text-[#333] ${mono ? "font-mono text-xs" : ""}`}
         placeholder={placeholder}
       />
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-[#000000] text-white font-sans selection:bg-[#0099ff]/30">
       {/* Top bar */}
-      <div className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between sticky top-0 z-10">
-        <div className="flex items-center gap-3">
+      <div className="bg-[#000000]/80 backdrop-blur-xl border-b border-white/5 px-8 py-6 flex items-center justify-between sticky top-0 z-20">
+        <div className="flex items-center gap-6">
           <button
-            onClick={() => window.close()}
-            className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+            onClick={() => navigate("/admin/questions")}
+            className="p-3 text-[#525252] hover:text-white hover:bg-white/5 rounded-2xl transition-all"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
-          <h1 className="text-slate-900 text-lg" style={{ fontWeight: 600 }}>
-            {isEdit ? "Edit Question" : "Add New Question"}
-          </h1>
+          <div>
+            <h1 className="text-3xl font-black tracking-[-0.05em] uppercase">
+              {isEdit ? "Edit" : "New"} <span className="text-[#0099ff]">Question</span>
+            </h1>
+          </div>
         </div>
-        <div className="flex gap-3">
+        <div className="flex gap-4">
           <button
-            onClick={() => window.close()}
-            className="px-5 py-2.5 border border-slate-200 text-slate-700 text-sm rounded-lg hover:bg-slate-50 transition-colors"
+            onClick={() => navigate("/admin/questions")}
+            className="px-8 py-3.5 border border-white/5 text-[#a6a6a6] text-[10px] font-black uppercase tracking-[0.2em] rounded-full hover:bg-white/5 transition-all"
           >
-            Cancel
+            Discard
           </button>
           <button
             onClick={handleSave}
             disabled={saving || saved}
-            className="px-5 py-2.5 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-60"
-            style={{ fontWeight: 500 }}
+            className="px-8 py-3.5 bg-[#0099ff] text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-full hover:scale-105 active:scale-95 transition-all shadow-[0_0_30px_rgba(0,153,255,0.2)] disabled:opacity-50"
           >
-            {saved ? "Saved ✓" : saving ? "Saving…" : isEdit ? "Save Changes" : "Add Question"}
+            {saved ? "Saved ✓" : saving ? "Saving…" : isEdit ? "Save Changes" : "Create Question"}
           </button>
         </div>
       </div>
 
-      {/* Error banner */}
-      {error && (
-        <div className="max-w-3xl mx-auto mt-4 px-6">
-          <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-4 py-3">
-            {error}
-          </div>
-        </div>
-      )}
+      <div className="max-w-4xl mx-auto py-12 px-8">
+        {/* Error banner */}
+        <AnimatePresence>
+          {error && (
+            <motion.div 
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="mb-8 bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-black uppercase tracking-widest rounded-2xl px-6 py-4 flex items-center gap-3"
+            >
+              <X className="w-4 h-4" />
+              {error}
+            </motion.div>
+          )}
+        </AnimatePresence>
 
-      {/* Tabs */}
-      <div className="max-w-3xl mx-auto pt-6 px-6">
-        <div className="flex gap-1 border-b border-slate-200">
+        {/* Tabs */}
+        <div className="flex gap-2 p-1.5 bg-[#090909] border border-white/5 rounded-3xl mb-12">
           {(["basic", "statement", "boilerplate"] as const).map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`px-4 py-2.5 text-sm capitalize rounded-t-lg transition-colors -mb-px border-b-2 ${
+              className={`flex-1 py-3.5 text-[10px] font-black uppercase tracking-[0.2em] rounded-2xl transition-all ${
                 activeTab === tab
-                  ? "border-blue-600 text-blue-700 bg-blue-50/50"
-                  : "border-transparent text-slate-400 hover:text-slate-600"
+                  ? "bg-[#0099ff] text-white shadow-[0_0_20px_rgba(0,153,255,0.3)]"
+                  : "text-[#525252] hover:text-[#a6a6a6] hover:bg-white/5"
               }`}
-              style={{ fontWeight: activeTab === tab ? 500 : 400 }}
             >
-              {tab === "boilerplate" ? "Boilerplate" : tab.charAt(0).toUpperCase() + tab.slice(1)}
+              {tab}
             </button>
           ))}
         </div>
-      </div>
 
-      {/* Form content */}
-      <div className="max-w-3xl mx-auto py-6 px-6 space-y-6">
+        {/* Form content */}
+        <div className="space-y-12">
 
-        {/* ── BASIC TAB ── */}
-        {activeTab === "basic" && (
-          <div className="bg-white rounded-2xl border border-slate-200 p-6 space-y-5">
-            <h2 className="text-slate-800 text-base" style={{ fontWeight: 600 }}>
-              Basic Information
-            </h2>
+          {/* ── BASIC TAB ── */}
+          {activeTab === "basic" && (
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="space-y-10"
+            >
+              <div className="bg-[#090909] border border-white/5 rounded-[2.5rem] p-10 space-y-8 shadow-2xl">
+                <div className="flex items-center gap-3 mb-4">
+                  <Info className="w-5 h-5 text-[#0099ff]" />
+                  <h2 className="text-xl font-black tracking-[-0.03em] uppercase">Basic Details</h2>
+                </div>
 
-            <div>
-              <label className="block text-sm text-slate-600 mb-1.5" style={{ fontWeight: 500 }}>
-                Problem Title <span className="text-red-500">*</span>
-              </label>
-              <input
-                value={form.title}
-                onChange={(e) => setForm({ ...form, title: e.target.value })}
-                className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all"
-                placeholder="e.g. Two Sum"
-              />
-            </div>
+                <div className="space-y-2">
+                  <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-[#525252]">
+                    Problem Title <span className="text-[#0099ff]">*</span>
+                  </label>
+                  <input
+                    value={form.title}
+                    onChange={(e) => setForm({ ...form, title: e.target.value })}
+                    className="w-full px-6 py-4 bg-[#000000] border border-white/5 rounded-2xl text-sm font-bold tracking-tight text-white outline-none focus:border-[#0099ff]/50 focus:ring-4 focus:ring-[#0099ff]/5 transition-all placeholder:text-[#333]"
+                    placeholder="e.g. Array Summation"
+                  />
+                </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm text-slate-600 mb-1.5" style={{ fontWeight: 500 }}>Difficulty</label>
-                <select
-                  value={form.difficulty}
-                  onChange={(e) => setForm({ ...form, difficulty: e.target.value })}
-                  className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm outline-none focus:border-blue-500 transition-all"
-                >
-                  <option>Easy</option>
-                  <option>Medium</option>
-                  <option>Hard</option>
-                </select>
+                <div className="grid grid-cols-2 gap-8">
+                  <div className="space-y-2">
+                    <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-[#525252]">Difficulty</label>
+                    <select
+                      value={form.difficulty}
+                      onChange={(e) => setForm({ ...form, difficulty: e.target.value })}
+                      className="w-full px-6 py-4 bg-[#000000] border border-white/5 rounded-2xl text-sm font-bold tracking-tight text-white outline-none focus:border-[#0099ff]/50 transition-all appearance-none cursor-pointer"
+                    >
+                      <option>Easy</option>
+                      <option>Medium</option>
+                      <option>Hard</option>
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-[#525252]">Category</label>
+                    <input
+                      value={form.category}
+                      onChange={(e) => setForm({ ...form, category: e.target.value })}
+                      className="w-full px-6 py-4 bg-[#000000] border border-white/5 rounded-2xl text-sm font-bold tracking-tight text-white outline-none focus:border-[#0099ff]/50 transition-all placeholder:text-[#333]"
+                      placeholder="e.g. Dynamic Programming"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-8">
+                  <div className="space-y-2">
+                    <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-[#525252]">Time Limit</label>
+                    <input
+                      value={form.timeLimit}
+                      onChange={(e) => setForm({ ...form, timeLimit: e.target.value })}
+                      className="w-full px-6 py-4 bg-[#000000] border border-white/5 rounded-2xl text-sm font-bold tracking-tight text-white outline-none focus:border-[#0099ff]/50 transition-all placeholder:text-[#333]"
+                      placeholder="e.g. 2s"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-[#525252]">Memory Limit</label>
+                    <input
+                      value={form.memoryLimit}
+                      onChange={(e) => setForm({ ...form, memoryLimit: e.target.value })}
+                      className="w-full px-6 py-4 bg-[#000000] border border-white/5 rounded-2xl text-sm font-bold tracking-tight text-white outline-none focus:border-[#0099ff]/50 transition-all placeholder:text-[#333]"
+                      placeholder="e.g. 256MB"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-[#525252]">Points</label>
+                    <input
+                      type="number"
+                      value={form.points}
+                      onChange={(e) => setForm({ ...form, points: Number(e.target.value) })}
+                      className="w-full px-6 py-4 bg-[#000000] border border-white/5 rounded-2xl text-sm font-bold tracking-tight text-white outline-none focus:border-[#0099ff]/50 transition-all placeholder:text-[#333]"
+                      placeholder="e.g. 100"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-[#525252]">Constraints</label>
+                  <textarea
+                    value={form.constraints}
+                    onChange={(e) => setForm({ ...form, constraints: e.target.value })}
+                    className="w-full px-6 py-4 bg-[#000000] border border-white/5 rounded-2xl text-sm font-bold tracking-tight text-white outline-none focus:border-[#0099ff]/50 transition-all resize-none h-32 placeholder:text-[#333]"
+                    placeholder={"One constraint per line, e.g.:\n1 ≤ n ≤ 10^5\n-10^9 ≤ a[i] ≤ 10^9"}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-[#525252]">Test Cases</label>
+                  <div className="border-2 border-dashed border-white/5 rounded-3xl p-12 text-center hover:border-[#0099ff]/30 transition-all cursor-pointer bg-[#000000]">
+                    <Upload className="w-10 h-10 text-[#333] mx-auto mb-4 group-hover:text-[#0099ff] transition-colors" />
+                    <p className="text-[#a6a6a6] text-[10px] font-black uppercase tracking-[0.2em]">Drop .zip or browse</p>
+                    <p className="text-[#333] text-[9px] font-bold uppercase tracking-[0.1em] mt-2">Required: input.txt + expected_output.txt</p>
+                  </div>
+                </div>
               </div>
-              <div>
-                <label className="block text-sm text-slate-600 mb-1.5" style={{ fontWeight: 500 }}>Category</label>
-                <input
-                  value={form.category}
-                  onChange={(e) => setForm({ ...form, category: e.target.value })}
-                  className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm outline-none focus:border-blue-500 transition-all"
-                  placeholder="e.g. Hash Map"
-                />
-              </div>
-            </div>
+            </motion.div>
+          )}
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm text-slate-600 mb-1.5" style={{ fontWeight: 500 }}>Time Limit</label>
-                <input
-                  value={form.timeLimit}
-                  onChange={(e) => setForm({ ...form, timeLimit: e.target.value })}
-                  className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm outline-none focus:border-blue-500 transition-all"
-                  placeholder="e.g. 2s"
-                />
-              </div>
-              <div>
-                <label className="block text-sm text-slate-600 mb-1.5" style={{ fontWeight: 500 }}>Memory Limit</label>
-                <input
-                  value={form.memoryLimit}
-                  onChange={(e) => setForm({ ...form, memoryLimit: e.target.value })}
-                  className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm outline-none focus:border-blue-500 transition-all"
-                  placeholder="e.g. 256MB"
-                />
-              </div>
-            </div>
+          {/* ── STATEMENT TAB ── */}
+          {activeTab === "statement" && (
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="space-y-10"
+            >
+              <div className="bg-[#090909] border border-white/5 rounded-[2.5rem] p-10 space-y-10 shadow-2xl">
+                <div className="flex items-center gap-3 mb-4">
+                  <FileText className="w-5 h-5 text-[#0099ff]" />
+                  <h2 className="text-xl font-black tracking-[-0.03em] uppercase">Problem Statement</h2>
+                </div>
 
-            <div>
-              <label className="block text-sm text-slate-600 mb-1.5" style={{ fontWeight: 500 }}>Constraints</label>
-              <textarea
-                value={form.constraints}
-                onChange={(e) => setForm({ ...form, constraints: e.target.value })}
-                className="w-full px-3 py-2.5 border border-slate-200 rounded-lg text-sm outline-none focus:border-blue-500 transition-all resize-none h-28"
-                placeholder={"One constraint per line, e.g.:\n1 ≤ n ≤ 10^5\n-10^9 ≤ a[i] ≤ 10^9"}
-              />
-            </div>
+                {inputField(
+                  "Description",
+                  "statement",
+                  "Define the core algorithm objective and scenario...",
+                  10
+                )}
 
-            <div>
-              <label className="block text-sm text-slate-600 mb-1.5" style={{ fontWeight: 500 }}>Test Cases</label>
-              <div className="border-2 border-dashed border-slate-200 rounded-xl p-8 text-center hover:border-blue-300 transition-colors cursor-pointer">
-                <Upload className="w-7 h-7 text-slate-300 mx-auto mb-2" />
-                <p className="text-slate-400 text-sm">Drop .zip file or click to upload</p>
-                <p className="text-slate-300 text-xs mt-1">Each test case: input.txt + expected_output.txt</p>
-              </div>
-            </div>
-          </div>
-        )}
+                <div className="grid grid-cols-2 gap-8">
+                  {inputField(
+                    "Input Format",
+                    "inputFormat",
+                    "Define how the data is fed to stdin...",
+                    5
+                  )}
+                  {inputField(
+                    "Output Format",
+                    "outputFormat",
+                    "Define the required stdout format...",
+                    5
+                  )}
+                </div>
 
-        {/* ── STATEMENT TAB ── */}
-        {activeTab === "statement" && (
-          <div className="bg-white rounded-2xl border border-slate-200 p-6 space-y-5">
-            <h2 className="text-slate-800 text-base" style={{ fontWeight: 600 }}>
-              Problem Statement
-            </h2>
+                <div className="grid grid-cols-2 gap-8">
+                  <div className="space-y-2">
+                    <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-[#525252]">
+                      Sample Input
+                    </label>
+                    <textarea
+                      value={form.sampleInput}
+                      onChange={(e) => setForm({ ...form, sampleInput: e.target.value })}
+                      rows={5}
+                      className="w-full px-5 py-4 bg-[#000000] text-emerald-400 border border-white/5 rounded-2xl text-xs font-mono outline-none resize-none placeholder:text-[#222]"
+                      placeholder={"4 9\n2 7 11 15"}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-[#525252]">
+                      Sample Output
+                    </label>
+                    <textarea
+                      value={form.sampleOutput}
+                      onChange={(e) => setForm({ ...form, sampleOutput: e.target.value })}
+                      rows={5}
+                      className="w-full px-5 py-4 bg-[#000000] text-emerald-400 border border-white/5 rounded-2xl text-xs font-mono outline-none resize-none placeholder:text-[#222]"
+                      placeholder={"0 1"}
+                    />
+                  </div>
+                </div>
 
-            {inputField(
-              "Statement",
-              "statement",
-              "Write the full problem statement here...",
-              8
-            )}
+                {inputField(
+                  "Explanation",
+                  "explanation",
+                  "Describe why the sample output is correct based on the input...",
+                  4
+                )}
 
-            {/* Input / Output format side by side */}
-            <div className="grid grid-cols-2 gap-4">
-              {inputField(
-                "Input Format",
-                "inputFormat",
-                "e.g.\nFirst line: n and target\nSecond line: n space-separated integers",
-                4
-              )}
-              {inputField(
-                "Output Format",
-                "outputFormat",
-                "e.g.\nPrint two space-separated integers — the 0-based indices",
-                4
-              )}
-            </div>
-
-            {/* Sample Input / Output side by side */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm text-slate-600 mb-1.5" style={{ fontWeight: 500 }}>
-                  Sample Input
-                </label>
-                <textarea
-                  value={form.sampleInput}
-                  onChange={(e) => setForm({ ...form, sampleInput: e.target.value })}
-                  rows={4}
-                  className="w-full px-3 py-2.5 bg-slate-900 text-green-400 border border-slate-700 rounded-lg text-xs outline-none resize-none"
-                  style={{ fontFamily: "monospace" }}
-                  placeholder={"4 9\n2 7 11 15"}
-                />
-              </div>
-              <div>
-                <label className="block text-sm text-slate-600 mb-1.5" style={{ fontWeight: 500 }}>
-                  Sample Output
-                </label>
-                <textarea
-                  value={form.sampleOutput}
-                  onChange={(e) => setForm({ ...form, sampleOutput: e.target.value })}
-                  rows={4}
-                  className="w-full px-3 py-2.5 bg-slate-900 text-green-400 border border-slate-700 rounded-lg text-xs outline-none resize-none"
-                  style={{ fontFamily: "monospace" }}
-                  placeholder={"0 1"}
-                />
-              </div>
-            </div>
-
-            {inputField(
-              "Explanation",
-              "explanation",
-              "e.g. nums[0] + nums[1] = 2 + 7 = 9, so return [0, 1].",
-              3
-            )}
-
-            <p className="text-slate-400 text-xs">
-              Use markdown syntax in the statement: **bold**, `inline code`, newlines for paragraphs
-            </p>
-          </div>
-        )}
-
-        {/* ── BOILERPLATE TAB ── */}
-        {activeTab === "boilerplate" && (
-          <div className="bg-white rounded-2xl border border-slate-200 p-6 space-y-5">
-            <div>
-              <h2 className="text-slate-800 text-base" style={{ fontWeight: 600 }}>
-                Boilerplate Code
-              </h2>
-              <p className="text-slate-500 text-sm mt-1">
-                Provide starting code templates for each supported language. The{" "}
-                <span className="font-medium text-slate-700">input format</span> you defined
-                above should be handled by the boilerplate's{" "}
-                <code className="text-xs bg-slate-100 px-1 py-0.5 rounded">main()</code> — Wandbox
-                will feed <code className="text-xs bg-slate-100 px-1 py-0.5 rounded">sampleInput</code>{" "}
-                directly as stdin when judging.
-              </p>
-            </div>
-
-            {/* Input format reminder */}
-            {form.inputFormat && (
-              <div className="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3">
-                <p className="text-blue-700 text-xs" style={{ fontWeight: 500 }}>
-                  📋 Input Format (for reference while writing boilerplate)
+                <p className="text-[#333] text-[9px] font-black uppercase tracking-[0.2em]">
+                  Markdown rendering enabled for description and explanations.
                 </p>
-                <p className="text-blue-600 text-xs mt-1 whitespace-pre-line">{form.inputFormat}</p>
               </div>
-            )}
+            </motion.div>
+          )}
 
-            {(["C++", "Java", "Python"] as const).map((lang) => (
-              <div key={lang}>
-                <label className="block text-sm text-slate-600 mb-1.5" style={{ fontWeight: 500 }}>
-                  {lang} Boilerplate
-                </label>
-                <textarea
-                  value={boilerplates[lang]}
-                  onChange={(e) =>
-                    setBoilerplates((prev) => ({ ...prev, [lang]: e.target.value }))
-                  }
-                  className="w-full px-3 py-2.5 bg-slate-900 text-slate-100 border border-slate-700 rounded-lg text-xs outline-none resize-none h-48"
-                  style={{ fontFamily: "monospace" }}
-                  placeholder={`${lang} starter code...`}
-                />
+          {/* ── BOILERPLATE TAB ── */}
+          {activeTab === "boilerplate" && (
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="space-y-10"
+            >
+              <div className="bg-[#090909] border border-white/5 rounded-[2.5rem] p-10 space-y-10 shadow-2xl">
+                <div className="flex items-center gap-3 mb-4">
+                  <Save className="w-5 h-5 text-[#0099ff]" />
+                  <h2 className="text-xl font-black tracking-[-0.03em] uppercase">Starter Code</h2>
+                </div>
+
+                {/* Input format reminder */}
+                {form.inputFormat && (
+                  <div className="bg-[#0099ff]/5 border border-[#0099ff]/10 rounded-2xl px-6 py-5">
+                    <p className="text-[#0099ff] text-[10px] font-black uppercase tracking-[0.2em] mb-2 flex items-center gap-2">
+                      <ArrowLeft className="w-3 h-3 rotate-180" /> Input Reference
+                    </p>
+                    <p className="text-[#a6a6a6] text-xs font-medium leading-relaxed whitespace-pre-line">{form.inputFormat}</p>
+                  </div>
+                )}
+
+                <div className="space-y-12">
+                  {(["C++", "Java", "Python"] as const).map((lang) => (
+                    <div key={lang} className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-[#525252]">
+                          {lang} Starter Code
+                        </label>
+                      </div>
+                      <textarea
+                        value={boilerplates[lang]}
+                        onChange={(e) =>
+                          setBoilerplates((prev) => ({ ...prev, [lang]: e.target.value }))
+                        }
+                        className="w-full px-6 py-6 bg-[#000000] text-blue-100 border border-white/5 rounded-3xl text-xs font-mono outline-none resize-none h-64 focus:border-[#0099ff]/30 transition-all shadow-inner"
+                        placeholder={`${lang} starter code...`}
+                      />
+                    </div>
+                  ))}
+                </div>
               </div>
-            ))}
-          </div>
-        )}
+            </motion.div>
+          )}
+        </div>
       </div>
     </div>
   );
