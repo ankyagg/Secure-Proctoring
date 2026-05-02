@@ -135,10 +135,20 @@ export default function AddQuestion() {
     setError(null);
 
     const payload = {
-      ...form,
+      title: form.title,
+      difficulty: form.difficulty,
       points: Number(form.points),
+      statement: form.statement,
+      inputFormat: form.inputFormat,
+      outputFormat: form.outputFormat,
+      timeLimit: form.timeLimit,
+      memoryLimit: form.memoryLimit,
+      sampleInput: form.sampleInput,
+      sampleOutput: form.sampleOutput,
+      constraints: form.constraints,
+      explanation: form.explanation,
+      category: form.category,
       boilerplates: JSON.stringify(boilerplates),
-      updatedAt: new Date().toISOString(),
     };
 
     try {
@@ -150,6 +160,7 @@ export default function AddQuestion() {
         const ref = await databases.createDocument(APPWRITE_DB_ID, "questions", ID.unique(), {
           ...payload,
           createdAt: new Date().toISOString(),
+          created_at: new Date().toISOString(), // snake_case support
         });
         qid = ref.$id;
       }
@@ -186,7 +197,7 @@ export default function AddQuestion() {
     mono: boolean = false
   ) => (
     <div className="space-y-2">
-      <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-[#525252]">
+      <label className="block text-[10px] font-semibold uppercase tracking-wider text-[#525252]">
         {label}
       </label>
       <textarea
@@ -211,7 +222,7 @@ export default function AddQuestion() {
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div>
-            <h1 className="text-3xl font-black tracking-[-0.05em] uppercase">
+            <h1 className="text-3xl font-semibold tracking-tight uppercase">
               {isEdit ? "Edit" : "New"} <span className="text-[#0099ff]">Question</span>
             </h1>
           </div>
@@ -219,14 +230,14 @@ export default function AddQuestion() {
         <div className="flex gap-4">
           <button
             onClick={() => navigate("/admin/questions")}
-            className="px-8 py-3.5 border border-white/5 text-[#a6a6a6] text-[10px] font-black uppercase tracking-[0.2em] rounded-full hover:bg-white/5 transition-all"
+            className="px-8 py-3.5 border border-white/5 text-[#a6a6a6] text-[10px] font-semibold uppercase tracking-wider rounded-full hover:bg-white/5 transition-all"
           >
             Discard
           </button>
           <button
             onClick={handleSave}
             disabled={saving || saved}
-            className="px-8 py-3.5 bg-[#0099ff] text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-full hover:scale-105 active:scale-95 transition-all shadow-[0_0_30px_rgba(0,153,255,0.2)] disabled:opacity-50"
+            className="px-8 py-3.5 bg-[#0099ff] text-white text-[10px] font-semibold uppercase tracking-wider rounded-full hover:scale-105 active:scale-95 transition-all shadow-[0_0_30px_rgba(0,153,255,0.2)] disabled:opacity-50"
           >
             {saved ? "Saved ✓" : saving ? "Saving…" : isEdit ? "Save Changes" : "Create Question"}
           </button>
@@ -241,7 +252,7 @@ export default function AddQuestion() {
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              className="mb-8 bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-black uppercase tracking-widest rounded-2xl px-6 py-4 flex items-center gap-3"
+              className="mb-8 bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-semibold uppercase tracking-widest rounded-2xl px-6 py-4 flex items-center gap-3"
             >
               <X className="w-4 h-4" />
               {error}
@@ -255,7 +266,7 @@ export default function AddQuestion() {
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`flex-1 py-3.5 text-[10px] font-black uppercase tracking-[0.2em] rounded-2xl transition-all ${
+              className={`flex-1 py-3.5 text-[10px] font-semibold uppercase tracking-wider rounded-2xl transition-all ${
                 activeTab === tab
                   ? "bg-[#0099ff] text-white shadow-[0_0_20px_rgba(0,153,255,0.3)]"
                   : "text-[#525252] hover:text-[#a6a6a6] hover:bg-white/5"
@@ -279,11 +290,11 @@ export default function AddQuestion() {
               <div className="bg-[#090909] border border-white/5 rounded-[2.5rem] p-10 space-y-8 shadow-2xl">
                 <div className="flex items-center gap-3 mb-4">
                   <Info className="w-5 h-5 text-[#0099ff]" />
-                  <h2 className="text-xl font-black tracking-[-0.03em] uppercase">Basic Details</h2>
+                  <h2 className="text-xl font-semibold tracking-[-0.03em] uppercase">Basic Details</h2>
                 </div>
 
                 <div className="space-y-2">
-                  <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-[#525252]">
+                  <label className="block text-[10px] font-semibold uppercase tracking-wider text-[#525252]">
                     Problem Title <span className="text-[#0099ff]">*</span>
                   </label>
                   <input
@@ -296,7 +307,7 @@ export default function AddQuestion() {
 
                 <div className="grid grid-cols-2 gap-8">
                   <div className="space-y-2">
-                    <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-[#525252]">Difficulty</label>
+                    <label className="block text-[10px] font-semibold uppercase tracking-wider text-[#525252]">Difficulty</label>
                     <select
                       value={form.difficulty}
                       onChange={(e) => setForm({ ...form, difficulty: e.target.value })}
@@ -308,7 +319,7 @@ export default function AddQuestion() {
                     </select>
                   </div>
                   <div className="space-y-2">
-                    <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-[#525252]">Category</label>
+                    <label className="block text-[10px] font-semibold uppercase tracking-wider text-[#525252]">Category</label>
                     <input
                       value={form.category}
                       onChange={(e) => setForm({ ...form, category: e.target.value })}
@@ -320,7 +331,7 @@ export default function AddQuestion() {
 
                 <div className="grid grid-cols-3 gap-8">
                   <div className="space-y-2">
-                    <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-[#525252]">Time Limit</label>
+                    <label className="block text-[10px] font-semibold uppercase tracking-wider text-[#525252]">Time Limit</label>
                     <input
                       value={form.timeLimit}
                       onChange={(e) => setForm({ ...form, timeLimit: e.target.value })}
@@ -329,7 +340,7 @@ export default function AddQuestion() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-[#525252]">Memory Limit</label>
+                    <label className="block text-[10px] font-semibold uppercase tracking-wider text-[#525252]">Memory Limit</label>
                     <input
                       value={form.memoryLimit}
                       onChange={(e) => setForm({ ...form, memoryLimit: e.target.value })}
@@ -338,7 +349,7 @@ export default function AddQuestion() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-[#525252]">Points</label>
+                    <label className="block text-[10px] font-semibold uppercase tracking-wider text-[#525252]">Points</label>
                     <input
                       type="number"
                       value={form.points}
@@ -350,7 +361,7 @@ export default function AddQuestion() {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-[#525252]">Constraints</label>
+                  <label className="block text-[10px] font-semibold uppercase tracking-wider text-[#525252]">Constraints</label>
                   <textarea
                     value={form.constraints}
                     onChange={(e) => setForm({ ...form, constraints: e.target.value })}
@@ -360,7 +371,7 @@ export default function AddQuestion() {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-[#525252]">Test Cases</label>
+                  <label className="block text-[10px] font-semibold uppercase tracking-wider text-[#525252]">Test Cases</label>
                   <input
                     type="file"
                     ref={fileInputRef}
@@ -377,19 +388,19 @@ export default function AddQuestion() {
                     {parsingZip ? (
                       <div className="flex flex-col items-center">
                         <Loader2 className="w-10 h-10 text-[#0099ff] animate-spin mb-4" />
-                        <p className="text-[#a6a6a6] text-[10px] font-black uppercase tracking-[0.2em]">Processing ZIP...</p>
+                        <p className="text-[#a6a6a6] text-[10px] font-semibold uppercase tracking-wider">Processing ZIP...</p>
                       </div>
                     ) : testCases.length > 0 ? (
                       <div className="flex flex-col items-center">
                         <FileCheck className="w-10 h-10 text-emerald-500 mb-4" />
-                        <p className="text-emerald-400 text-sm font-black uppercase tracking-widest">{testCases.length} Test Cases Loaded</p>
-                        <p className="text-emerald-500/60 text-[9px] font-bold uppercase tracking-[0.1em] mt-2">Click to replace ZIP</p>
+                        <p className="text-emerald-400 text-sm font-semibold uppercase tracking-widest">{testCases.length} Test Cases Loaded</p>
+                        <p className="text-emerald-500/60 text-[9px] font-bold uppercase tracking-wider mt-2">Click to replace ZIP</p>
                       </div>
                     ) : (
                       <div className="group">
                         <Upload className="w-10 h-10 text-[#333] mx-auto mb-4 group-hover:text-[#0099ff] transition-colors" />
-                        <p className="text-[#a6a6a6] text-[10px] font-black uppercase tracking-[0.2em]">Drop .zip or browse</p>
-                        <p className="text-[#333] text-[9px] font-bold uppercase tracking-[0.1em] mt-2">Required: input.txt + expected_output.txt</p>
+                        <p className="text-[#a6a6a6] text-[10px] font-semibold uppercase tracking-wider">Drop .zip or browse</p>
+                        <p className="text-[#333] text-[9px] font-bold uppercase tracking-wider mt-2">Required: input.txt + expected_output.txt</p>
                       </div>
                     )}
                   </div>
@@ -408,7 +419,7 @@ export default function AddQuestion() {
               <div className="bg-[#090909] border border-white/5 rounded-[2.5rem] p-10 space-y-10 shadow-2xl">
                 <div className="flex items-center gap-3 mb-4">
                   <FileText className="w-5 h-5 text-[#0099ff]" />
-                  <h2 className="text-xl font-black tracking-[-0.03em] uppercase">Problem Statement</h2>
+                  <h2 className="text-xl font-semibold tracking-[-0.03em] uppercase">Problem Statement</h2>
                 </div>
 
                 {inputField(
@@ -435,7 +446,7 @@ export default function AddQuestion() {
 
                 <div className="grid grid-cols-2 gap-8">
                   <div className="space-y-2">
-                    <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-[#525252]">
+                    <label className="block text-[10px] font-semibold uppercase tracking-wider text-[#525252]">
                       Sample Input
                     </label>
                     <textarea
@@ -447,7 +458,7 @@ export default function AddQuestion() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-[#525252]">
+                    <label className="block text-[10px] font-semibold uppercase tracking-wider text-[#525252]">
                       Sample Output
                     </label>
                     <textarea
@@ -467,7 +478,7 @@ export default function AddQuestion() {
                   4
                 )}
 
-                <p className="text-[#333] text-[9px] font-black uppercase tracking-[0.2em]">
+                <p className="text-[#333] text-[9px] font-semibold uppercase tracking-wider">
                   Markdown rendering enabled for description and explanations.
                 </p>
               </div>
@@ -484,13 +495,13 @@ export default function AddQuestion() {
               <div className="bg-[#090909] border border-white/5 rounded-[2.5rem] p-10 space-y-10 shadow-2xl">
                 <div className="flex items-center gap-3 mb-4">
                   <Save className="w-5 h-5 text-[#0099ff]" />
-                  <h2 className="text-xl font-black tracking-[-0.03em] uppercase">Starter Code</h2>
+                  <h2 className="text-xl font-semibold tracking-[-0.03em] uppercase">Starter Code</h2>
                 </div>
 
                 {/* Input format reminder */}
                 {form.inputFormat && (
                   <div className="bg-[#0099ff]/5 border border-[#0099ff]/10 rounded-2xl px-6 py-5">
-                    <p className="text-[#0099ff] text-[10px] font-black uppercase tracking-[0.2em] mb-2 flex items-center gap-2">
+                    <p className="text-[#0099ff] text-[10px] font-semibold uppercase tracking-wider mb-2 flex items-center gap-2">
                       <ArrowLeft className="w-3 h-3 rotate-180" /> Input Reference
                     </p>
                     <p className="text-[#a6a6a6] text-xs font-medium leading-relaxed whitespace-pre-line">{form.inputFormat}</p>
@@ -501,7 +512,7 @@ export default function AddQuestion() {
                   {(["C++", "Java", "Python"] as const).map((lang) => (
                     <div key={lang} className="space-y-3">
                       <div className="flex items-center justify-between">
-                        <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-[#525252]">
+                        <label className="block text-[10px] font-semibold uppercase tracking-wider text-[#525252]">
                           {lang} Starter Code
                         </label>
                       </div>

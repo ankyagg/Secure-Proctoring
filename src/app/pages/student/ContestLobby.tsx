@@ -65,14 +65,14 @@ export default function ContestLobby() {
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
             onClick={() => navigate("/")}
-            className="flex items-center gap-3 text-[#525252] hover:text-white transition-all text-[10px] font-black uppercase tracking-[0.3em] group"
+            className="flex items-center gap-3 text-[#525252] hover:text-white transition-all text-[10px] font-semibold uppercase tracking-wider group"
           >
             <ChevronLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
             Back to Contests
           </motion.button>
           
           <div className="flex items-center gap-10">
-            <div className="hidden md:flex items-center gap-8 text-[9px] font-black uppercase tracking-[0.4em] text-[#2a2a2a]">
+            <div className="hidden md:flex items-center gap-8 text-[9px] font-semibold uppercase tracking-wider text-[#2a2a2a]">
               <span className="text-[#0099ff]">Active Contests</span>
               <span className="hover:text-white cursor-pointer transition-colors">Recent Activity</span>
               <span className="hover:text-white cursor-pointer transition-colors">Leaderboard</span>
@@ -90,11 +90,11 @@ export default function ContestLobby() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
           >
-            <div className="inline-flex items-center gap-3 px-6 py-2.5 rounded-full bg-white/5 border border-white/5 text-[9px] font-black text-[#0099ff] uppercase tracking-[0.4em] mb-10 shadow-2xl">
+            <div className="inline-flex items-center gap-3 px-6 py-2.5 rounded-full bg-white/5 border border-white/5 text-[9px] font-semibold text-[#0099ff] uppercase tracking-wider mb-10 shadow-2xl">
               <Sparkles className="w-3 h-3 animate-pulse" />
               Leaderboard
             </div>
-            <h1 className="text-6xl md:text-9xl font-black tracking-[-0.06em] leading-[0.85] uppercase mb-10">
+            <h1 className="text-4xl md:text-7xl font-semibold tracking-tight leading-[0.85] uppercase mb-7">
               Join a <br />
               <span className="text-[#0099ff] italic">Challenges.</span>
             </h1>
@@ -109,7 +109,7 @@ export default function ContestLobby() {
                    value={searchQuery}
                    onChange={e => setSearchQuery(e.target.value)}
                    placeholder="Search Contests..."
-                   className="w-full bg-[#090909] border border-white/5 rounded-[2rem] py-6 pl-16 pr-8 text-[11px] font-black uppercase tracking-[0.2em] text-white outline-none focus:border-[#0099ff]/50 transition-all placeholder:text-[#2a2a2a]"
+                   className="w-full bg-[#090909] border border-white/5 rounded-[2rem] py-6 pl-16 pr-8 text-[11px] font-semibold uppercase tracking-wider text-white outline-none focus:border-[#0099ff]/50 transition-all placeholder:text-[#2a2a2a]"
                  />
                </div>
             </div>
@@ -128,7 +128,7 @@ export default function ContestLobby() {
             <div className="w-24 h-24 rounded-full bg-white/5 flex items-center justify-center opacity-20">
               <Shield className="w-10 h-10 text-white" />
             </div>
-            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-[#2a2a2a]">Your Progress</span>
+            <span className="text-[10px] font-semibold uppercase tracking-wider text-[#2a2a2a]">Your Progress</span>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
@@ -149,14 +149,14 @@ export default function ContestLobby() {
                     <div className="w-16 h-16 rounded-[2rem] bg-white/5 border border-white/10 flex items-center justify-center group-hover:scale-110 group-hover:bg-[#0099ff]/10 group-hover:border-[#0099ff]/20 transition-all duration-500">
                       <Flame className="w-8 h-8 text-[#525252] group-hover:text-[#0099ff]" />
                     </div>
-                    <div className={`px-5 py-2 rounded-full text-[9px] font-black uppercase tracking-[0.3em] border shadow-2xl ${
+                    <div className={`px-5 py-2 rounded-full text-[9px] font-semibold uppercase tracking-wider border shadow-2xl ${
                       contest.status === 'Live' ? 'bg-[#10b981]/10 text-[#10b981] border-[#10b981]/20 animate-pulse' : 'bg-white/5 text-[#525252] border-white/5'
                     }`}>
                       {contest.status}
                     </div>
                   </div>
 
-                  <h3 className="text-4xl font-black tracking-[-0.04em] uppercase leading-[0.9] mb-6 group-hover:text-[#0099ff] transition-colors">
+                  <h3 className="text-4xl font-semibold tracking-tight uppercase leading-[0.9] mb-6 group-hover:text-[#0099ff] transition-colors">
                     {contest.name}
                   </h3>
                   
@@ -167,23 +167,23 @@ export default function ContestLobby() {
                   <div className="mt-auto space-y-10">
                     <div className="grid grid-cols-2 gap-8 border-t border-white/5 pt-10">
                       <div>
-                        <span className="text-[10px] font-black text-[#525252] uppercase tracking-[0.4em]">Loading Problems...</span>
+                        <span className="text-[10px] font-semibold text-[#525252] uppercase tracking-wider">Loading Problems...</span>
                         <div className="flex items-center gap-3 text-white">
                           <Users className="w-4 h-4 text-[#0099ff]" />
-                          <span className="text-base font-black tracking-tighter">1.2k+</span>
+                          <span className="text-base font-semibold tracking-tighter">1.2k+</span>
                         </div>
                       </div>
                       <div>
-                        <span className="text-[9px] font-black text-[#2a2a2a] uppercase tracking-[0.3em] block mb-3">Security</span>
+                        <span className="text-[9px] font-semibold text-[#2a2a2a] uppercase tracking-wider block mb-3">Security</span>
                         <div className="flex items-center gap-3 text-white">
                           <Shield className="w-4 h-4 text-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.3)]" />
-                          <span className="text-base font-black tracking-tighter uppercase">High</span>
+                          <span className="text-base font-semibold tracking-tighter uppercase">High</span>
                         </div>
                       </div>
                     </div>
 
                     <div className="flex items-center justify-between group/btn">
-                      <div className="flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.2em] text-[#525252]">
+                      <div className="flex items-center gap-3 text-[10px] font-semibold uppercase tracking-wider text-[#525252]">
                         <Clock className="w-4 h-4 text-[#0099ff]/40" />
                         {contest.points || "100"} POINTS
                       </div>
@@ -225,11 +225,11 @@ export default function ContestLobby() {
                   <Lock className="w-12 h-12 text-black" />
                 </div>
                 
-                <h2 className="text-5xl font-black text-white tracking-[-0.05em] uppercase leading-[0.9] mb-4">
+                <h2 className="text-4xl font-semibold text-white tracking-tight uppercase leading-[0.9] mb-4">
                   Join <span className="text-[#0099ff]">Contest</span>
                 </h2>
-                <div className="text-[10px] font-black text-[#525252] uppercase tracking-[0.2em]">Problems Solved</div>
-                <p className="text-[10px] font-black text-[#525252] uppercase tracking-[0.4em] mb-12">Joining Contest: {selectedContest.name}</p>
+                <div className="text-[10px] font-semibold text-[#525252] uppercase tracking-wider">Problems Solved</div>
+                <p className="text-[10px] font-semibold text-[#525252] uppercase tracking-wider mb-12">Joining Contest: {selectedContest.name}</p>
 
                 <div className="grid grid-cols-1 gap-4 w-full mb-16 text-left">
                   <div className="p-8 rounded-[2rem] bg-white/5 border border-white/5 flex items-center gap-8 group hover:bg-[#0099ff]/5 hover:border-[#0099ff]/20 transition-all">
@@ -237,8 +237,8 @@ export default function ContestLobby() {
                       <Eye className="w-6 h-6" />
                     </div>
                     <div>
-                      <h4 className="text-sm font-black text-white uppercase tracking-tight mb-1">Gaze Tracking</h4>
-                      <span className="text-[#0099ff] text-[10px] font-black uppercase tracking-widest leading-none">Result</span>
+                      <h4 className="text-sm font-semibold text-white uppercase tracking-tight mb-1">Gaze Tracking</h4>
+                      <span className="text-[#0099ff] text-[10px] font-semibold uppercase tracking-widest leading-none">Result</span>
                       <p className="text-[11px] text-[#525252] font-bold uppercase tracking-widest">Our AI tracks your focus to prevent cheating.</p>
                     </div>
                   </div>
@@ -248,7 +248,7 @@ export default function ContestLobby() {
                       <Shield className="w-6 h-6" />
                     </div>
                     <div>
-                      <h4 className="text-sm font-black text-white uppercase tracking-tight mb-1">Security Scan</h4>
+                      <h4 className="text-sm font-semibold text-white uppercase tracking-tight mb-1">Security Scan</h4>
                       <p className="text-[11px] text-[#525252] font-bold uppercase tracking-widest">We verify your identity and device setup.</p>
                     </div>
                   </div>
@@ -257,13 +257,13 @@ export default function ContestLobby() {
                 <div className="flex gap-6 w-full">
                   <button 
                     onClick={() => setSelectedContest(null)}
-                    className="flex-1 px-10 py-6 rounded-[1.5rem] bg-[#000000] border border-white/5 text-[#525252] text-[10px] font-black uppercase tracking-[0.3em] hover:text-white transition-all"
+                    className="flex-1 px-10 py-6 rounded-[1.5rem] bg-[#000000] border border-white/5 text-[#525252] text-[10px] font-semibold uppercase tracking-wider hover:text-white transition-all"
                   >
                     All Problems
                   </button>
                   <button 
                     onClick={confirmEnterContest}
-                    className="flex-[2] px-12 py-6 rounded-[1.5rem] bg-[#0099ff] text-white text-[11px] font-black uppercase tracking-[0.3em] hover:bg-white hover:text-black transition-all duration-500 shadow-[0_20px_50px_-10px_rgba(0,153,255,0.4)] active:scale-95"
+                    className="flex-[2] px-12 py-6 rounded-[1.5rem] bg-[#0099ff] text-white text-[11px] font-semibold uppercase tracking-wider hover:bg-white hover:text-black transition-all duration-500 shadow-[0_20px_50px_-10px_rgba(0,153,255,0.4)] active:scale-95"
                   >
                     Start Contest
                   </button>

@@ -100,7 +100,7 @@ export default function AdminDashboard() {
   if (loading) return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
        <div className="w-10 h-10 border-2 border-[#0099ff] border-t-transparent rounded-full animate-spin" />
-       <span className="text-[10px] font-black text-[#525252] uppercase tracking-[0.3em]">System Online</span>
+       <span className="text-[10px] font-semibold text-[#525252] uppercase tracking-wider">System Online</span>
     </div>
   );
 
@@ -110,7 +110,7 @@ export default function AdminDashboard() {
       <div className="space-y-2">
         <div className="flex items-center gap-3">
            <div className="w-1.5 h-6 bg-[#0099ff] rounded-full shadow-[0_0_15px_rgba(0,153,255,0.5)]" />
-           <h1 className="text-5xl font-black tracking-[-0.05em] uppercase">
+           <h1 className="text-4xl font-semibold tracking-tight uppercase">
               Dashboard
            </h1>
         </div>
@@ -133,10 +133,10 @@ export default function AdminDashboard() {
               <div className={`p-4 rounded-2xl bg-white/5 border border-white/5 group-hover:bg-[#0099ff]/10 group-hover:border-[#0099ff]/20 transition-all`}>
                 <card.icon className={`w-5 h-5 ${card.color}`} />
               </div>
-              <div className="px-3 py-1 bg-white/5 rounded-full text-[8px] font-black uppercase tracking-widest text-[#2a2a2a]">Real-Time</div>
+              <div className="px-3 py-1 bg-white/5 rounded-full text-[8px] font-semibold uppercase tracking-widest text-[#2a2a2a]">Real-Time</div>
             </div>
             <div>
-              <div className="text-4xl font-black tracking-tight mb-1">{card.value}</div>
+              <div className="text-4xl font-semibold tracking-tight mb-1">{card.value}</div>
               <div className="text-[10px] font-bold text-white uppercase tracking-widest">{card.label}</div>
               <div className="text-[9px] font-bold text-[#2a2a2a] uppercase tracking-widest mt-1">{card.sub}</div>
             </div>
@@ -150,7 +150,7 @@ export default function AdminDashboard() {
           <div className="absolute top-0 right-0 p-8">
             <TrendingUp className="w-5 h-5 text-[#0099ff] opacity-20" />
           </div>
-          <h2 className="text-[10px] font-black uppercase tracking-[0.4em] text-[#2a2a2a] mb-10">Activity Level</h2>
+          <h2 className="text-[10px] font-semibold uppercase tracking-wider text-[#2a2a2a] mb-10">Activity Level</h2>
           <div className="h-[300px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={submissionsChartData}>
@@ -168,7 +168,7 @@ export default function AdminDashboard() {
         </div>
 
         <div className="bg-[#090909] border border-white/5 rounded-[2.5rem] p-10 shadow-2xl relative overflow-hidden">
-          <h2 className="text-[10px] font-black uppercase tracking-[0.4em] text-[#2a2a2a] mb-10">Pass/Fail Rate</h2>
+          <h2 className="text-[10px] font-semibold uppercase tracking-wider text-[#2a2a2a] mb-10">Pass/Fail Rate</h2>
           <div className="h-[300px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
@@ -199,11 +199,11 @@ export default function AdminDashboard() {
         <div className="flex justify-between items-center mb-10">
           <div className="flex items-center gap-4">
             <Cpu className="w-5 h-5 text-[#0099ff]" />
-            <h2 className="text-[10px] font-black uppercase tracking-[0.4em] text-[#2a2a2a]">Latest Submissions</h2>
+            <h2 className="text-[10px] font-semibold uppercase tracking-wider text-[#2a2a2a]">Latest Submissions</h2>
           </div>
           <button
             onClick={() => navigate("/admin/submissions")}
-            className="text-[9px] font-black uppercase tracking-widest text-[#525252] hover:text-white transition-all flex items-center gap-2"
+            className="text-[9px] font-semibold uppercase tracking-widest text-[#525252] hover:text-white transition-all flex items-center gap-2"
           >
             View All <ArrowRight className="w-4 h-4" />
           </button>
@@ -219,15 +219,15 @@ export default function AdminDashboard() {
               className="grid grid-cols-3 items-center p-6 rounded-2xl bg-[#000000] border border-white/5 hover:border-[#0099ff]/20 transition-all group"
             >
               <div className="flex items-center gap-5">
-                <div className="w-10 h-10 bg-white/5 border border-white/10 rounded-xl flex items-center justify-center text-[10px] font-black text-[#525252] group-hover:text-white transition-colors">
+                <div className="w-10 h-10 bg-white/5 border border-white/10 rounded-xl flex items-center justify-center text-[10px] font-semibold text-[#525252] group-hover:text-white transition-colors">
                   {sub.user_email.charAt(0).toUpperCase()}
                 </div>
-                <span className="text-sm font-black text-white tracking-tight uppercase group-hover:text-[#0099ff] transition-colors">
+                <span className="text-sm font-semibold text-white tracking-tight uppercase group-hover:text-[#0099ff] transition-colors">
                   {sub.user_email.split('@')[0]}
                 </span>
               </div>
               <div className="text-[11px] font-bold text-[#525252] uppercase tracking-widest truncate">{sub.question_title}</div>
-              <div className={`text-[10px] font-black tracking-widest uppercase text-right ${sub.passed_all ? "text-emerald-400" : "text-rose-400"}`}>
+              <div className={`text-[10px] font-semibold tracking-widest uppercase text-right ${sub.passed_all ? "text-emerald-400" : "text-rose-400"}`}>
                 {sub.passed_all ? "Accepted" : "Failed"}
               </div>
             </motion.div>

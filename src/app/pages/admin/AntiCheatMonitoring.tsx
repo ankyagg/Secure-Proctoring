@@ -105,7 +105,7 @@ export default function AntiCheatMonitoring() {
         <div className="space-y-2">
           <div className="flex items-center gap-3">
              <div className="w-1.5 h-6 bg-[#0099ff] rounded-full shadow-[0_0_15px_rgba(0,153,255,0.5)]" />
-             <h1 className="text-5xl font-medium tracking-[-0.05em] uppercase font-sans">
+             <h1 className="text-4xl font-medium tracking-tight uppercase font-sans">
                 Anti-Cheat <span className="text-[#525252]">System</span>
              </h1>
           </div>
@@ -121,7 +121,7 @@ export default function AntiCheatMonitoring() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="SEARCH NODE LOGS..."
-              className="pl-12 pr-6 py-4 bg-[#090909] border border-white/5 rounded-full text-[9px] font-black uppercase tracking-[0.2em] text-white outline-none focus:border-[#0099ff]/50 transition-all w-80 placeholder:text-[#2a2a2a] shadow-[rgba(0,153,255,0.05)_0px_0px_20px_0px]"
+              className="pl-12 pr-6 py-4 bg-[#090909] border border-white/5 rounded-full text-[9px] font-semibold uppercase tracking-wider text-white outline-none focus:border-[#0099ff]/50 transition-all w-80 placeholder:text-[#2a2a2a] shadow-[rgba(0,153,255,0.05)_0px_0px_20px_0px]"
             />
           </div>
           <button 
@@ -144,7 +144,7 @@ export default function AntiCheatMonitoring() {
           <div key={i} className="bg-[#090909] border border-white/5 rounded-[2rem] p-8 space-y-4 shadow-[rgba(0,153,255,0.05)_0px_0px_0px_1px]">
             <div className="flex items-center justify-between">
               <stat.icon className={`w-5 h-5 ${stat.color}`} />
-              <div className="px-2 py-1 bg-white/5 rounded-lg text-[8px] font-black uppercase tracking-widest text-[#2a2a2a]">Node_{i+1}</div>
+              <div className="px-2 py-1 bg-white/5 rounded-lg text-[8px] font-semibold uppercase tracking-widest text-[#2a2a2a]">Node_{i+1}</div>
             </div>
             <div>
               <div className="text-3xl font-medium tracking-tight">{stat.value}</div>
@@ -160,7 +160,7 @@ export default function AntiCheatMonitoring() {
           <button
             key={type}
             onClick={() => setFilter(type)}
-            className={`px-8 py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-500 whitespace-nowrap border ${
+            className={`px-8 py-3.5 rounded-2xl text-[10px] font-semibold uppercase tracking-wider transition-all duration-500 whitespace-nowrap border ${
               filter === type 
                 ? "bg-[#0c0c0c] text-[#0099ff] border-[#0099ff]/40 shadow-[0_10px_40px_rgba(0,153,255,0.15)] scale-[1.02]" 
                 : "bg-[#090909] text-[#444] border-white/5 hover:border-white/10 hover:text-[#888]"
@@ -173,7 +173,7 @@ export default function AntiCheatMonitoring() {
 
       {/* Logs Table */}
       <div className="bg-[#090909] border border-white/5 rounded-[2.5rem] overflow-hidden shadow-2xl shadow-black">
-        <div className="grid px-10 py-6 bg-white/[0.01] border-b border-white/5 text-[9px] font-black text-[#2a2a2a] uppercase tracking-[0.3em]"
+        <div className="grid px-10 py-6 bg-white/[0.01] border-b border-white/5 text-[9px] font-semibold text-[#2a2a2a] uppercase tracking-wider"
           style={{ gridTemplateColumns: "1.5fr 1fr 1.5fr 1fr 0.8fr 0.5fr" }}>
           <span>Candidate Information</span>
           <span>Violation Type</span>
@@ -187,7 +187,7 @@ export default function AntiCheatMonitoring() {
           {loading && logs.length === 0 ? (
             <div className="py-32 flex flex-col items-center justify-center gap-4">
               <div className="w-8 h-8 border-2 border-[#0099ff] border-t-transparent rounded-full animate-spin" />
-              <span className="text-[10px] font-black text-[#525252] uppercase tracking-[0.2em]">Synchronizing Logs...</span>
+              <span className="text-[10px] font-semibold text-[#525252] uppercase tracking-wider">Synchronizing Logs...</span>
             </div>
           ) : filteredLogs.map((log, index) => {
             const severity = getSeverity(log.type);
@@ -206,7 +206,7 @@ export default function AntiCheatMonitoring() {
                     <User className="w-5 h-5 text-[#2a2a2a] group-hover/row:text-white transition-colors" />
                   </div>
                   <div>
-                    <div className="text-white text-base font-black tracking-[-0.02em] uppercase group-hover/row:text-rose-400 transition-colors">
+                    <div className="text-white text-base font-semibold tracking-[-0.02em] uppercase group-hover/row:text-rose-400 transition-colors">
                       {log.user_email || "anonymous@system.void"}
                     </div>
                     <div className="text-[9px] text-[#2a2a2a] font-bold uppercase tracking-widest mt-1">
@@ -216,7 +216,7 @@ export default function AntiCheatMonitoring() {
                 </div>
 
                 <div>
-                  <span className="text-[10px] font-black text-[#a6a6a6] uppercase tracking-widest border border-white/10 px-3 py-1.5 rounded-xl">
+                  <span className="text-[10px] font-semibold text-[#a6a6a6] uppercase tracking-widest border border-white/10 px-3 py-1.5 rounded-xl">
                     {log.type || "General Violation"}
                   </span>
                 </div>
@@ -231,7 +231,7 @@ export default function AntiCheatMonitoring() {
                 </div>
 
                 <div>
-                  <span className={`text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-full border ${
+                  <span className={`text-[9px] font-semibold uppercase tracking-widest px-3 py-1.5 rounded-full border ${
                     severity === 'Critical' ? 'bg-rose-500/10 text-rose-500 border-rose-500/20' :
                     severity === 'High' ? 'bg-amber-500/10 text-amber-500 border-amber-500/20' :
                     'bg-[#0099ff]/10 text-[#0099ff] border-[#0099ff]/20'
@@ -251,7 +251,7 @@ export default function AntiCheatMonitoring() {
             <div className="py-40 text-center">
               <ShieldCheck className="w-12 h-12 text-[#2a2a2a] mx-auto mb-6 opacity-20" />
               <h3 className="text-2xl font-medium text-white uppercase tracking-tight">No Violations Found</h3>
-              <p className="text-[10px] font-bold text-[#2a2a2a] uppercase tracking-[0.3em] mt-2">The system has detected zero integrity breaches in this node cycle.</p>
+              <p className="text-[10px] font-bold text-[#2a2a2a] uppercase tracking-wider mt-2">The system has detected zero integrity breaches in this node cycle.</p>
             </div>
           )}
         </div>
@@ -280,8 +280,8 @@ export default function AntiCheatMonitoring() {
                     <ShieldAlert className="w-8 h-8 text-rose-500" />
                   </div>
                   <div>
-                    <h2 className="text-3xl font-black uppercase tracking-tight">{selectedLog.user_email || "ANONYMOUS"}</h2>
-                    <p className="text-[10px] font-bold text-[#525252] uppercase tracking-[0.3em] mt-1">{selectedLog.user_name || "Identity Not Verified"} • Incident Report: {selectedLog.$id}</p>
+                    <h2 className="text-3xl font-semibold uppercase tracking-tight">{selectedLog.user_email || "ANONYMOUS"}</h2>
+                    <p className="text-[10px] font-bold text-[#525252] uppercase tracking-wider mt-1">{selectedLog.user_name || "Identity Not Verified"} • Incident Report: {selectedLog.$id}</p>
                   </div>
                 </div>
                 <button onClick={() => setSelectedLog(null)} className="p-4 bg-white/5 rounded-full hover:bg-white/10 transition-all border border-white/5">
@@ -294,21 +294,21 @@ export default function AntiCheatMonitoring() {
                   {/* Telemetry Data */}
                   <div className="space-y-8">
                     <div className="space-y-4">
-                      <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-[#2a2a2a]">Violation Data</h3>
+                      <h3 className="text-[10px] font-semibold uppercase tracking-wider text-[#2a2a2a]">Violation Data</h3>
                       <div className="grid grid-cols-2 gap-4">
                         <div className="bg-[#000000] border border-white/5 p-6 rounded-[2rem] shadow-[rgba(0,153,255,0.05)_0px_0px_10px_0px]">
                           <p className="text-[9px] font-bold text-[#2a2a2a] uppercase tracking-widest mb-1">Violation Category</p>
-                          <p className="text-[10px] font-black uppercase text-rose-500">{selectedLog.type || "Undefined"}</p>
+                          <p className="text-[10px] font-semibold uppercase text-rose-500">{selectedLog.type || "Undefined"}</p>
                         </div>
                         <div className="bg-[#090909] border border-white/5 p-6 rounded-[2rem] shadow-[rgba(0,153,255,0.05)_0px_0px_10px_0px]">
                           <p className="text-[9px] font-bold text-[#2a2a2a] uppercase tracking-widest mb-1">Temporal Node</p>
-                          <p className="text-[10px] font-black text-white">{new Date(selectedLog.timestamp).toLocaleString()}</p>
+                          <p className="text-[10px] font-semibold text-white">{new Date(selectedLog.timestamp).toLocaleString()}</p>
                         </div>
                       </div>
                     </div>
 
                     <div className="bg-[#090909] border border-white/5 p-8 rounded-[2rem]">
-                      <h4 className="text-[10px] font-black uppercase tracking-widest text-[#2a2a2a] mb-4">AI Analysis</h4>
+                      <h4 className="text-[10px] font-semibold uppercase tracking-widest text-[#2a2a2a] mb-4">AI Analysis</h4>
                       <p className="text-sm font-bold text-[#a6a6a6] leading-relaxed italic">
                         "{selectedLog.message}"
                       </p>
@@ -319,7 +319,7 @@ export default function AntiCheatMonitoring() {
                         <div className="px-8 py-4 border-b border-white/5 bg-white/5 flex items-center justify-between">
                           <div className="flex items-center gap-3">
                             <FileCode className="w-4 h-4 text-[#0099ff]" />
-                            <span className="text-[9px] font-black uppercase tracking-widest text-[#a6a6a6]">Code Snapshot</span>
+                            <span className="text-[9px] font-semibold uppercase tracking-widest text-[#a6a6a6]">Code Snapshot</span>
                           </div>
                         </div>
                         <pre className="p-8 text-[11px] font-mono text-[#0099ff]/80 overflow-x-auto bg-[#050505]">
@@ -331,7 +331,7 @@ export default function AntiCheatMonitoring() {
 
                   {/* Visual Evidence */}
                   <div className="space-y-6">
-                    <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-[#525252]">Security Settings</h3>
+                    <h3 className="text-[10px] font-semibold uppercase tracking-wider text-[#525252]">Security Settings</h3>
                     {selectedLog.screenshot_url ? (
                       <div className="relative rounded-[2.5rem] overflow-hidden border border-white/10 group">
                         <img 
@@ -342,13 +342,13 @@ export default function AntiCheatMonitoring() {
                         <div className="absolute inset-0 bg-gradient-to-t from-[#000] to-transparent opacity-60" />
                         <div className="absolute bottom-8 left-8 flex items-center gap-3">
                           <div className="w-2 h-2 bg-rose-500 rounded-full animate-ping" />
-                          <span className="text-[10px] font-black uppercase tracking-widest">Evidence Node_{selectedLog.$id.slice(-4)}</span>
+                          <span className="text-[10px] font-semibold uppercase tracking-widest">Evidence Node_{selectedLog.$id.slice(-4)}</span>
                         </div>
                       </div>
                     ) : (
                       <div className="h-[400px] bg-[#090909] border border-dashed border-white/5 rounded-[2.5rem] flex flex-col items-center justify-center text-center p-12">
                         <EyeOff className="w-12 h-12 text-[#2a2a2a] mb-4" />
-                        <p className="text-[10px] font-black uppercase tracking-widest text-[#2a2a2a]">No image captured for this violation.</p>
+                        <p className="text-[10px] font-semibold uppercase tracking-widest text-[#2a2a2a]">No image captured for this violation.</p>
                       </div>
                     )}
                   </div>

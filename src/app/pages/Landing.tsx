@@ -55,22 +55,22 @@ export default function Landing() {
             <Shield className="w-6 h-6 text-white" />
           </div>
           <div className="flex flex-col">
-            <span className="text-white text-2xl tracking-[-0.05em] font-black leading-none uppercase">
+            <span className="text-white text-2xl tracking-tight font-semibold leading-none uppercase">
               Secure<span className="text-[#0099ff]">Proctor</span>
             </span>
-            <span className="text-[9px] text-[#525252] font-black uppercase tracking-[0.4em] mt-1">Global Security Standard</span>
+            <span className="text-[9px] text-[#525252] font-semibold uppercase tracking-wider mt-1">Global Security Standard</span>
           </div>
         </motion.div>
 
         <div className="flex items-center gap-10">
-          <nav className="hidden md:flex items-center gap-10 text-[10px] font-black uppercase tracking-[0.2em] text-[#525252]">
+          <nav className="hidden md:flex items-center gap-10 text-[10px] font-semibold uppercase tracking-wider text-[#525252]">
             <a href="#features" className="hover:text-white transition-colors">Features</a>
             <a href="#integrity" className="hover:text-white transition-colors">Anti-Cheat</a>
             <a href="#stats" className="hover:text-white transition-colors">Activity</a>
           </nav>
           <button
             onClick={() => navigate("/login")}
-            className="text-[10px] font-black uppercase tracking-[0.2em] text-white bg-white/5 border border-white/10 hover:bg-[#0099ff] hover:border-[#0099ff] rounded-2xl px-10 py-4 transition-all active:scale-95 shadow-2xl"
+            className="text-[10px] font-semibold uppercase tracking-wider text-white bg-white/5 border border-white/10 hover:bg-[#0099ff] hover:border-[#0099ff] rounded-2xl px-10 py-4 transition-all active:scale-95 shadow-2xl"
           >
             Login System
           </button>
@@ -89,12 +89,12 @@ export default function Landing() {
           transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
           className="text-center mb-32 max-w-5xl"
         >
-          <div className="inline-flex items-center gap-3 bg-white/5 border border-white/5 rounded-full px-6 py-2.5 text-[9px] font-black text-[#0099ff] uppercase tracking-[0.3em] mb-12">
+          <div className="inline-flex items-center gap-3 bg-white/5 border border-white/5 rounded-full px-6 py-2.5 text-[9px] font-semibold text-[#0099ff] uppercase tracking-wider mb-12">
             <div className="w-1.5 h-1.5 rounded-full bg-[#0099ff] animate-ping" />
             <span>Deployment v4.0.2 Active</span>
           </div>
 
-          <h1 className="text-7xl md:text-[140px] font-black text-white mb-10 tracking-[-0.06em] leading-[0.85] text-balance uppercase">
+          <h1 className="text-4xl md:text-[140px] font-semibold text-white mb-10 tracking-tight leading-[0.85] text-balance uppercase">
             Code with <br />
             <span className="text-[#0099ff] italic">Absolute</span> Zero.
           </h1>
@@ -106,14 +106,14 @@ export default function Landing() {
           <div className="flex flex-col sm:flex-row gap-6 justify-center">
             <button
               onClick={() => navigate("/signup")}
-              className="group relative flex items-center justify-center gap-4 text-white bg-[#0099ff] hover:bg-white hover:text-black rounded-[2rem] px-14 py-7 text-[11px] font-black uppercase tracking-[0.25em] shadow-[0_0_50px_rgba(0,153,255,0.3)] transition-all duration-500 active:scale-95"
+              className="group relative flex items-center justify-center gap-4 text-white bg-[#0099ff] hover:bg-white hover:text-black rounded-[2rem] px-14 py-7 text-[11px] font-semibold uppercase tracking-wider shadow-[0_0_50px_rgba(0,153,255,0.3)] transition-all duration-500 active:scale-95"
             >
               Start Testing
               <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </button>
             <button
               onClick={() => navigate("/login")}
-              className="flex items-center justify-center gap-4 bg-white/5 hover:bg-white/10 border border-white/5 text-white rounded-[2rem] px-14 py-7 text-[11px] font-black uppercase tracking-[0.25em] transition-all backdrop-blur-3xl"
+              className="flex items-center justify-center gap-4 bg-white/5 hover:bg-white/10 border border-white/5 text-white rounded-[2rem] px-14 py-7 text-[11px] font-semibold uppercase tracking-wider transition-all backdrop-blur-3xl"
             >
               About Us
             </button>
@@ -133,11 +133,11 @@ export default function Landing() {
             <div className="w-20 h-20 bg-[#0099ff]/10 border border-[#0099ff]/20 rounded-[2rem] flex items-center justify-center mb-10 shadow-[0_0_40px_rgba(0,153,255,0.15)] group-hover:scale-110 transition-transform duration-500">
               <Trophy className="w-8 h-8 text-[#0099ff]" />
             </div>
-            <h2 className="text-4xl font-black text-white mb-6 tracking-[-0.04em] uppercase">For Candidates</h2>
+            <h2 className="text-4xl font-semibold text-white mb-6 tracking-tight uppercase">For Candidates</h2>
               Access the coding platform. High-quality editor, real-time feedback, and world-class problem sets.
             <button
               onClick={() => navigate("/signup")}
-              className="w-full flex items-center justify-center gap-3 text-white bg-white/5 border border-white/5 hover:bg-white/10 rounded-2xl py-5 text-[10px] font-black uppercase tracking-[0.3em] transition-all"
+              className="w-full flex items-center justify-center gap-3 text-white bg-white/5 border border-white/5 hover:bg-white/10 rounded-2xl py-5 text-[10px] font-semibold uppercase tracking-wider transition-all"
             >
               Get Started
               <ChevronRight className="w-4 h-4" />
@@ -154,11 +154,11 @@ export default function Landing() {
             <div className="w-20 h-20 bg-white/5 border border-white/10 rounded-[2rem] flex items-center justify-center mb-10 group-hover:scale-110 transition-transform duration-500">
               <Shield className="w-8 h-8 text-white" />
             </div>
-            <h2 className="text-4xl font-black text-white mb-6 tracking-[-0.04em] uppercase">For Commands</h2>
+            <h2 className="text-4xl font-semibold text-white mb-6 tracking-tight uppercase">For Commands</h2>
               Create and manage contests. AI-driven gaze tracking, real-time monitoring, and detailed reports.
             <button
               onClick={() => navigate("/admin")}
-              className="w-full flex items-center justify-center gap-3 text-white bg-white/5 border border-white/5 hover:bg-white/10 rounded-2xl py-5 text-[10px] font-black uppercase tracking-[0.3em] transition-all"
+              className="w-full flex items-center justify-center gap-3 text-white bg-white/5 border border-white/5 hover:bg-white/10 rounded-2xl py-5 text-[10px] font-semibold uppercase tracking-wider transition-all"
             >
               Admin Login
               <ChevronRight className="w-4 h-4" />
@@ -179,10 +179,10 @@ export default function Landing() {
                 <div className="flex justify-center mb-6">
                   <stat.icon className="w-5 h-5 text-[#2a2a2a] group-hover:text-[#0099ff] transition-colors duration-500" />
                 </div>
-                <div className="text-6xl font-black text-white mb-4 tracking-[-0.06em] group-hover:scale-110 transition-transform duration-700">
+                <div className="text-4xl font-semibold text-white mb-4 tracking-tight group-hover:scale-110 transition-transform duration-700">
                   {stat.value}
                 </div>
-                <div className="text-[10px] text-[#525252] font-black uppercase tracking-[0.4em] group-hover:text-white transition-colors">{stat.label}</div>
+                <div className="text-[10px] text-[#525252] font-semibold uppercase tracking-wider group-hover:text-white transition-colors">{stat.label}</div>
               </div>
             ))}
           </div>
@@ -193,11 +193,11 @@ export default function Landing() {
       <footer className="px-12 py-16 flex flex-col md:flex-row items-center justify-between border-t border-white/5 bg-[#000000] relative z-10">
         <div className="flex items-center gap-5 opacity-40">
           <Shield className="w-5 h-5 text-white" />
-          <span className="text-white text-[9px] font-black uppercase tracking-[0.4em]">
+          <span className="text-white text-[9px] font-semibold uppercase tracking-wider">
             © 2026 Void Protocol · Secure Proctoring System
           </span>
         </div>
-        <div className="flex gap-12 text-[9px] text-[#525252] font-black uppercase tracking-[0.4em] mt-8 md:mt-0">
+        <div className="flex gap-12 text-[9px] text-[#525252] font-semibold uppercase tracking-wider mt-8 md:mt-0">
           <a href="#" className="hover:text-white transition-colors">Privacy</a>
           <a href="#" className="hover:text-white transition-colors">Security</a>
           <a href="#" className="hover:text-white transition-colors">Manifesto</a>

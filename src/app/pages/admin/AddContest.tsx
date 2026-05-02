@@ -136,7 +136,7 @@ export default function AddContest() {
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div>
-            <h1 className="text-3xl font-black tracking-[-0.05em] uppercase">
+            <h1 className="text-3xl font-semibold tracking-tight uppercase">
               {isEdit ? "Edit" : "Create"} <span className="text-[#0099ff]">Contest</span>
             </h1>
           </div>
@@ -145,14 +145,14 @@ export default function AddContest() {
         <div className="flex gap-4">
           <button
             onClick={() => navigate("/admin/contests")}
-            className="px-8 py-3.5 border border-white/5 text-[#a6a6a6] text-[10px] font-black uppercase tracking-[0.2em] rounded-full hover:bg-white/5 transition-all"
+            className="px-8 py-3.5 border border-white/5 text-[#a6a6a6] text-[10px] font-semibold uppercase tracking-wider rounded-full hover:bg-white/5 transition-all"
           >
             Cancel
           </button>
           <button
             onClick={handleSave}
             disabled={saving || saved}
-            className="px-8 py-3.5 bg-[#0099ff] text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-full hover:scale-105 active:scale-95 transition-all shadow-[0_0_30px_rgba(0,153,255,0.2)] disabled:opacity-50"
+            className="px-8 py-3.5 bg-[#0099ff] text-white text-[10px] font-semibold uppercase tracking-wider rounded-full hover:scale-105 active:scale-95 transition-all shadow-[0_0_30px_rgba(0,153,255,0.2)] disabled:opacity-50"
           >
             {saved ? "Saved ✓" : saving ? "Saving…" : isEdit ? "Save Changes" : "Create Contest"}
           </button>
@@ -166,22 +166,22 @@ export default function AddContest() {
             <section className="space-y-6">
               <div className="flex items-center gap-3">
                 <Trophy className="w-4 h-4 text-[#0099ff]" />
-                <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-[#525252]">Contest Details</h2>
+                <h2 className="text-[10px] font-semibold uppercase tracking-wider text-[#525252]">Contest Details</h2>
               </div>
               <div className="bg-[#090909] border border-white/5 rounded-[2.5rem] p-10 space-y-8 shadow-2xl">
                 <div className="space-y-2">
-                  <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-[#525252]">Contest Name</label>
+                  <label className="block text-[10px] font-semibold uppercase tracking-wider text-[#525252]">Contest Name</label>
                   <input
                     value={form.name}
                     onChange={(e) => setForm({ ...form, name: e.target.value })}
                     placeholder="e.g. Winter Coding Challenge"
-                    className="w-full bg-[#000000] border border-white/5 rounded-2xl px-6 py-4 text-white font-black text-sm placeholder:text-[#2a2a2a] focus:border-[#0099ff]/50 transition-all outline-none"
+                    className="w-full bg-[#000000] border border-white/5 rounded-2xl px-6 py-4 text-white font-semibold text-sm placeholder:text-[#2a2a2a] focus:border-[#0099ff]/50 transition-all outline-none"
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-8">
                   <div className="space-y-2">
-                    <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-[#525252]">Start Time</label>
+                    <label className="block text-[10px] font-semibold uppercase tracking-wider text-[#525252]">Start Time</label>
                     <input
                       type="datetime-local"
                       value={form.startTime}
@@ -190,7 +190,7 @@ export default function AddContest() {
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-[#525252]">End Time</label>
+                    <label className="block text-[10px] font-semibold uppercase tracking-wider text-[#525252]">End Time</label>
                     <input
                       type="datetime-local"
                       value={form.endTime}
@@ -205,11 +205,11 @@ export default function AddContest() {
             <section className="space-y-6">
               <div className="flex items-center gap-3">
                 <ListChecks className="w-4 h-4 text-[#0099ff]" />
-                <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-[#525252]">Select Questions</h2>
+                <h2 className="text-[10px] font-semibold uppercase tracking-wider text-[#525252]">Select Questions</h2>
               </div>
               <div className="bg-[#090909] border border-white/5 rounded-[2.5rem] p-10 space-y-4 shadow-2xl">
                 {loading ? (
-                  <div className="py-20 text-center text-[#525252] text-[10px] font-black uppercase tracking-widest animate-pulse">Loading Questions...</div>
+                  <div className="py-20 text-center text-[#525252] text-[10px] font-semibold uppercase tracking-widest animate-pulse">Loading Questions...</div>
                 ) : (
                   <div className="max-h-[500px] overflow-y-auto pr-4 space-y-3 custom-scrollbar">
                     {questions.map((q) => (
@@ -233,13 +233,13 @@ export default function AddContest() {
                             )}
                           </div>
                           <div className="text-left">
-                            <p className="text-[11px] font-black uppercase tracking-wider">{q.title}</p>
+                            <p className="text-[11px] font-semibold uppercase tracking-wider">{q.title}</p>
                             <p className={`text-[9px] font-bold uppercase tracking-widest mt-1 ${
                               q.difficulty === 'Hard' ? 'text-rose-400' : q.difficulty === 'Medium' ? 'text-blue-400' : 'text-emerald-400'
                             }`}>{q.difficulty}</p>
                           </div>
                         </div>
-                        <div className="text-[10px] font-black text-[#333]">
+                        <div className="text-[10px] font-semibold text-[#333]">
                            {q.points} PTS
                         </div>
                       </button>
@@ -254,13 +254,13 @@ export default function AddContest() {
             <section className="space-y-6 sticky top-32">
               <div className="flex items-center gap-3">
                 <ShieldCheck className="w-4 h-4 text-[#0099ff]" />
-                <h2 className="text-[10px] font-black uppercase tracking-[0.3em] text-[#525252]">Anti-Cheat Settings</h2>
+                <h2 className="text-[10px] font-semibold uppercase tracking-wider text-[#525252]">Anti-Cheat Settings</h2>
               </div>
               <div className="bg-[#090909] border border-white/5 rounded-[2.5rem] p-10 space-y-10 shadow-2xl">
                 <div className="flex items-center justify-between p-6 bg-[#000000] border border-white/5 rounded-3xl">
                   <div>
-                    <p className="text-xs font-black text-white uppercase tracking-wider">Security Status</p>
-                    <p className="text-[9px] font-bold text-[#525252] uppercase tracking-[0.2em] mt-1">Enabled</p>
+                    <p className="text-xs font-semibold text-white uppercase tracking-wider">Security Status</p>
+                    <p className="text-[9px] font-bold text-[#525252] uppercase tracking-wider mt-1">Enabled</p>
                   </div>
                   <button 
                     onClick={() => setAntiCheat({ ...antiCheat, enabled: !antiCheat.enabled })}
@@ -283,7 +283,7 @@ export default function AddContest() {
                           : "bg-transparent border-white/5 text-[#525252]"
                       }`}
                     >
-                      <span className="text-[10px] font-black uppercase tracking-widest">
+                      <span className="text-[10px] font-semibold uppercase tracking-widest">
                         {key.replace(/([A-Z])/g, ' $1').trim()}
                       </span>
                       <div className={`w-2 h-2 rounded-full ${value ? 'bg-[#0099ff] shadow-[0_0_10px_rgba(0,153,255,0.5)]' : 'bg-[#2a2a2a]'}`} />
@@ -294,7 +294,7 @@ export default function AddContest() {
                 <div className="pt-8 border-t border-white/5">
                   <div className="flex items-start gap-4 px-1">
                     <Info className="w-4 h-4 text-[#0099ff] shrink-0 mt-0.5" />
-                    <p className="text-[10px] font-bold text-[#525252] uppercase tracking-[0.1em] leading-relaxed">
+                    <p className="text-[10px] font-bold text-[#525252] uppercase tracking-wider leading-relaxed">
                       Anti-cheat rules will be active during the contest.
                     </p>
                   </div>

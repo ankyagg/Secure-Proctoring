@@ -14,6 +14,7 @@ export default defineConfig({
     },
   },
   server: {
+    allowedHosts: ["alessandro-necessitous-leandro.ngrok-free.dev"],
     proxy: {
       '/api/piston': {
         target: 'https://emkc.org',

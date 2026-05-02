@@ -51,7 +51,7 @@ export default function Signup() {
           initial={{ opacity: 0, x: -10 }}
           animate={{ opacity: 1, x: 0 }}
           onClick={() => navigate("/")}
-          className="absolute top-12 left-12 flex items-center gap-3 text-[#525252] hover:text-white transition-all text-[10px] font-black uppercase tracking-[0.3em] group"
+          className="absolute top-12 left-12 flex items-center gap-3 text-[#525252] hover:text-white transition-all text-[10px] font-semibold uppercase tracking-wider group"
         >
           <ChevronLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
           Go Back
@@ -72,14 +72,14 @@ export default function Signup() {
                </div>
             </div>
             <div className="space-y-4">
-              <div className="inline-flex items-center gap-3 px-5 py-2 rounded-full bg-white/5 border border-white/5 text-[9px] font-black text-[#0099ff] uppercase tracking-[0.4em]">
+              <div className="inline-flex items-center gap-3 px-5 py-2 rounded-full bg-white/5 border border-white/5 text-[9px] font-semibold text-[#0099ff] uppercase tracking-wider">
                  <Binary className="w-3 h-3" />
                  Create Your Account
               </div>
-              <h2 className="text-5xl font-black text-white tracking-[-0.06em] uppercase leading-none">
+              <h2 className="text-4xl font-semibold text-white tracking-tight uppercase leading-none">
                 Join <span className="text-[#0099ff]">Now.</span>
               </h2>
-              <p className="text-[#525252] text-[10px] font-black uppercase tracking-[0.3em]">
+              <p className="text-[#525252] text-[10px] font-semibold uppercase tracking-wider">
                 Sign up to start your journey.
               </p>
             </div>
@@ -87,7 +87,7 @@ export default function Signup() {
 
           <form className="space-y-6" onSubmit={handleSignup}>
             <div className="space-y-3">
-              <label className="text-[10px] font-black text-[#2a2a2a] uppercase tracking-[0.4em] ml-2">Username</label>
+              <label className="text-[10px] font-semibold text-[#2a2a2a] uppercase tracking-wider ml-2">Username</label>
               <div className="relative group">
                 <User className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-[#2a2a2a] group-focus-within:text-[#0099ff] transition-colors" />
                 <input
@@ -95,14 +95,14 @@ export default function Signup() {
                   placeholder="CHOOSE_A_USERNAME"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  className="w-full pl-16 pr-8 py-5 bg-[#000000] border border-white/5 rounded-3xl text-white placeholder:text-[#2a2a2a] focus:outline-none focus:border-[#0099ff]/50 transition-all font-black text-[11px] uppercase tracking-[0.2em]"
+                  className="w-full pl-16 pr-8 py-5 bg-[#000000] border border-white/5 rounded-3xl text-white placeholder:text-[#2a2a2a] focus:outline-none focus:border-[#0099ff]/50 transition-all font-semibold text-[11px] uppercase tracking-wider"
                   required
                 />
               </div>
             </div>
 
             <div className="space-y-3">
-              <label className="text-[10px] font-black text-[#2a2a2a] uppercase tracking-[0.4em] ml-2">Email Address</label>
+              <label className="text-[10px] font-semibold text-[#2a2a2a] uppercase tracking-wider ml-2">Email Address</label>
               <div className="relative group">
                 <Mail className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-[#2a2a2a] group-focus-within:text-[#0099ff] transition-colors" />
                 <input
@@ -110,14 +110,14 @@ export default function Signup() {
                   placeholder="YOUR@EMAIL.COM"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-16 pr-8 py-5 bg-[#000000] border border-white/5 rounded-3xl text-white placeholder:text-[#2a2a2a] focus:outline-none focus:border-[#0099ff]/50 transition-all font-black text-[11px] uppercase tracking-[0.2em]"
+                  className="w-full pl-16 pr-8 py-5 bg-[#000000] border border-white/5 rounded-3xl text-white placeholder:text-[#2a2a2a] focus:outline-none focus:border-[#0099ff]/50 transition-all font-semibold text-[11px] uppercase tracking-wider"
                   required
                 />
               </div>
             </div>
 
             <div className="space-y-3">
-              <label className="text-[10px] font-black text-[#2a2a2a] uppercase tracking-[0.4em] ml-2">Password</label>
+              <label className="text-[10px] font-semibold text-[#2a2a2a] uppercase tracking-wider ml-2">Password</label>
               <div className="relative group">
                 <Lock className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-[#2a2a2a] group-focus-within:text-[#0099ff] transition-colors" />
                 <input
@@ -125,7 +125,7 @@ export default function Signup() {
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-16 pr-8 py-5 bg-[#000000] border border-white/5 rounded-3xl text-white placeholder:text-[#2a2a2a] focus:outline-none focus:border-[#0099ff]/50 transition-all font-black text-[11px] uppercase tracking-[0.2em]"
+                  className="w-full pl-16 pr-8 py-5 bg-[#000000] border border-white/5 rounded-3xl text-white placeholder:text-[#2a2a2a] focus:outline-none focus:border-[#0099ff]/50 transition-all font-semibold text-[11px] uppercase tracking-wider"
                   required
                 />
               </div>
@@ -135,7 +135,7 @@ export default function Signup() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-6 px-8 bg-[#0099ff] hover:bg-white text-white hover:text-black rounded-3xl text-[11px] font-black uppercase tracking-[0.3em] shadow-[0_20px_50px_-10px_rgba(0,153,255,0.4)] transition-all duration-500 flex items-center justify-center gap-3 group disabled:opacity-50 active:scale-[0.98]"
+                className="w-full py-6 px-8 bg-[#0099ff] hover:bg-white text-white hover:text-black rounded-3xl text-[11px] font-semibold uppercase tracking-wider shadow-[0_20px_50px_-10px_rgba(0,153,255,0.4)] transition-all duration-500 flex items-center justify-center gap-3 group disabled:opacity-50 active:scale-[0.98]"
               >
                 {loading ? "Creating Account..." : "Get Started"}
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
@@ -145,13 +145,13 @@ export default function Signup() {
 
           <div className="mt-12 flex items-start gap-4 p-6 bg-white/[0.02] border border-white/5 rounded-3xl">
              <ShieldCheck className="w-5 h-5 text-[#0099ff] flex-shrink-0" />
-             <p className="text-[9px] text-[#525252] font-black uppercase tracking-[0.2em] leading-relaxed">
+             <p className="text-[9px] text-[#525252] font-semibold uppercase tracking-wider leading-relaxed">
                We use AI monitoring to keep contests fair. Please play by the rules.
              </p>
           </div>
 
           <div className="mt-12 text-center">
-            <p className="text-[10px] font-black text-[#525252] uppercase tracking-[0.4em]">
+            <p className="text-[10px] font-semibold text-[#525252] uppercase tracking-wider">
                 Sign In
             </p>
           </div>

@@ -61,7 +61,7 @@ export default function ContestManagement() {
         <div className="space-y-2">
           <div className="flex items-center gap-3">
              <div className="w-1.5 h-6 bg-[#0099ff] rounded-full shadow-[0_0_15px_rgba(0,153,255,0.5)]" />
-              <h1 className="text-5xl font-black tracking-[-0.05em] uppercase">
+              <h1 className="text-4xl font-semibold tracking-tight uppercase">
                  Contests
               </h1>
           </div>
@@ -77,13 +77,13 @@ export default function ContestManagement() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search Contests..."
-              className="pl-12 pr-6 py-4 bg-[#090909] border border-white/5 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] text-white outline-none focus:border-[#0099ff]/50 transition-all w-72 placeholder:text-[#2a2a2a]"
+              className="pl-12 pr-6 py-4 bg-[#090909] border border-white/5 rounded-2xl text-[10px] font-semibold uppercase tracking-wider text-white outline-none focus:border-[#0099ff]/50 transition-all w-72 placeholder:text-[#2a2a2a]"
             />
           </div>
           
           <button
             onClick={() => navigate("/admin/contests/new")}
-            className="flex items-center gap-3 px-8 py-4 bg-[#0099ff] text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-2xl hover:scale-105 active:scale-95 transition-all shadow-[0_0_30px_rgba(0,153,255,0.2)]"
+            className="flex items-center gap-3 px-8 py-4 bg-[#0099ff] text-white text-[10px] font-semibold uppercase tracking-wider rounded-2xl hover:scale-105 active:scale-95 transition-all shadow-[0_0_30px_rgba(0,153,255,0.2)]"
           >
             <Plus className="w-4 h-4" />
             New Contest
@@ -93,7 +93,7 @@ export default function ContestManagement() {
 
       {/* Main Table Interface */}
       <div className="bg-[#090909] border border-white/5 rounded-[2.5rem] overflow-hidden shadow-2xl">
-        <div className="grid px-10 py-6 bg-white/[0.02] border-b border-white/5 text-[9px] font-black text-[#2a2a2a] uppercase tracking-[0.3em]"
+        <div className="grid px-10 py-6 bg-white/[0.02] border-b border-white/5 text-[9px] font-semibold text-[#2a2a2a] uppercase tracking-wider"
           style={{ gridTemplateColumns: "1.8fr 1fr 1.5fr 0.8fr 1fr 1fr" }}>
           <span>Contest Name</span>
           <span>Status</span>
@@ -107,7 +107,7 @@ export default function ContestManagement() {
           {loading ? (
              <div className="py-32 flex flex-col items-center justify-center gap-4">
                 <div className="w-8 h-8 border-2 border-[#0099ff] border-t-transparent rounded-full animate-spin" />
-                <span className="text-[10px] font-black text-[#525252] uppercase tracking-[0.2em]">Loading Contests...</span>
+                <span className="text-[10px] font-semibold text-[#525252] uppercase tracking-wider">Loading Contests...</span>
              </div>
           ) : filtered.map((c, index) => {
             const s = statusConfig[c.status as keyof typeof statusConfig] || statusConfig.Live;
@@ -129,7 +129,7 @@ export default function ContestManagement() {
                     <Trophy className="w-5 h-5 text-[#2a2a2a] group-hover/row:text-[#0099ff] transition-colors" />
                   </div>
                   <div>
-                    <div className="text-white text-base font-black tracking-[-0.02em] uppercase group-hover/row:text-[#0099ff] transition-colors">
+                    <div className="text-white text-base font-semibold tracking-[-0.02em] uppercase group-hover/row:text-[#0099ff] transition-colors">
                       {c.name}
                     </div>
                     <div className="text-[9px] text-[#2a2a2a] font-bold uppercase tracking-widest mt-1">SIG: {c.id.slice(0, 8)}</div>
@@ -137,7 +137,7 @@ export default function ContestManagement() {
                 </div>
 
                 <div>
-                  <span className={`inline-flex items-center gap-2.5 text-[9px] font-black uppercase tracking-[0.2em] px-4 py-2 rounded-full border ${s.bg} ${s.text} ${s.border}`}>
+                  <span className={`inline-flex items-center gap-2.5 text-[9px] font-semibold uppercase tracking-wider px-4 py-2 rounded-full border ${s.bg} ${s.text} ${s.border}`}>
                     <span className={`w-1.5 h-1.5 rounded-full ${s.dot} ${c.status === "Live" ? "animate-pulse" : ""}`} />
                     {c.status || "Live"}
                   </span>
@@ -154,19 +154,19 @@ export default function ContestManagement() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3 text-white font-black text-xs tracking-widest">
+                <div className="flex items-center gap-3 text-white font-semibold text-xs tracking-widest">
                   <Box className="w-4 h-4 text-[#2a2a2a]" />
                   {problemsCount}
                 </div>
 
                 <div>
                   {c.antiCheat ? (
-                    <div className="flex items-center gap-2.5 text-[#0099ff] text-[9px] font-black uppercase tracking-[0.2em] bg-[#0099ff]/5 border border-[#0099ff]/20 px-4 py-2 rounded-xl w-fit">
+                    <div className="flex items-center gap-2.5 text-[#0099ff] text-[9px] font-semibold uppercase tracking-wider bg-[#0099ff]/5 border border-[#0099ff]/20 px-4 py-2 rounded-xl w-fit">
                       <Shield className="w-3.5 h-3.5" />
                       Locked
                     </div>
                   ) : (
-                    <div className="flex items-center gap-2.5 text-[#2a2a2a] text-[9px] font-black uppercase tracking-[0.2em] bg-white/5 border border-white/5 px-4 py-2 rounded-xl w-fit">
+                    <div className="flex items-center gap-2.5 text-[#2a2a2a] text-[9px] font-semibold uppercase tracking-wider bg-white/5 border border-white/5 px-4 py-2 rounded-xl w-fit">
                       <ShieldOff className="w-3.5 h-3.5" />
                       Open
                     </div>
@@ -208,8 +208,8 @@ export default function ContestManagement() {
               <div className="w-20 h-20 bg-white/5 border border-white/5 rounded-[2rem] flex items-center justify-center mb-8">
                 <Zap className="w-10 h-10 text-[#2a2a2a]" />
               </div>
-              <h3 className="text-2xl font-black text-white tracking-tight uppercase mb-3">No Contests</h3>
-              <p className="text-[#2a2a2a] text-[10px] font-black uppercase tracking-[0.3em] max-w-xs">Create your first contest to get started.</p>
+              <h3 className="text-2xl font-semibold text-white tracking-tight uppercase mb-3">No Contests</h3>
+              <p className="text-[#2a2a2a] text-[10px] font-semibold uppercase tracking-wider max-w-xs">Create your first contest to get started.</p>
             </div>
           )}
         </div>
@@ -233,20 +233,20 @@ export default function ContestManagement() {
               <div className="w-16 h-16 bg-rose-500/10 border border-rose-500/20 rounded-2xl flex items-center justify-center mb-8">
                 <Trash2 className="w-8 h-8 text-rose-500" />
               </div>
-              <h3 className="text-4xl font-black text-white tracking-tight uppercase mb-4">Delete Contest?</h3>
+              <h3 className="text-4xl font-semibold text-white tracking-tight uppercase mb-4">Delete Contest?</h3>
               <p className="text-[#525252] text-sm font-bold uppercase tracking-widest leading-relaxed mb-10">
                 This will permanently delete the contest and all its data.
               </p>
               <div className="flex gap-4">
                 <button 
                   onClick={() => setDeleteId(null)} 
-                  className="flex-1 px-8 py-5 bg-[#000000] border border-white/10 text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-2xl hover:bg-white/5 transition-all"
+                  className="flex-1 px-8 py-5 bg-[#000000] border border-white/10 text-white text-[10px] font-semibold uppercase tracking-wider rounded-2xl hover:bg-white/5 transition-all"
                 >
                   Cancel
                 </button>
                 <button 
                   onClick={() => handleDelete(deleteId)} 
-                  className="flex-1 px-8 py-5 bg-rose-600 text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-2xl hover:bg-rose-700 shadow-[0_0_30px_rgba(225,29,72,0.3)] transition-all"
+                  className="flex-1 px-8 py-5 bg-rose-600 text-white text-[10px] font-semibold uppercase tracking-wider rounded-2xl hover:bg-rose-700 shadow-[0_0_30px_rgba(225,29,72,0.3)] transition-all"
                 >
                   Delete
                 </button>

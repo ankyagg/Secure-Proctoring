@@ -95,7 +95,7 @@ export default function SubmissionsMonitoring() {
         <div className="space-y-2">
           <div className="flex items-center gap-3">
              <div className="w-1.5 h-6 bg-[#0099ff] rounded-full shadow-[0_0_15px_rgba(0,153,255,0.5)]" />
-              <h1 className="text-5xl font-black tracking-[-0.05em] uppercase">
+              <h1 className="text-4xl font-semibold tracking-tight uppercase">
                  Submission <span className="text-[#525252]">History</span>
               </h1>
           </div>
@@ -111,7 +111,7 @@ export default function SubmissionsMonitoring() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search..."
-              className="pl-12 pr-6 py-4 bg-[#090909] border border-white/5 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] text-white outline-none focus:border-[#0099ff]/50 transition-all w-72 placeholder:text-[#2a2a2a]"
+              className="pl-12 pr-6 py-4 bg-[#090909] border border-white/5 rounded-2xl text-[10px] font-semibold uppercase tracking-wider text-white outline-none focus:border-[#0099ff]/50 transition-all w-72 placeholder:text-[#2a2a2a]"
             />
           </div>
           <button 
@@ -134,10 +134,10 @@ export default function SubmissionsMonitoring() {
           <div key={i} className="bg-[#090909] border border-white/5 rounded-[2rem] p-8 space-y-4">
             <div className="flex items-center justify-between">
               <stat.icon className={`w-5 h-5 ${stat.color}`} />
-              <div className="px-2 py-1 bg-white/5 rounded-lg text-[8px] font-black uppercase tracking-widest text-[#2a2a2a]">System</div>
+              <div className="px-2 py-1 bg-white/5 rounded-lg text-[8px] font-semibold uppercase tracking-widest text-[#2a2a2a]">System</div>
             </div>
             <div>
-              <div className="text-3xl font-black tracking-tight">{stat.value}</div>
+              <div className="text-3xl font-semibold tracking-tight">{stat.value}</div>
               <div className="text-[10px] font-bold text-[#2a2a2a] uppercase tracking-widest mt-1">{stat.label}</div>
             </div>
           </div>
@@ -150,7 +150,7 @@ export default function SubmissionsMonitoring() {
           <button 
             key={v}
             onClick={() => setFilterVerdict(v)}
-            className={`px-8 py-3.5 rounded-2xl text-[9px] font-black uppercase tracking-[0.2em] transition-all whitespace-nowrap border ${
+            className={`px-8 py-3.5 rounded-2xl text-[9px] font-semibold uppercase tracking-wider transition-all whitespace-nowrap border ${
               filterVerdict === v ? "bg-[#0099ff] text-white border-[#0099ff]/50 shadow-[0_0_20px_rgba(0,153,255,0.2)]" : "bg-[#090909] text-[#525252] border-white/5 hover:text-white"
             }`}
           >
@@ -161,7 +161,7 @@ export default function SubmissionsMonitoring() {
 
       {/* Main Table */}
       <div className="bg-[#090909] border border-white/5 rounded-[2.5rem] overflow-hidden shadow-2xl">
-        <div className="grid px-10 py-6 bg-white/[0.02] border-b border-white/5 text-[9px] font-black text-[#2a2a2a] uppercase tracking-[0.3em]"
+        <div className="grid px-10 py-6 bg-white/[0.02] border-b border-white/5 text-[9px] font-semibold text-[#2a2a2a] uppercase tracking-wider"
           style={{ gridTemplateColumns: "1.5fr 1.5fr 1fr 1fr 1fr 0.5fr" }}>
           <span>Student Name</span>
           <span>Problem Title</span>
@@ -175,7 +175,7 @@ export default function SubmissionsMonitoring() {
           {loading && submissions.length === 0 ? (
             <div className="py-32 flex flex-col items-center justify-center gap-4">
               <div className="w-8 h-8 border-2 border-[#0099ff] border-t-transparent rounded-full animate-spin" />
-              <span className="text-[10px] font-black text-[#525252] uppercase tracking-[0.2em]">Loading Submissions...</span>
+              <span className="text-[10px] font-semibold text-[#525252] uppercase tracking-wider">Loading Submissions...</span>
             </div>
           ) : filtered.map((sub, index) => {
             const verdict = sub.passed_all ? "Accepted" : "Wrong Answer";
@@ -196,22 +196,22 @@ export default function SubmissionsMonitoring() {
               >
                 <div className="flex items-center gap-5">
                   <div className="w-12 h-12 rounded-2xl bg-[#000000] border border-white/5 flex items-center justify-center group-hover/row:border-[#0099ff]/30 transition-all">
-                    <span className="text-[10px] font-black text-[#525252]">{sub.user_email.charAt(0).toUpperCase()}</span>
+                    <span className="text-[10px] font-semibold text-[#525252]">{sub.user_email.charAt(0).toUpperCase()}</span>
                   </div>
                   <div>
-                    <div className="text-white text-base font-black tracking-[-0.02em] uppercase group-hover/row:text-[#0099ff] transition-colors">
+                    <div className="text-white text-base font-semibold tracking-[-0.02em] uppercase group-hover/row:text-[#0099ff] transition-colors">
                       {sub.user_email.split('@')[0]}
                     </div>
                     <div className="text-[9px] text-[#2a2a2a] font-bold uppercase tracking-widest mt-1">ID: {sub.$id.slice(-6)}</div>
                   </div>
                 </div>
 
-                <div className="text-sm font-black text-[#a6a6a6] uppercase tracking-tight truncate max-w-[200px]">
+                <div className="text-sm font-semibold text-[#a6a6a6] uppercase tracking-tight truncate max-w-[200px]">
                   {sub.question_title}
                 </div>
 
                 <div>
-                  <span className={`inline-flex items-center gap-2.5 text-[9px] font-black uppercase tracking-[0.2em] px-4 py-2 rounded-full border ${vc.bg} ${vc.text} ${vc.border} ${vc.glow}`}>
+                  <span className={`inline-flex items-center gap-2.5 text-[9px] font-semibold uppercase tracking-wider px-4 py-2 rounded-full border ${vc.bg} ${vc.text} ${vc.border} ${vc.glow}`}>
                     <span className={`w-1.5 h-1.5 rounded-full ${vc.text.replace('text-', 'bg-')}`} />
                     {verdict}
                   </span>
@@ -222,7 +222,7 @@ export default function SubmissionsMonitoring() {
                       <Clock className="w-3.5 h-3.5 text-[#525252]" />
                       {time}
                    </div>
-                   <div className="text-[9px] font-black text-[#2a2a2a] uppercase tracking-widest">ENV: {lang}</div>
+                   <div className="text-[9px] font-semibold text-[#2a2a2a] uppercase tracking-widest">ENV: {lang}</div>
                 </div>
 
                 <div className="text-[10px] font-bold text-[#525252] uppercase tracking-widest">
@@ -261,8 +261,8 @@ export default function SubmissionsMonitoring() {
                     <Terminal className="w-8 h-8 text-[#0099ff]" />
                   </div>
                   <div>
-                    <h2 className="text-3xl font-black uppercase tracking-tight">{selectedSubmission.question_title}</h2>
-                    <p className="text-[10px] font-bold text-[#525252] uppercase tracking-[0.3em] mt-1">
+                    <h2 className="text-3xl font-semibold uppercase tracking-tight">{selectedSubmission.question_title}</h2>
+                    <p className="text-[10px] font-bold text-[#525252] uppercase tracking-wider mt-1">
                       Submitted by <span className="text-white">{selectedSubmission.user_email}</span>
                     </p>
                   </div>
@@ -293,18 +293,18 @@ export default function SubmissionsMonitoring() {
               <div className="px-10 py-6 border-t border-white/5 bg-white/[0.02] flex items-center justify-between">
                 <div className="flex gap-10">
                   <div className="flex flex-col gap-1">
-                    <span className="text-[8px] font-black text-[#525252] uppercase tracking-[0.2em]">Result</span>
-                    <span className={`text-[10px] font-black uppercase tracking-widest ${selectedSubmission.passed_all ? 'text-emerald-400' : 'text-rose-400'}`}>
+                    <span className="text-[8px] font-semibold text-[#525252] uppercase tracking-wider">Result</span>
+                    <span className={`text-[10px] font-semibold uppercase tracking-widest ${selectedSubmission.passed_all ? 'text-emerald-400' : 'text-rose-400'}`}>
                       {selectedSubmission.passed_all ? 'Accepted' : 'Wrong Answer'}
                     </span>
                   </div>
                   <div className="flex flex-col gap-1">
-                    <span className="text-[8px] font-black text-[#525252] uppercase tracking-[0.2em]">Language</span>
-                    <span className="text-[10px] font-black uppercase tracking-widest text-white">{langMap[selectedSubmission.language_id]}</span>
+                    <span className="text-[8px] font-semibold text-[#525252] uppercase tracking-wider">Language</span>
+                    <span className="text-[10px] font-semibold uppercase tracking-widest text-white">{langMap[selectedSubmission.language_id]}</span>
                   </div>
                 </div>
                 <div className="flex items-center gap-4">
-                  <button className="px-6 py-3 bg-[#0099ff] text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-2xl hover:scale-105 active:scale-95 transition-all">
+                  <button className="px-6 py-3 bg-[#0099ff] text-white text-[10px] font-semibold uppercase tracking-wider rounded-2xl hover:scale-105 active:scale-95 transition-all">
                     Download Source
                   </button>
                 </div>

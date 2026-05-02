@@ -261,12 +261,12 @@ export default function StudentLayout() {
                   <ShieldCheck className="w-12 h-12 text-black" />
                 </div>
                 <div className="space-y-6">
-                  <h2 className="text-5xl font-black text-white tracking-[-0.05em] uppercase leading-none">Security Required</h2>
+                  <h2 className="text-4xl font-semibold text-white tracking-tight uppercase leading-none">Security Required</h2>
                     This test requires fullscreen mode. Please click the button below to start.
                 </div>
                 <button
                   onClick={enterFullscreen}
-                  className="px-12 py-6 bg-[#0099ff] text-white font-black text-[11px] uppercase tracking-[0.4em] rounded-[1.5rem] hover:bg-white hover:text-black transition-all shadow-[0_20px_50px_-10px_rgba(0,153,255,0.4)] active:scale-95"
+                  className="px-12 py-6 bg-[#0099ff] text-white font-semibold text-[11px] uppercase tracking-wider rounded-[1.5rem] hover:bg-white hover:text-black transition-all shadow-[0_20px_50px_-10px_rgba(0,153,255,0.4)] active:scale-95"
                 >
                   Enter Fullscreen
                 </button>
@@ -290,8 +290,8 @@ export default function StudentLayout() {
                 <AlertTriangle className="w-6 h-6 animate-pulse" />
               </div>
               <div className="flex flex-col">
-                <span className="text-[9px] font-black uppercase tracking-[0.4em] mb-1 opacity-50">Security Alert</span>
-                <p className="text-sm font-black uppercase tracking-widest leading-none">
+                <span className="text-[9px] font-semibold uppercase tracking-wider mb-1 opacity-50">Security Alert</span>
+                <p className="text-sm font-semibold uppercase tracking-widest leading-none">
                   {watchdogState === 'angry' ? "Please look back at the screen!" : "Please focus on the screen."}
                 </p>
               </div>
@@ -300,74 +300,76 @@ export default function StudentLayout() {
         </AnimatePresence>
 
         {/* Global Toolbar */}
-        <header className="h-24 sticky top-0 z-50 flex items-center justify-between px-12 border-b border-white/5 bg-black/40 backdrop-blur-xl">
-          <div className="flex items-center gap-10">
-            <Link to="/student/lobby" className="flex items-center gap-4 group">
-              <div className="w-12 h-12 bg-white border border-white/10 rounded-2xl flex items-center justify-center shadow-2xl group-hover:scale-110 transition-all">
-                <Code2 className="w-6 h-6 text-black" />
+        {!isWorkspace && (
+          <header className="h-24 sticky top-0 z-50 flex items-center justify-between px-12 border-b border-white/5 bg-black/40 backdrop-blur-xl">
+            <div className="flex items-center gap-10">
+              <Link to="/student/lobby" className="flex items-center gap-4 group">
+                <div className="w-12 h-12 bg-white border border-white/10 rounded-2xl flex items-center justify-center shadow-2xl group-hover:scale-110 transition-all">
+                  <Code2 className="w-6 h-6 text-black" />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-white text-[11px] font-semibold tracking-wider uppercase leading-none mb-1.5">Proctor</span>
+                  <span className="text-[9px] text-[#525252] font-semibold uppercase tracking-wider flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 bg-[#0099ff] rounded-full shadow-[0_0_8px_rgba(0,153,255,1)] animate-pulse" />
+                    System Online
+                  </span>
+                </div>
+              </Link>
+
+              <div className="h-8 w-px bg-white/5 hidden md:block" />
+
+              <div className="hidden md:flex items-center gap-10">
+                {[
+                  { to: "/student/problems", label: "Library", icon: LayoutList },
+                  { to: "/student/leaderboard", label: "Rankings", icon: Trophy }
+                ].map((item) => {
+                  const isActive = location.pathname.includes(item.to);
+                  return (
+                    <Link
+                      key={item.to}
+                      to={`${item.to}${location.search}`}
+                      className={`flex items-center gap-3 text-[10px] font-semibold uppercase tracking-wider transition-all ${isActive ? "text-[#0099ff]" : "text-[#525252] hover:text-white"}`}
+                    >
+                      <item.icon className="w-4 h-4" />
+                      {item.label}
+                    </Link>
+                  );
+                })}
               </div>
-              <div className="flex flex-col">
-                <span className="text-white text-[11px] font-black tracking-[0.4em] uppercase leading-none mb-1.5">Proctor</span>
-                <span className="text-[9px] text-[#525252] font-black uppercase tracking-[0.3em] flex items-center gap-2">
-                  <div className="w-1.5 h-1.5 bg-[#0099ff] rounded-full shadow-[0_0_8px_rgba(0,153,255,1)] animate-pulse" />
-                  System Online
-                </span>
-              </div>
-            </Link>
-
-            <div className="h-8 w-px bg-white/5 hidden md:block" />
-
-            <div className="hidden md:flex items-center gap-10">
-              {[
-                { to: "/student/problems", label: "Library", icon: LayoutList },
-                { to: "/student/leaderboard", label: "Rankings", icon: Trophy }
-              ].map((item) => {
-                const isActive = location.pathname.includes(item.to);
-                return (
-                  <Link
-                    key={item.to}
-                    to={`${item.to}${location.search}`}
-                    className={`flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.3em] transition-all ${isActive ? "text-[#0099ff]" : "text-[#525252] hover:text-white"}`}
-                  >
-                    <item.icon className="w-4 h-4" />
-                    {item.label}
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
-
-          <div className="flex items-center gap-8">
-            <div className="flex items-center gap-3 px-6 py-3 rounded-2xl bg-[#0099ff]/5 border border-[#0099ff]/10 text-[#0099ff]">
-               <div className="w-2 h-2 bg-[#0099ff] rounded-full animate-ping" />
-               <span className="text-[10px] font-black uppercase tracking-[0.3em]">Anti-Cheat</span>
             </div>
 
-            <div className="flex items-center gap-4">
-               <div className="flex items-center gap-3 px-6 py-3 rounded-2xl bg-white/5 border border-white/5 text-[#525252]">
-                 <Clock className="w-4 h-4 text-[#0099ff]" />
-                 <span className="text-[11px] font-black tabular-nums tracking-widest">{formatTime(timeRemaining)}</span>
-               </div>
-               {warningCount > 0 && (
-                 <div className="flex items-center gap-3 px-6 py-3 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-500 animate-pulse">
-                   <AlertTriangle className="w-4 h-4" />
-                   <span className="text-[11px] font-black">{warningCount}</span>
+            <div className="flex items-center gap-8">
+              <div className="flex items-center gap-3 px-6 py-3 rounded-2xl bg-[#0099ff]/5 border border-[#0099ff]/10 text-[#0099ff]">
+                 <div className="w-2 h-2 bg-[#0099ff] rounded-full animate-ping" />
+                 <span className="text-[10px] font-semibold uppercase tracking-wider">Anti-Cheat</span>
+              </div>
+
+              <div className="flex items-center gap-4">
+                 <div className="flex items-center gap-3 px-6 py-3 rounded-2xl bg-white/5 border border-white/5 text-[#525252]">
+                   <Clock className="w-4 h-4 text-[#0099ff]" />
+                   <span className="text-[11px] font-semibold tabular-nums tracking-widest">{formatTime(timeRemaining)}</span>
                  </div>
-               )}
-            </div>
+                 {warningCount > 0 && (
+                   <div className="flex items-center gap-3 px-6 py-3 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-500 animate-pulse">
+                     <AlertTriangle className="w-4 h-4" />
+                     <span className="text-[11px] font-semibold">{warningCount}</span>
+                   </div>
+                 )}
+              </div>
 
-            <div className="h-8 w-px bg-white/5" />
+              <div className="h-8 w-px bg-white/5" />
 
-            <div className="flex items-center gap-6">
-               <div className="w-12 h-12 rounded-2xl bg-white border border-white/10 flex items-center justify-center text-black font-black text-xs shadow-2xl">
-                 {user?.name?.substring(0, 2).toUpperCase() || "??"}
-               </div>
-               <button onClick={async () => { await account.deleteSession('current'); navigate("/"); }} className="p-3 text-[#2a2a2a] hover:text-white transition-colors">
-                 <LogOut className="w-5 h-5" />
-               </button>
+              <div className="flex items-center gap-6">
+                 <div className="w-12 h-12 rounded-2xl bg-white border border-white/10 flex items-center justify-center text-black font-semibold text-xs shadow-2xl">
+                   {user?.name?.substring(0, 2).toUpperCase() || "??"}
+                 </div>
+                 <button onClick={async () => { await account.deleteSession('current'); navigate("/"); }} className="p-3 text-[#2a2a2a] hover:text-white transition-colors">
+                   <LogOut className="w-5 h-5" />
+                 </button>
+              </div>
             </div>
-          </div>
-        </header>
+          </header>
+        )}
 
         <main className="flex-1 relative flex flex-col overflow-y-auto">
           <Outlet />
@@ -386,7 +388,7 @@ export default function StudentLayout() {
                 <WebcamPreview username={user?.name || "node"} className="w-64 h-40 rounded-[2rem] overflow-hidden group-hover:scale-105 transition-all duration-700" />
                 <div className="absolute top-6 left-6 flex items-center gap-3 px-4 py-2 rounded-full bg-black/80 border border-white/10 backdrop-blur-xl">
                   <div className="w-2 h-2 bg-rose-500 rounded-full animate-pulse shadow-[0_0_10px_#f43f5e]" />
-                  <span className="text-[9px] font-black text-white uppercase tracking-[0.3em]">Live Monitoring</span>
+                  <span className="text-[9px] font-semibold text-white uppercase tracking-wider">Live Monitoring</span>
                 </div>
               </div>
             </motion.div>

@@ -39,10 +39,10 @@ export default function AdminLogin() {
             <Shield className="w-8 h-8 text-[#0099ff]" />
           </div>
           <div>
-            <h2 className="text-3xl font-black text-white tracking-tight uppercase">
+            <h2 className="text-3xl font-semibold text-white tracking-tight uppercase">
               Admin <span className="text-[#0099ff]">Portal</span>
             </h2>
-            <p className="mt-2 text-[10px] font-black uppercase tracking-[0.25em] text-[#525252]">
+            <p className="mt-2 text-[10px] font-semibold uppercase tracking-wider text-[#525252]">
               Secure Operations Command
             </p>
           </div>
@@ -50,7 +50,7 @@ export default function AdminLogin() {
 
         <form className="mt-8 space-y-5" onSubmit={handleLogin}>
           <div className="space-y-2">
-            <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-[#525252] ml-1">
+            <label className="block text-[10px] font-semibold uppercase tracking-wider text-[#525252] ml-1">
               Email Identity
             </label>
             <div className="relative">
@@ -67,7 +67,7 @@ export default function AdminLogin() {
           </div>
 
           <div className="space-y-2">
-            <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-[#525252] ml-1">
+            <label className="block text-[10px] font-semibold uppercase tracking-wider text-[#525252] ml-1">
               Access Code
             </label>
             <div className="relative">
@@ -86,7 +86,7 @@ export default function AdminLogin() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full flex items-center justify-center gap-3 py-4 px-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] text-white bg-[#0099ff] hover:bg-white hover:text-black hover:scale-105 active:scale-95 transition-all shadow-[0_0_30px_rgba(0,153,255,0.3)] disabled:opacity-50 mt-4 group"
+            className="w-full flex items-center justify-center gap-3 py-4 px-4 rounded-2xl text-[11px] font-semibold uppercase tracking-wider text-white bg-[#0099ff] hover:bg-white hover:text-black hover:scale-105 active:scale-95 transition-all shadow-[0_0_30px_rgba(0,153,255,0.3)] disabled:opacity-50 mt-4 group"
           >
             {loading ? "Authenticating..." : (
               <>

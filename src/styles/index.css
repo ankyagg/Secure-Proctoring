@@ -70,6 +70,7 @@
 }
 
 @theme inline {
+  --font-sans: "GT Walsheim Pro", "Inter", system-ui, sans-serif;
   --animate-cell-ripple: cell-ripple var(--duration, 200ms) ease-out none 1 var(--delay, 0ms);
   @keyframes cell-ripple {
     0% { opacity: 0.4; }

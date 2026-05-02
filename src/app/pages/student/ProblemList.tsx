@@ -73,7 +73,7 @@ export default function ProblemList() {
   if (loading) return (
     <div className="min-h-screen flex flex-col items-center justify-center gap-6 bg-[#000]">
       <div className="w-10 h-10 border-2 border-[#0099ff] border-t-transparent rounded-full animate-spin" />
-      <span className="text-[10px] font-black text-[#525252] uppercase tracking-[0.2em]">Loading Contests...</span>
+      <span className="text-[10px] font-semibold text-[#525252] uppercase tracking-wider">Loading Contests...</span>
     </div>
   );
 
@@ -92,7 +92,7 @@ export default function ProblemList() {
           initial={{ opacity: 0, x: -10 }}
           animate={{ opacity: 1, x: 0 }}
           onClick={() => navigate("/student/lobby")}
-          className="flex items-center gap-3 text-[#525252] hover:text-white transition-all text-[10px] font-black uppercase tracking-[0.3em] group mb-20"
+          className="flex items-center gap-3 text-[#525252] hover:text-white transition-all text-[10px] font-semibold uppercase tracking-wider group mb-20"
         >
           <ChevronLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
           Back to Lobby
@@ -101,11 +101,11 @@ export default function ProblemList() {
         {/* Header Section */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-8 mb-16">
           <div className="space-y-3 max-w-3xl">
-            <div className="inline-flex items-center gap-3 px-4 py-1.5 rounded-full bg-white/5 border border-white/5 text-[8px] font-black text-[#0099ff] uppercase tracking-[0.4em] mb-4">
+            <div className="inline-flex items-center gap-3 px-4 py-1.5 rounded-full bg-white/5 border border-white/5 text-[8px] font-semibold text-[#0099ff] uppercase tracking-wider mb-4">
                <Binary className="w-3 h-3" />
                Test Started
             </div>
-            <h1 className="text-5xl md:text-6xl font-black tracking-[-0.06em] leading-[0.85] uppercase">
+            <h1 className="text-4xl md:text-4xl font-semibold tracking-tight leading-[0.85] uppercase">
               Coding <span className="text-[#0099ff] italic">Challenges.</span>
             </h1>
             <p className="text-lg md:text-xl text-[#525252] font-medium tracking-tight max-w-xl text-balance">
@@ -115,7 +115,7 @@ export default function ProblemList() {
 
           <button
             onClick={() => navigate("/student/leaderboard")}
-            className="flex items-center gap-4 px-8 py-4 bg-[#090909] border border-white/5 rounded-2xl text-[9px] font-black text-white uppercase tracking-[0.2em] hover:bg-white hover:text-black transition-all shadow-2xl active:scale-95"
+            className="flex items-center gap-4 px-8 py-4 bg-[#090909] border border-white/5 rounded-2xl text-[9px] font-semibold text-white uppercase tracking-wider hover:bg-white hover:text-black transition-all shadow-2xl active:scale-95"
           >
             <Trophy className="w-4 h-4" />
             Rankings
@@ -126,17 +126,17 @@ export default function ProblemList() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-16">
           <div className="md:col-span-2 bg-[#090909] border border-white/5 rounded-[2.5rem] p-8 flex flex-col justify-between group transition-all relative overflow-hidden shadow-2xl">
             <div className="flex items-center justify-between mb-8">
-              <span className="text-[9px] font-black uppercase tracking-[0.3em] text-[#2a2a2a]">Your Progress</span>
+              <span className="text-[9px] font-semibold uppercase tracking-wider text-[#2a2a2a]">Your Progress</span>
               <div className="p-3 rounded-xl bg-[#0099ff]/5 border border-[#0099ff]/10">
                 <Target className="w-5 h-5 text-[#0099ff]" />
               </div>
             </div>
             <div>
               <div className="flex items-end gap-4 mb-6">
-                <span className="text-6xl font-black tracking-[-0.06em] leading-none">{masteryPercentage}%</span>
+                <span className="text-4xl font-semibold tracking-tight leading-none">{masteryPercentage}%</span>
                 <div className="flex flex-col mb-1">
-                  <span className="text-[#0099ff] text-[9px] font-black uppercase tracking-widest leading-none">Status</span>
-                  <span className="text-[#2a2a2a] text-[9px] font-black uppercase tracking-widest mt-1">In Progress</span>
+                  <span className="text-[#0099ff] text-[9px] font-semibold uppercase tracking-widest leading-none">Status</span>
+                  <span className="text-[#2a2a2a] text-[9px] font-semibold uppercase tracking-widest mt-1">In Progress</span>
                 </div>
               </div>
               <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
@@ -150,18 +150,18 @@ export default function ProblemList() {
           </div>
 
           <div className="bg-[#090909] border border-white/5 rounded-[2.5rem] p-8 flex flex-col justify-between shadow-2xl">
-            <div className="text-[9px] font-black uppercase tracking-[0.3em] text-[#2a2a2a] mb-8">Solved</div>
+            <div className="text-[9px] font-semibold uppercase tracking-wider text-[#2a2a2a] mb-8">Solved</div>
             <div>
-              <div className="text-5xl font-black tracking-[-0.06em] leading-none mb-3">00</div>
-              <div className="text-[9px] font-black text-[#525252] uppercase tracking-[0.2em]">Completed</div>
+              <div className="text-4xl font-semibold tracking-tight leading-none mb-3">00</div>
+              <div className="text-[9px] font-semibold text-[#525252] uppercase tracking-wider">Completed</div>
             </div>
           </div>
 
           <div className="bg-[#090909] border border-white/5 rounded-[2.5rem] p-8 flex flex-col justify-between shadow-2xl">
-            <div className="text-[9px] font-black uppercase tracking-[0.3em] text-[#2a2a2a] mb-8">Total Score</div>
+            <div className="text-[9px] font-semibold uppercase tracking-wider text-[#2a2a2a] mb-8">Total Score</div>
             <div>
-              <div className="text-5xl font-black tracking-[-0.06em] leading-none mb-3">000</div>
-              <div className="text-[9px] font-black text-[#525252] uppercase tracking-[0.2em]">Total Points</div>
+              <div className="text-4xl font-semibold tracking-tight leading-none mb-3">000</div>
+              <div className="text-[9px] font-semibold text-[#525252] uppercase tracking-wider">Total Points</div>
             </div>
           </div>
         </div>
@@ -170,11 +170,11 @@ export default function ProblemList() {
         <div className="space-y-6">
           <div className="flex items-center justify-between mb-10 px-6">
             <div className="flex items-center gap-10">
-               <div className="flex items-center gap-3 text-[10px] font-black text-white uppercase tracking-[0.2em]">
+               <div className="flex items-center gap-3 text-[10px] font-semibold text-white uppercase tracking-wider">
                  <Flame className="w-4 h-4 text-[#0099ff]" />
                  All Problems
                </div>
-               <div className="flex items-center gap-3 text-[10px] font-black text-[#2a2a2a] uppercase tracking-[0.2em] hover:text-[#525252] cursor-pointer transition-colors">
+               <div className="flex items-center gap-3 text-[10px] font-semibold text-[#2a2a2a] uppercase tracking-wider hover:text-[#525252] cursor-pointer transition-colors">
                  <Filter className="w-4 h-4" />
                  Filter
                </div>
@@ -197,25 +197,25 @@ export default function ProblemList() {
                 >
                   <div className="absolute inset-0 bg-[#0099ff]/5 translate-x-[-100%] group-hover:translate-x-0 transition-transform duration-700" />
                   
-                  <div className="relative z-10 w-16 h-16 rounded-2xl bg-black border border-white/5 flex items-center justify-center text-[11px] font-black text-[#2a2a2a] group-hover:text-white group-hover:border-[#0099ff]/30 transition-all shadow-2xl">
+                  <div className="relative z-10 w-16 h-16 rounded-2xl bg-black border border-white/5 flex items-center justify-center text-[11px] font-semibold text-[#2a2a2a] group-hover:text-white group-hover:border-[#0099ff]/30 transition-all shadow-2xl">
                     {idxLabel}
                   </div>
 
                   <div className="relative z-10 flex-1 flex flex-col gap-3">
                     <div className="flex items-center gap-6">
-                      <h3 className="text-3xl font-black text-white uppercase tracking-[-0.04em] group-hover:text-[#0099ff] transition-colors">
+                      <h3 className="text-3xl font-semibold text-white uppercase tracking-tight group-hover:text-[#0099ff] transition-colors">
                         {problem.title}
                       </h3>
-                      <span className={`px-4 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-[0.2em] border ${diff.bg} ${diff.text} ${diff.border}`}>
+                      <span className={`px-4 py-1.5 rounded-xl text-[9px] font-semibold uppercase tracking-wider border ${diff.bg} ${diff.text} ${diff.border}`}>
                         {problem.difficulty}
                       </span>
                     </div>
                     <div className="flex items-center gap-8">
-                      <div className="flex items-center gap-2.5 text-[10px] font-black text-[#2a2a2a] uppercase tracking-[0.2em] group-hover:text-[#525252] transition-colors">
+                      <div className="flex items-center gap-2.5 text-[10px] font-semibold text-[#2a2a2a] uppercase tracking-wider group-hover:text-[#525252] transition-colors">
                         <Clock className="w-4 h-4" />
                         {problem.time_limit || "2.0"}S
                       </div>
-                      <div className="flex items-center gap-2.5 text-[10px] font-black text-[#2a2a2a] uppercase tracking-[0.2em] group-hover:text-[#525252] transition-colors">
+                      <div className="flex items-center gap-2.5 text-[10px] font-semibold text-[#2a2a2a] uppercase tracking-wider group-hover:text-[#525252] transition-colors">
                         <Zap className="w-4 h-4 text-[#0099ff]/40" />
                         {problem.points || "100"} POINTS
                       </div>
@@ -223,7 +223,7 @@ export default function ProblemList() {
                   </div>
 
                   <div className="relative z-10 flex items-center gap-10">
-                    <div className="px-6 py-3 rounded-2xl bg-white/5 border border-white/5 text-[9px] font-black text-[#2a2a2a] uppercase tracking-[0.3em]">
+                    <div className="px-6 py-3 rounded-2xl bg-white/5 border border-white/5 text-[9px] font-semibold text-[#2a2a2a] uppercase tracking-wider">
                       Locked
                     </div>
                     <div className="w-14 h-14 rounded-full bg-white/5 border border-white/5 flex items-center justify-center group-hover:bg-[#0099ff] group-hover:border-[#0099ff] group-hover:scale-110 transition-all shadow-2xl">

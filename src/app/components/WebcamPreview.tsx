@@ -40,7 +40,7 @@ const WebcamPreview: React.FC<WebcamPreviewProps> = ({ username, className }) =>
           >
             <Shield className="w-4 h-4 text-[#a6a6a6]" />
           </motion.div>
-          <div className="text-[8px] font-black text-[#a6a6a6] uppercase tracking-[0.2em] relative z-10 text-center px-4">
+          <div className="text-[8px] font-semibold text-[#a6a6a6] uppercase tracking-wider relative z-10 text-center px-4">
             Initializing Secure Feed
           </div>
           <div className="mt-2 w-24 h-0.5 bg-white/5 rounded-full overflow-hidden relative z-10">

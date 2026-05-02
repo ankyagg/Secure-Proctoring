@@ -109,23 +109,42 @@ export default function CodingWorkspace() {
         const data = {
           ...doc,
           id: doc.$id,
-          timeLimit: doc.time_limit || "2.0s",
-          memoryLimit: doc.memory_limit || "256MB",
-          sampleInput: doc.sample_input || "",
-          sampleOutput: doc.sample_output || "",
+          title: doc.title || "",
+          difficulty: doc.difficulty || "Medium",
+          points: doc.points || 100,
           statement: doc.statement || "",
+          constraints: doc.constraints || "",
+          inputFormat: doc.inputFormat || doc.input_format || "",
+          outputFormat: doc.outputFormat || doc.output_format || "",
+          timeLimit: doc.timeLimit || doc.time_limit || "2.0s",
+          memoryLimit: doc.memoryLimit || doc.memory_limit || "256MB",
+          sampleInput: doc.sampleInput || doc.sample_input || "",
+          sampleOutput: doc.sampleOutput || doc.sample_output || "",
+          explanation: doc.explanation || "",
         } as unknown as FirestoreProblem;
 
-        let boilerplates = {};
-        if (typeof doc.boilerplates === 'string') {
-          try { boilerplates = JSON.parse(doc.boilerplates); } catch(e){}
-        } else if (doc.boilerplates) {
-          boilerplates = doc.boilerplates;
+        let parsedBoilerplates: Record<string, string> = {
+          "C++": "",
+          "Java": "",
+          "Python": ""
+        };
+
+        if (doc.boilerplates) {
+          try {
+            const bp = typeof doc.boilerplates === 'string' ? JSON.parse(doc.boilerplates) : doc.boilerplates;
+            parsedBoilerplates = { ...parsedBoilerplates, ...bp };
+          } catch(e){
+            console.error("Boilerplate parse failed", e);
+          }
         }
 
-        setProblem({ ...data, boilerplates });
-        setCode(boilerplates[language] || "");
-        setCustomInput(doc.sample_input || "");
+        setProblem({ ...data, boilerplates: parsedBoilerplates });
+        
+        // Initialize source code from boilerplates
+        const initialCode = parsedBoilerplates[language] || "";
+        setCode(initialCode);
+        setCurrentCode(initialCode);
+        setCustomInput(data.sampleInput || "");
       })
       .catch((err) => {
         console.error("Appwrite fetch failed", err);
@@ -224,6 +243,7 @@ export default function CodingWorkspace() {
           language_id: language === "C++" ? 54 : language === "Java" ? 62 : 71, 
           user_email: currentUser?.email || "anonymous@node",
           user_name: currentUser?.username || "ANON",
+          user_id: currentUser?.id || "ANON",
           contest_id: contestId
         }),
       });
@@ -252,7 +272,7 @@ export default function CodingWorkspace() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-6 bg-[#000]">
         <div className="w-10 h-10 border-2 border-[#0099ff] border-t-transparent rounded-full animate-spin" />
-        <span className="text-[10px] font-black text-[#525252] uppercase tracking-[0.4em]">Loading Workspace...</span>
+        <span className="text-[10px] font-semibold text-[#525252] uppercase tracking-wider">Loading Workspace...</span>
       </div>
     );
   }
@@ -266,7 +286,7 @@ export default function CodingWorkspace() {
       <div className="w-[600px] flex flex-col border-r border-white/5 bg-[#000000] relative">
         
         {/* Workspace Toolbar */}
-        <div className="px-8 py-6 border-b border-white/5 flex items-center justify-between bg-[#050505]">
+        <div className="px-8 h-16 border-b border-white/5 flex items-center justify-between bg-[#050505]">
           <button
             onClick={() => {
               const queryParams = new URLSearchParams(window.location.search);
@@ -276,19 +296,12 @@ export default function CodingWorkspace() {
             className="flex items-center gap-3 px-6 py-3 rounded-2xl text-[#525252] hover:text-white bg-white/5 border border-white/5 transition-all group active:scale-95"
           >
             <ChevronLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-            <span className="text-[10px] font-black uppercase tracking-[0.3em]">Exit</span>
+            <span className="text-[10px] font-semibold uppercase tracking-wider">Exit</span>
           </button>
-          
-          {timeLeft !== null && (
-            <div className={`flex items-center gap-3 px-6 py-3 rounded-2xl border transition-all duration-700 ${timeLeft < 300000 ? 'bg-rose-500/10 border-rose-500/20 text-rose-500 animate-pulse' : 'bg-white/5 border-white/5 text-[#525252]'}`}>
-              <Clock className="w-4 h-4" />
-              <span className="text-[11px] font-black tracking-[0.2em]">{formatTime(timeLeft)}</span>
-            </div>
-          )}
         </div>
 
         {/* Intelligence Tabs */}
-        <div className="flex px-6 pt-6 gap-2 bg-[#050505] border-b border-white/5">
+        <div className="flex px-6 pt-2 gap-2 bg-[#050505] border-b border-white/5">
           {[
             { id: "statement", label: "Problem", icon: TerminalSquare },
             { id: "input",     label: "Custom Input", icon: Layout },
@@ -297,7 +310,7 @@ export default function CodingWorkspace() {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
-              className={`flex items-center gap-3 px-8 py-5 text-[10px] font-black uppercase tracking-[0.3em] transition-all relative group ${
+              className={`flex items-center gap-3 px-8 py-4 text-[10px] font-semibold uppercase tracking-wider transition-all relative group ${
                 activeTab === tab.id ? "text-[#0099ff]" : "text-[#2a2a2a] hover:text-white"
               }`}
             >
@@ -327,22 +340,22 @@ export default function CodingWorkspace() {
               >
                 <div className="space-y-6">
                   <div className="flex items-center gap-4">
-                    <div className={`px-5 py-2 rounded-xl text-[9px] font-black uppercase tracking-[0.3em] border shadow-2xl ${difficultyConfig[problem.difficulty]}`}>
+                    <div className={`px-5 py-2 rounded-xl text-[9px] font-semibold uppercase tracking-wider border shadow-2xl ${difficultyConfig[problem.difficulty]}`}>
                       {problem.difficulty}
                     </div>
-                    <div className="px-5 py-2 rounded-xl text-[9px] text-[#525252] font-black uppercase tracking-[0.3em] bg-white/5 border border-white/5 shadow-2xl">
+                    <div className="px-5 py-2 rounded-xl text-[9px] text-[#525252] font-semibold uppercase tracking-wider bg-white/5 border border-white/5 shadow-2xl">
                       Problem ID: {id?.slice(-6).toUpperCase()}
                     </div>
                   </div>
-                  <h1 className="text-5xl font-black text-white tracking-[-0.06em] leading-[0.9] uppercase">
+                  <h1 className="text-2xl font-bold text-white tracking-normal leading-[1.2] uppercase">
                     {problem.title}
                   </h1>
                   <div className="flex gap-10 items-center pt-6 border-t border-white/5">
-                    <div className="flex items-center gap-3 text-[10px] text-[#525252] font-black uppercase tracking-[0.3em]">
+                    <div className="flex items-center gap-3 text-[10px] text-[#525252] font-semibold uppercase tracking-wider">
                        <Clock className="w-4 h-4 text-[#0099ff]" /> 
                        {problem.timeLimit} Limit
                     </div>
-                    <div className="flex items-center gap-3 text-[10px] text-[#525252] font-black uppercase tracking-[0.3em]">
+                    <div className="flex items-center gap-3 text-[10px] text-[#525252] font-semibold uppercase tracking-wider">
                        <Zap className="w-4 h-4 text-[#0099ff]" /> 
                        {problem.memoryLimit} Limit
                     </div>
@@ -350,18 +363,18 @@ export default function CodingWorkspace() {
                 </div>
 
                 <div className="prose prose-invert prose-sm max-w-none">
-                  <div className="text-[#a6a6a6] text-xl font-medium leading-[1.4] tracking-tight whitespace-pre-wrap">
+                  <div className="text-[#a6a6a6] text-[15px] font-medium leading-[1.6] tracking-tight whitespace-pre-wrap">
                     {problem.statement}
                   </div>
                 </div>
 
                 {problem.constraints && (
                   <div className="p-10 bg-[#050505] border border-white/5 rounded-[2.5rem] space-y-6 shadow-2xl">
-                    <h3 className="text-[10px] font-black text-[#0099ff] uppercase tracking-[0.4em] flex items-center gap-3">
+                    <h3 className="text-[10px] font-semibold text-[#0099ff] uppercase tracking-wider flex items-center gap-3">
                       <Binary className="w-4 h-4" />
                       Constraints
                     </h3>
-                    <div className="text-sm text-[#525252] font-black uppercase tracking-[0.2em] leading-relaxed">
+                    <div className="text-sm text-[#525252] font-semibold uppercase tracking-wider leading-relaxed">
                       {problem.constraints}
                     </div>
                   </div>
@@ -377,7 +390,7 @@ export default function CodingWorkspace() {
                 className="space-y-10"
               >
                 <div className="space-y-4">
-                  <h3 className="text-[10px] font-black text-[#525252] uppercase tracking-[0.3em] ml-2">Enter Input</h3>
+                  <h3 className="text-[10px] font-semibold text-[#525252] uppercase tracking-wider ml-2">Enter Input</h3>
                   <textarea
                     value={customInput}
                     onChange={(e) => setCustomInput(e.target.value)}
@@ -389,23 +402,23 @@ export default function CodingWorkspace() {
                 {problem.sampleInput && (
                   <div className="space-y-8">
                     <div className="flex items-center justify-between px-2">
-                       <h3 className="text-[10px] font-black text-[#525252] uppercase tracking-[0.3em]">Examples</h3>
+                       <h3 className="text-[10px] font-semibold text-[#525252] uppercase tracking-wider">Examples</h3>
                        <button 
                          onClick={() => setCustomInput(problem.sampleInput || "")}
-                         className="text-[10px] font-black text-[#0099ff] uppercase tracking-[0.3em] hover:text-white transition-all"
+                         className="text-[10px] font-semibold text-[#0099ff] uppercase tracking-wider hover:text-white transition-all"
                        >
                          Use Sample
                        </button>
                     </div>
                     <div className="grid grid-cols-1 gap-6">
                       <div className="space-y-4">
-                        <div className="text-[9px] text-[#2a2a2a] font-black uppercase tracking-[0.4em] ml-2">Input</div>
+                        <div className="text-[9px] text-[#2a2a2a] font-semibold uppercase tracking-wider ml-2">Input</div>
                         <div className="p-8 bg-white/5 border border-white/5 rounded-[2rem] text-xs font-mono text-[#525252] whitespace-pre-wrap shadow-2xl">
                           {problem.sampleInput}
                         </div>
                       </div>
                       <div className="space-y-4">
-                        <div className="text-[9px] text-[#2a2a2a] font-black uppercase tracking-[0.4em] ml-2">Expected Output</div>
+                        <div className="text-[9px] text-[#2a2a2a] font-semibold uppercase tracking-wider ml-2">Expected Output</div>
                         <div className="p-8 bg-[#0099ff]/5 border border-[#0099ff]/10 rounded-[2rem] text-xs font-mono text-[#0099ff] whitespace-pre-wrap shadow-2xl">
                           {problem.sampleOutput}
                         </div>
@@ -424,13 +437,13 @@ export default function CodingWorkspace() {
                 className="space-y-8"
               >
                 <div className="flex items-center justify-between px-2">
-                  <h3 className="text-[10px] font-black text-[#525252] uppercase tracking-[0.3em]">Output</h3>
+                  <h3 className="text-[10px] font-semibold text-[#525252] uppercase tracking-wider">Output</h3>
                   <button onClick={() => setOutputText("")} className="text-[#525252] hover:text-white transition-colors">
                     <RotateCcw className="w-4 h-4" />
                   </button>
                 </div>
                 <div className="bg-[#000000] border border-white/5 rounded-[2.5rem] p-10 min-h-[400px] font-mono text-xs text-[#a6a6a6] whitespace-pre-wrap leading-relaxed shadow-2xl border-t-white/10">
-                  {outputText || <span className="text-[#2a2a2a] italic uppercase tracking-[0.2em]">Run your code to see output.</span>}
+                  {outputText || <span className="text-[#2a2a2a] italic uppercase tracking-wider">Run your code to see output.</span>}
                 </div>
               </motion.div>
             )}
@@ -438,20 +451,20 @@ export default function CodingWorkspace() {
         </div>
         
         {/* Node Status */}
-        <div className="p-8 bg-[#050505] border-t border-white/5 flex items-center gap-6 shadow-2xl">
-          <div className="w-14 h-14 bg-white border border-white/10 rounded-2xl flex items-center justify-center shadow-2xl">
-            <Target className="w-8 h-8 text-black" />
+        <div className="p-6 bg-[#050505] border-t border-white/5 flex items-center gap-5 shadow-2xl">
+          <div className="w-12 h-12 bg-white border border-white/10 rounded-2xl flex items-center justify-center shadow-2xl">
+            <Target className="w-6 h-6 text-black" />
           </div>
           <div className="flex-1">
-             <div className="text-[9px] text-[#525252] font-black uppercase tracking-[0.3em] mb-1">Signed In</div>
+             <div className="text-[9px] text-[#525252] font-semibold uppercase tracking-wider mb-1">Signed In</div>
              <div className="flex items-center gap-3">
                 <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.8)] animate-pulse" />
-                <div className="text-base text-white font-black uppercase tracking-tighter">{currentUser?.username || "GUEST"}</div>
+                <div className="text-sm text-white font-semibold uppercase tracking-tighter">{currentUser?.username || "GUEST"}</div>
              </div>
           </div>
           <div className="px-6 py-3 rounded-2xl bg-white/5 border border-white/5 flex items-center gap-3 shadow-2xl">
              <Trophy className="w-4 h-4 text-[#0099ff]" />
-             <span className="text-[10px] font-black text-white tracking-[0.2em]">{problem.points || 100}</span>
+             <span className="text-[10px] font-semibold text-white tracking-wider">{problem.points || 100}</span>
           </div>
         </div>
       </div>
@@ -460,12 +473,12 @@ export default function CodingWorkspace() {
       <div className="flex-1 flex flex-col bg-[#000000] relative">
         
         {/* Editor Toolbar */}
-        <div className="h-24 border-b border-white/5 bg-[#050505] flex items-center justify-between px-12 z-40 shadow-2xl">
+        <div className="h-16 border-b border-white/5 bg-[#050505] flex items-center justify-between px-8 z-40 shadow-2xl">
           <div className="flex items-center gap-8">
             <div className="relative">
               <button 
                 onClick={() => setLangOpen(!langOpen)}
-                className="flex items-center gap-3 px-6 py-3 rounded-xl bg-black border border-white/10 text-white text-[13px] font-black uppercase tracking-[0.1em] hover:bg-white hover:text-black transition-all shadow-2xl group"
+                className="flex items-center gap-3 px-6 py-3 rounded-xl bg-black border border-white/10 text-white text-[13px] font-semibold uppercase tracking-wider hover:bg-white hover:text-black transition-all shadow-2xl group"
               >
                 <Binary className="w-4 h-4 text-[#0099ff]" />
                 {language}
@@ -482,7 +495,7 @@ export default function CodingWorkspace() {
                       exit={{ opacity: 0, y: 10 }}
                       className="absolute top-full left-0 mt-4 w-56 bg-[#050505] border border-white/10 rounded-[1.5rem] shadow-[0_40px_80px_rgba(0,0,0,1)] py-4 z-50 overflow-hidden"
                     >
-                      <div className="px-6 py-3 text-[8px] font-black text-[#525252] uppercase tracking-[0.4em] border-b border-white/5 mb-2">
+                      <div className="px-6 py-3 text-[8px] font-semibold text-[#525252] uppercase tracking-wider border-b border-white/5 mb-2">
                         Select Language
                       </div>
                       {LANGUAGES.map(lang => (
@@ -493,7 +506,7 @@ export default function CodingWorkspace() {
                             handleLanguageChange(lang);
                             setLangOpen(false);
                           }}
-                          className={`w-full text-left px-6 py-4 text-[13px] font-black uppercase tracking-[0.1em] transition-all flex items-center justify-between ${
+                          className={`w-full text-left px-6 py-4 text-[13px] font-semibold uppercase tracking-wider transition-all flex items-center justify-between ${
                             language === lang ? 'bg-[#0099ff] text-white' : 'text-[#525252] hover:bg-white/5 hover:text-white'
                           }`}
                         >
@@ -512,20 +525,29 @@ export default function CodingWorkspace() {
             <div className="hidden lg:flex items-center gap-6">
                <div className="flex -space-x-3">
                   {[1,2,3].map(i => (
-                    <div key={i} className="w-10 h-10 rounded-xl bg-black border border-white/5 flex items-center justify-center text-[10px] font-black text-[#2a2a2a] shadow-2xl">
+                    <div key={i} className="w-10 h-10 rounded-xl bg-black border border-white/5 flex items-center justify-center text-[10px] font-semibold text-[#2a2a2a] shadow-2xl">
                       {i}
                     </div>
                   ))}
                </div>
-               <span className="text-[10px] font-black text-[#2a2a2a] uppercase tracking-[0.3em]">History</span>
+               <span className="text-[10px] font-semibold text-[#2a2a2a] uppercase tracking-wider">History</span>
             </div>
           </div>
 
           <div className="flex items-center gap-6">
+            {timeLeft !== null && (
+              <div className={`flex items-center gap-3 px-8 py-3 rounded-xl border transition-all duration-700 ${timeLeft < 300000 ? 'bg-rose-500/10 border-rose-500/20 text-rose-500 animate-pulse' : 'bg-[#0099ff]/5 border-[#0099ff]/10 text-[#0099ff]'}`}>
+                <Clock className="w-4 h-4" />
+                <span className="text-[13px] font-semibold tabular-nums tracking-widest">{formatTime(timeLeft)}</span>
+              </div>
+            )}
+            
+            <div className="h-6 w-px bg-white/5" />
+
             <button
               onClick={handleRun}
               disabled={isRunning || isSubmitting}
-              className="group flex items-center gap-3 px-8 py-3 rounded-xl text-[12px] font-black uppercase tracking-[0.1em] text-[#525252] hover:text-white bg-white/5 border border-white/5 hover:border-[#0099ff]/50 transition-all shadow-2xl active:scale-95 disabled:opacity-20"
+              className="group flex items-center gap-3 px-8 py-3 rounded-xl text-[12px] font-semibold uppercase tracking-wider text-[#525252] hover:text-white bg-white/5 border border-white/5 hover:border-[#0099ff]/50 transition-all shadow-2xl active:scale-95 disabled:opacity-20"
             >
               <Play className={`w-3.5 h-3.5 ${isRunning ? 'animate-spin' : 'text-[#0099ff]'}`} />
               Run Code
@@ -534,7 +556,7 @@ export default function CodingWorkspace() {
             <button
               onClick={handleSubmit}
               disabled={isRunning || isSubmitting}
-              className="group flex items-center gap-4 px-10 py-3 rounded-xl text-[12px] font-black uppercase tracking-[0.1em] text-white transition-all bg-[#0099ff] hover:bg-white hover:text-black shadow-[0_20px_50px_-10px_rgba(0,153,255,0.4)] disabled:opacity-20 active:scale-95"
+              className="group flex items-center gap-4 px-10 py-3 rounded-xl text-[12px] font-semibold uppercase tracking-wider text-white transition-all bg-[#0099ff] hover:bg-white hover:text-black shadow-[0_20px_50px_-10px_rgba(0,153,255,0.4)] disabled:opacity-20 active:scale-95"
             >
               {isSubmitting ? <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Send className="w-3.5 h-3.5" />}
               Submit
@@ -573,7 +595,7 @@ export default function CodingWorkspace() {
           <div className="absolute top-10 right-10 z-30 pointer-events-none">
              <div className="flex items-center gap-3 px-6 py-3 rounded-full bg-black/80 border border-[#0099ff]/20 backdrop-blur-xl shadow-2xl">
                 <div className="w-2 h-2 rounded-full bg-[#0099ff] animate-ping" />
-                <span className="text-[9px] font-black text-[#0099ff] uppercase tracking-[0.4em]">Anti-Cheat Active</span>
+                <span className="text-[9px] font-semibold text-[#0099ff] uppercase tracking-wider">Anti-Cheat Active</span>
              </div>
           </div>
         </div>
@@ -597,22 +619,22 @@ export default function CodingWorkspace() {
                   </div>
                   
                   <div className="space-y-4">
-                    <h2 className={`text-6xl font-black tracking-[-0.06em] uppercase ${verdictDetails.passed_all ? 'text-white' : 'text-rose-500'}`}>
+                    <h2 className={`text-4xl font-semibold tracking-tight uppercase ${verdictDetails.passed_all ? 'text-white' : 'text-rose-500'}`}>
                       {verdictDetails.passed_all ? "Correct" : "Wrong Answer"}
                     </h2>
-                    <p className="text-[#525252] font-black uppercase tracking-[0.4em] text-[10px]">
+                    <p className="text-[#525252] font-semibold uppercase tracking-wider text-[10px]">
                       {verdictDetails.passed} / {verdictDetails.total} Testcases Passed
                     </p>
                   </div>
 
                   <div className="bg-black border border-white/5 rounded-[2.5rem] p-10 grid grid-cols-2 gap-10 shadow-2xl">
                     <div className="space-y-3">
-                      <span className="text-[10px] text-[#2a2a2a] font-black uppercase tracking-[0.4em]">Score</span>
-                      <div className="text-5xl font-black text-white tracking-tighter italic">{verdictDetails.score}</div>
+                      <span className="text-[10px] text-[#2a2a2a] font-semibold uppercase tracking-wider">Score</span>
+                      <div className="text-4xl font-semibold text-white tracking-tighter italic">{verdictDetails.score}</div>
                     </div>
                     <div className="space-y-3">
-                      <span className="text-[10px] text-[#2a2a2a] font-black uppercase tracking-[0.4em]">Points</span>
-                      <div className="text-5xl font-black text-[#0099ff] tracking-tighter italic">+{verdictDetails.points}</div>
+                      <span className="text-[10px] text-[#2a2a2a] font-semibold uppercase tracking-wider">Points</span>
+                      <div className="text-4xl font-semibold text-[#0099ff] tracking-tighter italic">+{verdictDetails.points}</div>
                     </div>
                   </div>
 
@@ -623,13 +645,13 @@ export default function CodingWorkspace() {
                         const cId = qp.get("contestId");
                         navigate(cId ? `/student/problems?contestId=${cId}` : "/student/problems");
                       }}
-                      className="flex-1 py-6 bg-black border border-white/10 text-[#525252] font-black uppercase tracking-[0.3em] text-[11px] rounded-[1.5rem] hover:text-white transition-all shadow-2xl"
+                      className="flex-1 py-6 bg-black border border-white/10 text-[#525252] font-semibold uppercase tracking-wider text-[11px] rounded-[1.5rem] hover:text-white transition-all shadow-2xl"
                     >
                       Exit
                     </button>
                     <button 
                       onClick={() => setShowModal(false)}
-                      className="flex-[1.5] py-6 bg-[#0099ff] text-white font-black uppercase tracking-[0.3em] text-[11px] rounded-[1.5rem] hover:bg-white hover:text-black transition-all shadow-[0_20px_50px_-10px_rgba(0,153,255,0.4)]"
+                      className="flex-[1.5] py-6 bg-[#0099ff] text-white font-semibold uppercase tracking-wider text-[11px] rounded-[1.5rem] hover:bg-white hover:text-black transition-all shadow-[0_20px_50px_-10px_rgba(0,153,255,0.4)]"
                     >
                       Try Again
                     </button>

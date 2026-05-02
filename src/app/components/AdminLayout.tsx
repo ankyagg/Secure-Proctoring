@@ -66,8 +66,8 @@ export default function AdminLayout() {
                 animate={{ opacity: 1, x: 0 }}
                 className="flex flex-col"
               >
-                <span className="text-lg font-black tracking-[-0.05em] uppercase leading-none">Proctor</span>
-                <span className="text-[9px] font-bold text-[#525252] uppercase tracking-[0.3em] mt-1.5">Admin v4.0</span>
+                <span className="text-lg font-semibold tracking-tight uppercase leading-none">Proctor</span>
+                <span className="text-[9px] font-bold text-[#525252] uppercase tracking-wider mt-1.5">Admin v4.0</span>
               </motion.div>
             )}
           </div>
@@ -82,7 +82,7 @@ export default function AdminLayout() {
               <Link
                 key={item.path}
                 to={item.path}
-                className={`flex items-center gap-3 px-4 py-3.5 rounded-xl text-[11px] font-black uppercase tracking-[0.2em] transition-all group ${
+                className={`flex items-center gap-3 px-4 py-3.5 rounded-xl text-[11px] font-semibold uppercase tracking-wider transition-all group ${
                   isActive
                     ? "bg-[#0099ff] text-white shadow-[0_10px_20px_rgba(0,153,255,0.3)]"
                     : "text-[#525252] hover:text-white hover:bg-white/5"
@@ -115,7 +115,7 @@ export default function AdminLayout() {
         <div className="px-4 py-6 border-t border-white/5">
             <Link
                 to="/"
-                className="flex items-center gap-3 px-4 py-3.5 rounded-xl text-[11px] font-black uppercase tracking-[0.2em] text-[#525252] hover:text-white hover:bg-white/5 transition-all"
+                className="flex items-center gap-3 px-4 py-3.5 rounded-xl text-[11px] font-semibold uppercase tracking-wider text-[#525252] hover:text-white hover:bg-white/5 transition-all"
               >
                 <LogOut className="w-4 h-4" />
                 {!isCollapsed && <span>Exit Admin</span>}
@@ -128,16 +128,16 @@ export default function AdminLayout() {
       <div className="flex-1 flex flex-col min-w-0 relative">
         <header className="bg-[#0a0a0a] border-b border-white/5 px-10 flex items-center justify-between h-24 z-40">
           <div className="flex flex-col">
-            <h1 className="text-2xl font-black text-white tracking-[-0.05em] uppercase leading-none">
+            <h1 className="text-2xl font-semibold text-white tracking-tight uppercase leading-none">
               {menuItems.find(item => item.path === location.pathname)?.name || 'Admin Core'}
             </h1>
-            <p className="text-[9px] font-bold text-[#525252] uppercase tracking-[0.3em] mt-2">Administrative Control Panel</p>
+            <p className="text-[9px] font-bold text-[#525252] uppercase tracking-wider mt-2">Administrative Control Panel</p>
           </div>
           
           <div className="flex items-center gap-6">
             <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#0099ff]/5 border border-[#0099ff]/10">
                <div className="w-1.5 h-1.5 bg-[#0099ff] rounded-full animate-pulse shadow-[0_0_10px_#0099ff]" />
-               <span className="text-[9px] font-black text-[#0099ff] uppercase tracking-[0.3em]">System Online</span>
+               <span className="text-[9px] font-semibold text-[#0099ff] uppercase tracking-wider">System Online</span>
             </div>
 
             <div className="flex items-center gap-3 bg-white/5 border border-white/5 p-1.5 rounded-2xl">
@@ -156,11 +156,11 @@ export default function AdminLayout() {
 
             <div className="flex items-center gap-4">
               <div className="flex flex-col items-end">
-                <span className="text-[10px] font-black text-white uppercase tracking-tighter">ANIKET WALANJ</span>
-                 <span className="text-[8px] font-bold text-[#0099ff] uppercase tracking-[0.2em]">Administrator</span>
+                <span className="text-[10px] font-semibold text-white uppercase tracking-tighter">ANIKET WALANJ</span>
+                 <span className="text-[8px] font-bold text-[#0099ff] uppercase tracking-wider">Administrator</span>
               </div>
               <div className="w-10 h-10 rounded-2xl bg-white border border-white/10 flex items-center justify-center shadow-2xl">
-                <span className="font-black text-black text-[10px]">AW</span>
+                <span className="font-semibold text-black text-[10px]">AW</span>
               </div>
             </div>
           </div>

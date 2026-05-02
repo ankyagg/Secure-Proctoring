@@ -63,7 +63,7 @@ export default function QuestionManagement() {
         transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
         className="w-12 h-12 border-2 border-[#0099ff]/20 border-t-[#0099ff] rounded-full"
       />
-      <p className="text-[#a6a6a6] text-[10px] font-black uppercase tracking-[0.3em]">Loading Questions...</p>
+      <p className="text-[#a6a6a6] text-[10px] font-semibold uppercase tracking-wider">Loading Questions...</p>
     </div>
   );
 
@@ -78,7 +78,7 @@ export default function QuestionManagement() {
             className="flex items-center gap-4 mb-3"
           >
             <div className="w-1.5 h-10 bg-[#0099ff] rounded-full shadow-[0_0_20px_rgba(0,153,255,0.6)]" />
-            <h1 className="text-5xl font-black tracking-[-0.05em] uppercase">
+            <h1 className="text-4xl font-semibold tracking-tight uppercase">
               Question <span className="text-[#0099ff]">Bank</span>
             </h1>
           </motion.div>
@@ -89,7 +89,7 @@ export default function QuestionManagement() {
         
         <button
           onClick={() => navigate("/admin/questions/new")}
-          className="group relative flex items-center gap-3 px-8 py-4 bg-[#0099ff] text-white text-[11px] font-black uppercase tracking-[0.2em] rounded-full hover:scale-105 active:scale-95 transition-all shadow-[0_0_40px_rgba(0,153,255,0.2)] overflow-hidden"
+          className="group relative flex items-center gap-3 px-8 py-4 bg-[#0099ff] text-white text-[11px] font-semibold uppercase tracking-wider rounded-full hover:scale-105 active:scale-95 transition-all shadow-[0_0_40px_rgba(0,153,255,0.2)] overflow-hidden"
         >
           <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
           <Plus className="w-4 h-4 relative z-10" />
@@ -113,7 +113,7 @@ export default function QuestionManagement() {
             <button
               key={d}
               onClick={() => setFilterDiff(d)}
-              className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-[0.15em] transition-all ${
+              className={`px-6 py-2.5 rounded-xl text-[10px] font-semibold uppercase tracking-wider transition-all ${
                 filterDiff === d
                   ? "bg-[#0099ff] text-white shadow-[0_0_20px_rgba(0,153,255,0.3)]"
                   : "text-[#525252] hover:text-[#a6a6a6] hover:bg-white/5"
@@ -136,10 +136,10 @@ export default function QuestionManagement() {
           <div key={item.label} className={`relative group border ${item.border} rounded-3xl p-8 ${item.bg} overflow-hidden hover:shadow-[0_0_30px_rgba(0,0,0,0.5)] transition-all`}>
              <div className="relative z-10">
                 <item.icon className={`w-8 h-8 ${item.color} mb-4 opacity-40`} />
-                <div className="text-5xl font-black text-white tracking-[-0.05em] mb-1">
+                <div className="text-4xl font-semibold text-white tracking-tight mb-1">
                   {item.count}
                 </div>
-                <div className={`text-[10px] font-black uppercase tracking-[0.25em] ${item.color}`}>
+                <div className={`text-[10px] font-semibold uppercase tracking-wider ${item.color}`}>
                   {item.label} Questions
                 </div>
              </div>
@@ -150,7 +150,7 @@ export default function QuestionManagement() {
       {/* Bank Table */}
       <div className="bg-[#090909] border border-white/10 rounded-[2.5rem] overflow-hidden shadow-2xl">
         <div
-          className="grid px-10 py-6 bg-white/[0.02] border-b border-white/5 text-[10px] font-black text-[#525252] uppercase tracking-[0.25em]"
+          className="grid px-10 py-6 bg-white/[0.02] border-b border-white/5 text-[10px] font-semibold text-[#525252] uppercase tracking-wider"
           style={{ gridTemplateColumns: "2fr 1fr 1fr 1fr 1fr 0.8fr" }}
         >
           <span>Problem Title</span>
@@ -178,24 +178,24 @@ export default function QuestionManagement() {
                     <FileText className="w-6 h-6 text-[#525252] group-hover/row:text-[#0099ff] transition-colors" />
                   </div>
                   <div>
-                    <span className="text-white text-lg font-black tracking-[-0.03em] uppercase group-hover/row:text-[#0099ff] transition-colors">
+                    <span className="text-white text-lg font-semibold tracking-[-0.03em] uppercase group-hover/row:text-[#0099ff] transition-colors">
                       {q.title}
                     </span>
-                    <div className="text-[9px] text-[#525252] font-bold uppercase tracking-[0.2em] mt-1.5 flex items-center gap-2">
+                    <div className="text-[9px] text-[#525252] font-bold uppercase tracking-wider mt-1.5 flex items-center gap-2">
                       <span className="text-[#333]">ID:</span> {q.id?.slice(0, 12)}
                     </div>
                   </div>
                 </div>
 
                 <div>
-                  <span className={`text-[9px] font-black uppercase tracking-[0.15em] px-4 py-2 rounded-full border ${difficultyConfig[q.difficulty?.toLowerCase()]?.bg || "bg-white/5"} ${difficultyConfig[q.difficulty?.toLowerCase()]?.text || "text-white"} ${difficultyConfig[q.difficulty?.toLowerCase()]?.border || "border-white/10"}`}>
+                  <span className={`text-[9px] font-semibold uppercase tracking-wider px-4 py-2 rounded-full border ${difficultyConfig[q.difficulty?.toLowerCase()]?.bg || "bg-white/5"} ${difficultyConfig[q.difficulty?.toLowerCase()]?.text || "text-white"} ${difficultyConfig[q.difficulty?.toLowerCase()]?.border || "border-white/10"}`}>
                     {q.difficulty}
                   </span>
                 </div>
 
-                <span className="text-[#a6a6a6] text-[10px] font-bold uppercase tracking-[0.2em]">{q.category || "General"}</span>
-                <span className="text-white font-black text-xs tracking-widest">{q.time_limit || "2"}s</span>
-                <span className="text-white font-black text-xs tracking-widest">{q.memory_limit || "256"}MB</span>
+                <span className="text-[#a6a6a6] text-[10px] font-bold uppercase tracking-wider">{q.category || "General"}</span>
+                <span className="text-white font-semibold text-xs tracking-widest">{q.time_limit || "2"}s</span>
+                <span className="text-white font-semibold text-xs tracking-widest">{q.memory_limit || "256"}MB</span>
 
                 <div className="flex items-center justify-end gap-4">
                   <button 
@@ -220,8 +220,8 @@ export default function QuestionManagement() {
               <div className="w-20 h-20 bg-white/5 border border-white/10 rounded-[2.5rem] flex items-center justify-center mb-8">
                 <Code2 className="w-10 h-10 text-[#525252] opacity-30" />
               </div>
-              <h3 className="text-2xl font-black text-white tracking-tight uppercase mb-2">No Questions Found</h3>
-              <p className="text-[#525252] text-[10px] font-black uppercase tracking-[0.25em] max-w-xs">No questions match your search parameters.</p>
+              <h3 className="text-2xl font-semibold text-white tracking-tight uppercase mb-2">No Questions Found</h3>
+              <p className="text-[#525252] text-[10px] font-semibold uppercase tracking-wider max-w-xs">No questions match your search parameters.</p>
             </div>
           )}
         </div>
