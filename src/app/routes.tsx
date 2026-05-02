@@ -14,6 +14,7 @@ import ProblemList from "./pages/student/ProblemList";
 import CodingWorkspace from "./pages/student/CodingWorkspace";
 import Leaderboard from "./pages/student/Leaderboard";
 
+import AdminLogin from "./pages/admin/AdminLogin";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import ContestManagement from "./pages/admin/ContestManagement";
 import QuestionManagement from "./pages/admin/QuestionManagement";
@@ -48,6 +49,8 @@ export const router = createBrowserRouter([
 
     ]
   },
+
+  { path: "/admin/login", element: <AdminLogin /> },
 
   {
     path: "/admin",
