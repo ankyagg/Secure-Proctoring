@@ -25,6 +25,7 @@ import { useStudentContext } from "../../components/StudentLayout";
 import Editor from "@monaco-editor/react";
 import { motion, AnimatePresence } from "framer-motion";
 import { databases, APPWRITE_DB_ID } from "../../services/appwrite";
+import Watermark from "../../components/Watermark";
 
 const API_BASE = "http://localhost:3000/api";
 
@@ -313,7 +314,8 @@ export default function CodingWorkspace() {
         </div>
 
         {/* Spec Content */}
-        <div className="flex-1 overflow-y-auto p-12 custom-scrollbar bg-[#000000]">
+        <div className="flex-1 overflow-y-auto p-12 custom-scrollbar bg-[#000000] relative">
+          <Watermark />
           <AnimatePresence mode="wait">
             {activeTab === "statement" && (
               <motion.div 
@@ -542,6 +544,7 @@ export default function CodingWorkspace() {
 
         {/* Monaco Matrix */}
         <div className="flex-1 relative bg-[#000000]">
+          <Watermark />
           <Editor
             height="100%"
             defaultLanguage="cpp"

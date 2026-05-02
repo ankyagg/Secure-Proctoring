@@ -1,7 +1,17 @@
-import { auth } from "../services/firebase";
+import { useEffect, useState } from "react";
+import { account } from "../services/appwrite";
 
 export default function Watermark() {
-  const email = auth.currentUser?.email || "Private Content";
+  const [email, setEmail] = useState<string>("Loading...");
+
+  useEffect(() => {
+    account.get().then((user) => {
+      setEmail(user.email);
+    }).catch(() => {
+      setEmail("Private Content");
+    });
+  }, []);
+
   const watermarkText = `CodeArena - ${email}`;
 
   return (

@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
+import { Shield, Lock, ArrowRight, Code2 } from "lucide-react";
+import { motion } from "framer-motion";
 
 export default function AdminLogin() {
   const [email, setEmail] = useState("");
@@ -15,7 +17,6 @@ export default function AdminLogin() {
     
     if (allowedEmails.includes(email) && password === "am@1234") {
       localStorage.setItem("admin_auth", "true");
-      alert("Admin Login Successful!");
       navigate("/admin");
     } else {
       alert("Invalid admin credentials");
@@ -25,55 +26,77 @@ export default function AdminLogin() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-900 font-sans">
-      <div className="w-full max-w-md p-8 space-y-6 bg-slate-800 rounded-2xl shadow-xl border border-slate-700">
-        <div className="text-center">
-          <h2 className="text-3xl font-extrabold text-white">
-            CodeArena Admin
-          </h2>
-          <p className="mt-2 text-sm text-slate-400">
-            Secure Proctoring System
-          </p>
+    <div className="min-h-screen flex items-center justify-center bg-[#000000] font-sans selection:bg-[#0099ff]/30 p-4">
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="w-full max-w-md p-10 space-y-8 bg-[#090909] rounded-[2.5rem] shadow-2xl border border-white/5 relative overflow-hidden"
+      >
+        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-[#0099ff] to-transparent opacity-50" />
+        
+        <div className="text-center space-y-4">
+          <div className="w-16 h-16 bg-[#0099ff]/10 border border-[#0099ff]/20 rounded-2xl mx-auto flex items-center justify-center shadow-[0_0_30px_rgba(0,153,255,0.2)]">
+            <Shield className="w-8 h-8 text-[#0099ff]" />
+          </div>
+          <div>
+            <h2 className="text-3xl font-black text-white tracking-tight uppercase">
+              Admin <span className="text-[#0099ff]">Portal</span>
+            </h2>
+            <p className="mt-2 text-[10px] font-black uppercase tracking-[0.25em] text-[#525252]">
+              Secure Operations Command
+            </p>
+          </div>
         </div>
 
-        <form className="mt-8 space-y-4" onSubmit={handleLogin}>
-          <div>
-            <label className="block text-sm font-medium text-slate-300 ml-1">
-              Email Address
+        <form className="mt-8 space-y-5" onSubmit={handleLogin}>
+          <div className="space-y-2">
+            <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-[#525252] ml-1">
+              Email Identity
             </label>
-            <input
-              type="email"
-              placeholder="admin@example.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="mt-1 block w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-lg text-white focus:ring-blue-500 focus:border-blue-500 outline-none"
-              required
-            />
+            <div className="relative">
+               <Code2 className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#525252]" />
+               <input
+                 type="email"
+                 placeholder="admin@codearena.com"
+                 value={email}
+                 onChange={(e) => setEmail(e.target.value)}
+                 className="w-full pl-11 pr-4 py-4 bg-[#000000] border border-white/5 rounded-2xl text-sm font-bold tracking-tight text-white outline-none focus:border-[#0099ff]/50 focus:ring-4 focus:ring-[#0099ff]/5 transition-all placeholder:text-[#333]"
+                 required
+               />
+            </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-slate-300 ml-1">
-              Password
+          <div className="space-y-2">
+            <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-[#525252] ml-1">
+              Access Code
             </label>
-            <input
-              type="password"
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="mt-1 block w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-lg text-white focus:ring-blue-500 focus:border-blue-500 outline-none"
-              required
-            />
+            <div className="relative">
+               <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#525252]" />
+               <input
+                 type="password"
+                 placeholder="••••••••"
+                 value={password}
+                 onChange={(e) => setPassword(e.target.value)}
+                 className="w-full pl-11 pr-4 py-4 bg-[#000000] border border-white/5 rounded-2xl text-sm font-bold tracking-tight text-white outline-none focus:border-[#0099ff]/50 focus:ring-4 focus:ring-[#0099ff]/5 transition-all placeholder:text-[#333]"
+                 required
+               />
+            </div>
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full flex justify-center py-3 px-4 rounded-lg text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors disabled:opacity-50"
+            className="w-full flex items-center justify-center gap-3 py-4 px-4 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] text-white bg-[#0099ff] hover:bg-white hover:text-black hover:scale-105 active:scale-95 transition-all shadow-[0_0_30px_rgba(0,153,255,0.3)] disabled:opacity-50 mt-4 group"
           >
-            {loading ? "Authenticating..." : "Login"}
+            {loading ? "Authenticating..." : (
+              <>
+                Initialize Session
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              </>
+            )}
           </button>
         </form>
-      </div>
+      </motion.div>
     </div>
   );
 }

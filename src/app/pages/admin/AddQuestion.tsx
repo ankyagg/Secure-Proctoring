@@ -1,8 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useSearchParams, useNavigate } from "react-router";
-import { ArrowLeft, Upload, Save, X, Info } from "lucide-react";
+import { ArrowLeft, Upload, Save, X, Info, FileText, FileCheck, Loader2 } from "lucide-react";
 import { ID } from "appwrite";
 import { motion, AnimatePresence } from "framer-motion";
+import JSZip from "jszip";
 
 export default function AddQuestion() {
   const [searchParams] = useSearchParams();
@@ -36,6 +37,60 @@ export default function AddQuestion() {
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Test Case Upload State
+  const [testCases, setTestCases] = useState<{ input: string; output: string }[]>([]);
+  const [parsingZip, setParsingZip] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.name.endsWith(".zip")) {
+      setError("Please upload a .zip file containing test cases.");
+      return;
+    }
+
+    setParsingZip(true);
+    setError(null);
+
+    try {
+      const zip = await JSZip.loadAsync(file);
+      const files = Object.keys(zip.files).filter(f => !zip.files[f].dir);
+      
+      const parsed: Record<string, { input?: string; output?: string }> = {};
+
+      for (const filename of files) {
+        const content = await zip.files[filename].async("string");
+        const base = filename.replace(/\.(in|out|txt)$/, "").replace(/^(input|output)_?/, "");
+        
+        if (!parsed[base]) parsed[base] = {};
+
+        if (filename.includes("input") || filename.endsWith(".in")) {
+          parsed[base].input = content;
+        } else if (filename.includes("output") || filename.endsWith(".out")) {
+          parsed[base].output = content;
+        }
+      }
+
+      const finalCases = Object.values(parsed)
+        .filter(c => c.input !== undefined && c.output !== undefined)
+        .map(c => ({ input: c.input!, output: c.output! }));
+
+      if (finalCases.length === 0) {
+        throw new Error("No matching input/output pairs found in ZIP. Files should be named like '1.in'/'1.out' or 'input1.txt'/'output1.txt'.");
+      }
+
+      setTestCases(finalCases);
+    } catch (err: any) {
+      console.error("ZIP Error:", err);
+      setError(err.message || "Failed to parse ZIP file.");
+    } finally {
+      setParsingZip(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
 
   useEffect(() => {
     if (isEdit && editId) {
@@ -88,14 +143,31 @@ export default function AddQuestion() {
 
     try {
       const { databases, APPWRITE_DB_ID } = await import("../../services/appwrite");
+      let qid = editId;
       if (isEdit && editId) {
         await databases.updateDocument(APPWRITE_DB_ID, "questions", editId, payload);
       } else {
-        await databases.createDocument(APPWRITE_DB_ID, "questions", ID.unique(), {
+        const ref = await databases.createDocument(APPWRITE_DB_ID, "questions", ID.unique(), {
           ...payload,
           createdAt: new Date().toISOString(),
         });
+        qid = ref.$id;
       }
+
+      // Save Test Cases if any
+      if (qid && testCases.length > 0) {
+        // Appwrite client doesn't support batch out of the box so we iterate
+        for (const tc of testCases) {
+          await databases.createDocument(APPWRITE_DB_ID, "test_cases", ID.unique(), {
+            question_id: qid,
+            input: tc.input,
+            expected_output: tc.output,
+            is_hidden: false,
+            createdAt: new Date().toISOString(),
+          });
+        }
+      }
+
       setSaved(true);
       setTimeout(() => navigate("/admin/questions"), 1200);
     } catch (err: any) {
@@ -289,10 +361,37 @@ export default function AddQuestion() {
 
                 <div className="space-y-2">
                   <label className="block text-[10px] font-black uppercase tracking-[0.2em] text-[#525252]">Test Cases</label>
-                  <div className="border-2 border-dashed border-white/5 rounded-3xl p-12 text-center hover:border-[#0099ff]/30 transition-all cursor-pointer bg-[#000000]">
-                    <Upload className="w-10 h-10 text-[#333] mx-auto mb-4 group-hover:text-[#0099ff] transition-colors" />
-                    <p className="text-[#a6a6a6] text-[10px] font-black uppercase tracking-[0.2em]">Drop .zip or browse</p>
-                    <p className="text-[#333] text-[9px] font-bold uppercase tracking-[0.1em] mt-2">Required: input.txt + expected_output.txt</p>
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleFileUpload}
+                    accept=".zip"
+                    className="hidden"
+                  />
+                  <div 
+                    onClick={() => fileInputRef.current?.click()}
+                    className={`border-2 border-dashed rounded-3xl p-12 text-center transition-all cursor-pointer ${
+                      testCases.length > 0 ? "border-emerald-500/30 bg-emerald-500/5" : "border-white/5 hover:border-[#0099ff]/30 bg-[#000000]"
+                    }`}
+                  >
+                    {parsingZip ? (
+                      <div className="flex flex-col items-center">
+                        <Loader2 className="w-10 h-10 text-[#0099ff] animate-spin mb-4" />
+                        <p className="text-[#a6a6a6] text-[10px] font-black uppercase tracking-[0.2em]">Processing ZIP...</p>
+                      </div>
+                    ) : testCases.length > 0 ? (
+                      <div className="flex flex-col items-center">
+                        <FileCheck className="w-10 h-10 text-emerald-500 mb-4" />
+                        <p className="text-emerald-400 text-sm font-black uppercase tracking-widest">{testCases.length} Test Cases Loaded</p>
+                        <p className="text-emerald-500/60 text-[9px] font-bold uppercase tracking-[0.1em] mt-2">Click to replace ZIP</p>
+                      </div>
+                    ) : (
+                      <div className="group">
+                        <Upload className="w-10 h-10 text-[#333] mx-auto mb-4 group-hover:text-[#0099ff] transition-colors" />
+                        <p className="text-[#a6a6a6] text-[10px] font-black uppercase tracking-[0.2em]">Drop .zip or browse</p>
+                        <p className="text-[#333] text-[9px] font-bold uppercase tracking-[0.1em] mt-2">Required: input.txt + expected_output.txt</p>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

@@ -121,12 +121,12 @@ export default function AntiCheatMonitoring() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="SEARCH NODE LOGS..."
-              className="pl-12 pr-6 py-4 bg-[#000000] border border-white/5 rounded-full text-[9px] font-black uppercase tracking-[0.2em] text-white outline-none focus:border-[#0099ff]/50 transition-all w-80 placeholder:text-[#2a2a2a] shadow-[rgba(0,153,255,0.05)_0px_0px_20px_0px]"
+              className="pl-12 pr-6 py-4 bg-[#090909] border border-white/5 rounded-full text-[9px] font-black uppercase tracking-[0.2em] text-white outline-none focus:border-[#0099ff]/50 transition-all w-80 placeholder:text-[#2a2a2a] shadow-[rgba(0,153,255,0.05)_0px_0px_20px_0px]"
             />
           </div>
           <button 
             onClick={fetchLogs}
-            className="p-4 bg-[#000000] border border-white/5 rounded-full text-[#525252] hover:text-white transition-all active:scale-95 shadow-[rgba(0,153,255,0.05)_0px_0px_20px_0px]"
+            className="p-4 bg-[#090909] border border-white/5 rounded-full text-[#525252] hover:text-white transition-all active:scale-95 shadow-[rgba(0,153,255,0.05)_0px_0px_20px_0px]"
           >
             <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin text-[#0099ff]' : ''}`} />
           </button>
@@ -141,7 +141,7 @@ export default function AntiCheatMonitoring() {
           { label: "Integrity Score", value: "94.2%", icon: ShieldCheck, color: "text-emerald-500" },
           { label: "Risky Students", value: riskyStudentsCount.toString(), icon: Zap, color: "text-amber-500" },
         ].map((stat, i) => (
-          <div key={i} className="bg-[#000000] border border-white/5 rounded-[2rem] p-8 space-y-4 shadow-[rgba(0,153,255,0.05)_0px_0px_0px_1px]">
+          <div key={i} className="bg-[#090909] border border-white/5 rounded-[2rem] p-8 space-y-4 shadow-[rgba(0,153,255,0.05)_0px_0px_0px_1px]">
             <div className="flex items-center justify-between">
               <stat.icon className={`w-5 h-5 ${stat.color}`} />
               <div className="px-2 py-1 bg-white/5 rounded-lg text-[8px] font-black uppercase tracking-widest text-[#2a2a2a]">Node_{i+1}</div>
@@ -172,7 +172,7 @@ export default function AntiCheatMonitoring() {
       </div>
 
       {/* Logs Table */}
-      <div className="bg-[#000000] border border-white/5 rounded-[2.5rem] overflow-hidden shadow-2xl shadow-black">
+      <div className="bg-[#090909] border border-white/5 rounded-[2.5rem] overflow-hidden shadow-2xl shadow-black">
         <div className="grid px-10 py-6 bg-white/[0.01] border-b border-white/5 text-[9px] font-black text-[#2a2a2a] uppercase tracking-[0.3em]"
           style={{ gridTemplateColumns: "1.5fr 1fr 1.5fr 1fr 0.8fr 0.5fr" }}>
           <span>Candidate Information</span>
@@ -300,14 +300,14 @@ export default function AntiCheatMonitoring() {
                           <p className="text-[9px] font-bold text-[#2a2a2a] uppercase tracking-widest mb-1">Violation Category</p>
                           <p className="text-[10px] font-black uppercase text-rose-500">{selectedLog.type || "Undefined"}</p>
                         </div>
-                        <div className="bg-[#000000] border border-white/5 p-6 rounded-[2rem] shadow-[rgba(0,153,255,0.05)_0px_0px_10px_0px]">
+                        <div className="bg-[#090909] border border-white/5 p-6 rounded-[2rem] shadow-[rgba(0,153,255,0.05)_0px_0px_10px_0px]">
                           <p className="text-[9px] font-bold text-[#2a2a2a] uppercase tracking-widest mb-1">Temporal Node</p>
                           <p className="text-[10px] font-black text-white">{new Date(selectedLog.timestamp).toLocaleString()}</p>
                         </div>
                       </div>
                     </div>
 
-                    <div className="bg-[#000000] border border-white/5 p-8 rounded-[2rem]">
+                    <div className="bg-[#090909] border border-white/5 p-8 rounded-[2rem]">
                       <h4 className="text-[10px] font-black uppercase tracking-widest text-[#2a2a2a] mb-4">AI Analysis</h4>
                       <p className="text-sm font-bold text-[#a6a6a6] leading-relaxed italic">
                         "{selectedLog.message}"
@@ -315,7 +315,7 @@ export default function AntiCheatMonitoring() {
                     </div>
 
                     {selectedLog.code_snapshot && (
-                      <div className="bg-[#000000] border border-white/5 rounded-[2rem] overflow-hidden">
+                      <div className="bg-[#090909] border border-white/5 rounded-[2rem] overflow-hidden">
                         <div className="px-8 py-4 border-b border-white/5 bg-white/5 flex items-center justify-between">
                           <div className="flex items-center gap-3">
                             <FileCode className="w-4 h-4 text-[#0099ff]" />
@@ -346,7 +346,7 @@ export default function AntiCheatMonitoring() {
                         </div>
                       </div>
                     ) : (
-                      <div className="h-[400px] bg-[#000000] border border-dashed border-white/5 rounded-[2.5rem] flex flex-col items-center justify-center text-center p-12">
+                      <div className="h-[400px] bg-[#090909] border border-dashed border-white/5 rounded-[2.5rem] flex flex-col items-center justify-center text-center p-12">
                         <EyeOff className="w-12 h-12 text-[#2a2a2a] mb-4" />
                         <p className="text-[10px] font-black uppercase tracking-widest text-[#2a2a2a]">No image captured for this violation.</p>
                       </div>
