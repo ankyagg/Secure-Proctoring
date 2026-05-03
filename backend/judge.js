@@ -18,51 +18,60 @@ async function runCode(sourceCode, languageId, stdin) {
   });
 
   const data = res.data;
-  // Wandbox combines stdout and stderr sometimes, but usually it's in program_output
   return {
-    stdout: data.program_output || data.stdout || "",
-    stderr: data.program_error || data.stderr || "",
-    status: { id: (data.status === "0" || data.status === 0) ? 3 : 4 } // 3 = Accepted (for the runner)
+    stdout: data.program_output || "",
+    stderr: data.program_error || "",
+    status: { id: (data.status === "0" || data.status === 0) ? 3 : 4 }
   };
 }
 
 async function judgeSubmission(sourceCode, languageId, testCases) {
-  // Promise.all runs all test cases in parallel, slashing wait time from (N * latency) to (latency)
-  const results = await Promise.all(testCases.map(async (tc) => {
-    try {
-      const output = await runCode(sourceCode, languageId, tc.input);
-      const actual = (output.stdout || '').trim();
-      const expected = tc.expected_output.trim();
-      
-      console.log(`[JUDGE] TC ${tc.id}:`);
-      console.log(`  Actual: "${actual}"`);
-      console.log(`  Expected: "${expected}"`);
+  // Promise.all launches everything simultaneously for true parallel speed
+  const results = await Promise.all(testCases.map(async (tc, index) => {
+    let attempts = 0;
+    const maxAttempts = 3;
 
-      // SUPER-TOKEN SPLIT: Handles \r, \n, and multiple spaces
-      const actualTokens = actual.split(/[\s\r\n]+/).filter(Boolean);
-      const expectedTokens = expected.split(/[\s\r\n]+/).filter(Boolean);
-      
-      const passed = actualTokens.length === expectedTokens.length && 
-                     actualTokens.every((val, index) => val === expectedTokens[index]);
-      
-      console.log(`  Passed: ${passed}`);
+    // Small staggered start (10ms per TC) to prevent Wandbox from instantly dropping connections
+    await new Promise(resolve => setTimeout(resolve, index * 20));
 
-      return {
-        test_case_id: tc.id,
-        passed,
-        stdout: output.stdout,
-        stderr: output.stderr,
-        time: "0.1s", 
-        memory: "128KB"
-      };
-    } catch (err) {
-      console.error("[JUDGE ERROR]", err);
-      return {
-        test_case_id: tc.id,
-        passed: false,
-        error: err.message,
-        status: 'Error',
-      };
+    while (attempts < maxAttempts) {
+      try {
+        const output = await runCode(sourceCode, languageId, tc.input);
+        const actual = (output.stdout || '').trim();
+        const expected = (tc.expected_output || '').trim();
+        
+        // If we got an empty response from Wandbox but expected output, retry silently
+        if (actual === "" && expected !== "" && attempts < maxAttempts - 1) {
+          attempts++;
+          continue;
+        }
+
+        const actualTokens = actual.split(/[\s\r\n]+/).filter(Boolean);
+        const expectedTokens = expected.split(/[\s\r\n]+/).filter(Boolean);
+        const passed = actualTokens.length === expectedTokens.length && 
+                       actualTokens.every((val, i) => val === expectedTokens[i]);
+        
+        console.log(`[JUDGE] TC ${tc.id}: ${passed ? '✅ PASSED' : '❌ FAILED'}`);
+        return {
+          test_case_id: tc.id,
+          passed,
+          stdout: output.stdout,
+          stderr: output.stderr,
+          time: "0.1s", 
+          memory: "128KB"
+        };
+      } catch (err) {
+        attempts++;
+        if (attempts >= maxAttempts) {
+          console.error(`[JUDGE FATAL] TC ${tc.id}:`, err.message);
+          return {
+            test_case_id: tc.id,
+            passed: false,
+            error: err.message,
+            status: 'Error'
+          };
+        }
+      }
     }
   }));
 
