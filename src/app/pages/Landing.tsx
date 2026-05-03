@@ -17,16 +17,13 @@ export default function Landing() {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const [qs, cs, subs] = await Promise.all([
-          databases.listDocuments(APPWRITE_DB_ID, "questions"),
-          databases.listDocuments(APPWRITE_DB_ID, "contests"),
-          databases.listDocuments(APPWRITE_DB_ID, "submissions"),
-        ]);
+        const response = await fetch("http://localhost:3000/api/stats");
+        const data = await response.json();
         setStats({
-          questions: qs.total.toLocaleString(),
-          contests: cs.total.toLocaleString(),
-          submissions: subs.total.toLocaleString(),
-          users: "1.2k+" // Mocked for now or can derive from unique emails
+          questions: data.questions.toLocaleString(),
+          contests: data.contests.toLocaleString(),
+          submissions: data.submissions.toLocaleString(),
+          users: data.users.toLocaleString() + "+"
         });
       } catch (err) {
         console.error("Stats sync failed:", err);
@@ -39,12 +36,12 @@ export default function Landing() {
     <div className="min-h-screen bg-[#000000] text-white flex flex-col font-sans selection:bg-[#0099ff]/30 overflow-x-hidden">
       
       {/* Dynamic Background */}
-      <div className="fixed inset-0 z-0 pointer-events-none opacity-20">
+      <div className="fixed inset-0 z-0 opacity-40">
         <BackgroundRippleEffect />
       </div>
 
       {/* Glass Navigation */}
-      <header className="px-8 py-8 flex items-center justify-between border-b border-white/5 bg-black/50 backdrop-blur-3xl sticky top-0 z-[100]">
+      <header className="px-8 py-3 flex items-center justify-between border-b border-white/5 bg-black/50 backdrop-blur-3xl sticky top-0 z-[100]">
         <motion.div 
           initial={{ x: -20, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
@@ -63,14 +60,14 @@ export default function Landing() {
         </motion.div>
 
         <div className="flex items-center gap-10">
-          <nav className="hidden md:flex items-center gap-10 text-[10px] font-semibold uppercase tracking-wider text-[#525252]">
+          <nav className="hidden md:flex items-center gap-10 text-[12px] font-semibold uppercase tracking-wider text-[#525252]">
             <a href="#features" className="hover:text-white transition-colors">Features</a>
             <a href="#integrity" className="hover:text-white transition-colors">Anti-Cheat</a>
             <a href="#stats" className="hover:text-white transition-colors">Activity</a>
           </nav>
           <button
             onClick={() => navigate("/login")}
-            className="text-[10px] font-semibold uppercase tracking-wider text-white bg-white/5 border border-white/10 hover:bg-[#0099ff] hover:border-[#0099ff] rounded-2xl px-10 py-4 transition-all active:scale-95 shadow-2xl"
+            className="text-[10px] font-semibold uppercase tracking-wider text-white bg-white/5 border border-white/10 hover:bg-[#0099ff] hover:border-[#0099ff] rounded-2xl px-10 py-3 transition-all active:scale-95 shadow-2xl"
           >
             Login System
           </button>
@@ -78,7 +75,7 @@ export default function Landing() {
       </header>
 
       {/* Hero: The Void Aesthetic */}
-      <main className="flex-1 flex flex-col items-center justify-center px-6 py-40 relative z-10">
+      <main className="flex-1 flex flex-col items-center justify-center px-6 py-10 relative z-10">
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-[-1]">
           <div className="w-[800px] h-[800px] bg-[#0099ff]/5 rounded-full blur-[150px] animate-pulse" />
         </div>
@@ -106,14 +103,14 @@ export default function Landing() {
           <div className="flex flex-col sm:flex-row gap-6 justify-center">
             <button
               onClick={() => navigate("/signup")}
-              className="group relative flex items-center justify-center gap-4 text-white bg-[#0099ff] hover:bg-white hover:text-black rounded-[2rem] px-14 py-7 text-[11px] font-semibold uppercase tracking-wider shadow-[0_0_50px_rgba(0,153,255,0.3)] transition-all duration-500 active:scale-95"
+              className="group relative flex items-center justify-center gap-2 text-white bg-[#0099ff] hover:bg-white hover:text-black rounded-[2rem] px-7 py-4 text-sm font-semibold uppercase tracking-wider shadow-[0_0_50px_rgba(0,153,255,0.3)] transition-all duration-500 active:scale-95"
             >
               Start Testing
               <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </button>
             <button
               onClick={() => navigate("/login")}
-              className="flex items-center justify-center gap-4 bg-white/5 hover:bg-white/10 border border-white/5 text-white rounded-[2rem] px-14 py-7 text-[11px] font-semibold uppercase tracking-wider transition-all backdrop-blur-3xl"
+              className="flex items-center justify-center gap-4 bg-white/5 hover:bg-white/10 border border-white/5 text-white rounded-[2rem] px-10 py-3 text-sm font-semibold uppercase tracking-wider transition-all backdrop-blur-3xl"
             >
               About Us
             </button>

@@ -48,11 +48,8 @@ export default function Leaderboard() {
   const fetchLeaderboard = async () => {
     setRefreshing(true);
     try {
-      const response = await databases.listDocuments(APPWRITE_DB_ID, "submissions", [
-        Query.limit(100),
-        Query.orderDesc("$createdAt")
-      ]);
-      const leaderData = calculateLeaderboard(response.documents);
+      const response = await fetch("http://localhost:3000/api/leaderboard");
+      const leaderData = await response.json();
       setData(leaderData);
     } catch (err) {
       console.error("Leaderboard synchronization failed:", err);

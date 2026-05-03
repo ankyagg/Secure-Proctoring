@@ -57,31 +57,9 @@ export default function ContestLobby() {
         <div className="absolute bottom-[-10%] left-[-5%] w-[400px] h-[400px] bg-[#0099ff]/[0.02] blur-[120px] rounded-full" />
       </div>
 
-      <div className="relative z-10 max-w-7xl mx-auto px-8 py-20">
+      <div className="relative z-10 max-w-[90rem] mx-auto px-8 py-5">
         
-        {/* Navigation Bar */}
-        <div className="flex items-center justify-between mb-24">
-          <motion.button 
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-            onClick={() => navigate("/")}
-            className="flex items-center gap-3 text-[#525252] hover:text-white transition-all text-[10px] font-semibold uppercase tracking-wider group"
-          >
-            <ChevronLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-            Back to Contests
-          </motion.button>
-          
-          <div className="flex items-center gap-10">
-            <div className="hidden md:flex items-center gap-8 text-[9px] font-semibold uppercase tracking-wider text-[#2a2a2a]">
-              <span className="text-[#0099ff]">Active Contests</span>
-              <span className="hover:text-white cursor-pointer transition-colors">Recent Activity</span>
-              <span className="hover:text-white cursor-pointer transition-colors">Leaderboard</span>
-            </div>
-            <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center">
-              <Users className="w-4 h-4 text-[#525252]" />
-            </div>
-          </div>
-        </div>
+        <div className="mb-10" />
 
         {/* Header Section */}
         <div className="mb-24">
@@ -144,10 +122,22 @@ export default function ContestLobby() {
                 <div className="absolute inset-0 bg-[#0099ff]/10 rounded-[3.5rem] blur-2xl opacity-0 group-hover:opacity-100 transition-all duration-700" />
                 <div className="relative h-full bg-[#090909] border border-white/5 rounded-[3.5rem] p-12 flex flex-col hover:border-[#0099ff]/30 transition-all duration-500 overflow-hidden shadow-2xl">
                   
+                  {/* Backdrop Image */}
+                  {contest.backdrop_url && (
+                    <div className="absolute inset-0 z-0">
+                      <img src={contest.backdrop_url} className="w-full h-full object-cover opacity-20 group-hover:opacity-40 transition-opacity duration-700" alt="" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-[#090909] via-[#090909]/80 to-transparent" />
+                    </div>
+                  )}
+
                   {/* Status Indicator */}
-                  <div className="flex items-center justify-between mb-12">
-                    <div className="w-16 h-16 rounded-[2rem] bg-white/5 border border-white/10 flex items-center justify-center group-hover:scale-110 group-hover:bg-[#0099ff]/10 group-hover:border-[#0099ff]/20 transition-all duration-500">
-                      <Flame className="w-8 h-8 text-[#525252] group-hover:text-[#0099ff]" />
+                  <div className="flex items-center justify-between mb-12 relative z-10">
+                    <div className="w-16 h-16 rounded-[2rem] bg-white/5 border border-white/10 flex items-center justify-center group-hover:scale-110 group-hover:bg-[#0099ff]/10 group-hover:border-[#0099ff]/20 transition-all duration-500 overflow-hidden">
+                      {contest.logo_url ? (
+                        <img src={contest.logo_url} className="w-full h-full object-cover" alt={contest.name} />
+                      ) : (
+                        <Flame className="w-8 h-8 text-[#525252] group-hover:text-[#0099ff]" />
+                      )}
                     </div>
                     <div className={`px-5 py-2 rounded-full text-[9px] font-semibold uppercase tracking-wider border shadow-2xl ${
                       contest.status === 'Live' ? 'bg-[#10b981]/10 text-[#10b981] border-[#10b981]/20 animate-pulse' : 'bg-white/5 text-[#525252] border-white/5'
@@ -156,15 +146,15 @@ export default function ContestLobby() {
                     </div>
                   </div>
 
-                  <h3 className="text-4xl font-semibold tracking-tight uppercase leading-[0.9] mb-6 group-hover:text-[#0099ff] transition-colors">
+                  <h3 className="text-4xl font-semibold tracking-tight uppercase leading-[0.9] mb-6 group-hover:text-[#0099ff] transition-colors relative z-10">
                     {contest.name}
                   </h3>
                   
-                  <p className="text-[#525252] text-lg font-bold tracking-tight line-clamp-2 mb-12 text-balance leading-snug">
+                  <p className="text-[#525252] text-lg font-bold tracking-tight line-clamp-2 mb-12 text-balance leading-snug relative z-10">
                     {contest.description || "Solve coding challenges to win points."}
                   </p>
 
-                  <div className="mt-auto space-y-10">
+                  <div className="mt-auto space-y-10 relative z-10">
                     <div className="grid grid-cols-2 gap-8 border-t border-white/5 pt-10">
                       <div>
                         <span className="text-[10px] font-semibold text-[#525252] uppercase tracking-wider">Loading Problems...</span>

@@ -94,12 +94,11 @@ export default function ContestManagement() {
       {/* Main Table Interface */}
       <div className="bg-[#090909] border border-white/5 rounded-[2.5rem] overflow-hidden shadow-2xl">
         <div className="grid px-10 py-6 bg-white/[0.02] border-b border-white/5 text-[9px] font-semibold text-[#2a2a2a] uppercase tracking-wider"
-          style={{ gridTemplateColumns: "1.8fr 1fr 1.5fr 0.8fr 1fr 1fr" }}>
-          <span>Contest Name</span>
+          style={{ gridTemplateColumns: "2fr 1fr 1.5fr 0.8fr 1fr" }}>
+          <span>Contest Information</span>
           <span>Status</span>
           <span>Schedule</span>
           <span>Questions</span>
-          <span>Anti-Cheat</span>
           <span className="text-right">Actions</span>
         </div>
 
@@ -122,7 +121,7 @@ export default function ContestManagement() {
                 transition={{ delay: index * 0.05 }}
                 key={c.id}
                 className="grid px-10 py-8 items-center hover:bg-white/[0.01] transition-all group/row"
-                style={{ gridTemplateColumns: "1.8fr 1fr 1.5fr 0.8fr 1fr 1fr" }}
+                style={{ gridTemplateColumns: "2fr 1fr 1.5fr 0.8fr 1fr" }}
               >
                 <div className="flex items-center gap-5">
                   <div className="w-12 h-12 rounded-2xl bg-[#000000] border border-white/5 flex items-center justify-center group-hover/row:border-[#0099ff]/30 transition-all">
@@ -132,7 +131,10 @@ export default function ContestManagement() {
                     <div className="text-white text-base font-semibold tracking-[-0.02em] uppercase group-hover/row:text-[#0099ff] transition-colors">
                       {c.name}
                     </div>
-                    <div className="text-[9px] text-[#2a2a2a] font-bold uppercase tracking-widest mt-1">SIG: {c.id.slice(0, 8)}</div>
+                    <div className="flex items-center gap-3 text-[9px] text-[#2a2a2a] font-bold uppercase tracking-widest mt-1">
+                      <span>Node ID: {c.id.slice(0, 8)}</span>
+                      {c.antiCheat && <Shield className="w-3 h-3 text-[#0099ff]/40" title="Anti-Cheat Enabled" />}
+                    </div>
                   </div>
                 </div>
 
@@ -159,20 +161,6 @@ export default function ContestManagement() {
                   {problemsCount}
                 </div>
 
-                <div>
-                  {c.antiCheat ? (
-                    <div className="flex items-center gap-2.5 text-[#0099ff] text-[9px] font-semibold uppercase tracking-wider bg-[#0099ff]/5 border border-[#0099ff]/20 px-4 py-2 rounded-xl w-fit">
-                      <Shield className="w-3.5 h-3.5" />
-                      Locked
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-2.5 text-[#2a2a2a] text-[9px] font-semibold uppercase tracking-wider bg-white/5 border border-white/5 px-4 py-2 rounded-xl w-fit">
-                      <ShieldOff className="w-3.5 h-3.5" />
-                      Open
-                    </div>
-                  )}
-                </div>
-
                 <div className="flex items-center justify-end gap-3">
                   <button
                     onClick={() => {
@@ -180,11 +168,14 @@ export default function ContestManagement() {
                         edit: "true",
                         id: c.id,
                         name: c.name,
+                        description: c.description || "",
                         startTime: start,
                         endTime: end,
                         problems: String(problemsCount),
                         antiCheat: typeof c.antiCheat === "object" ? JSON.stringify(c.antiCheat) : String(c.antiCheat),
                         questionIds: JSON.stringify(c.question_ids || []),
+                        logo_url: c.logo_url || "",
+                        backdrop_url: c.backdrop_url || "",
                       });
                       navigate(`/admin/contests/new?${params.toString()}`);
                     }}

@@ -2,11 +2,7 @@ import { Navigate, Outlet } from "react-router";
 import { account } from "../../services/appwrite";
 import { useEffect, useState } from "react";
 
-const admins = [
-  "mansiparande2006@gmail.com",
-  "ixaaniketwalanj@gmail.com",
-  "admin@proctor.com"
-];
+const admins = (import.meta.env.VITE_ADMIN_EMAILS || "").split(",");
 
 export default function AdminProtectedRoute({ children }: any) {
   const [user, setUser] = useState<any>(null);

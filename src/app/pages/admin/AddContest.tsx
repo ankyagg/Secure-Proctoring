@@ -19,9 +19,12 @@ export default function AddContest() {
 
   const [form, setForm] = useState({
     name: contestName,
+    description: (searchParams.get("description") ?? ""),
     startTime: (searchParams.get("startTime") ?? "2026-04-25T10:00"),
     endTime: (searchParams.get("endTime") ?? "2026-04-25T13:00"),
     problems: Number(searchParams.get("problems")) || 5,
+    logo_url: (searchParams.get("logo_url") ?? ""),
+    backdrop_url: (searchParams.get("backdrop_url") ?? ""),
   });
 
   const [questions, setQuestions] = useState<Question[]>([]);
@@ -99,11 +102,14 @@ export default function AddContest() {
     setSaving(true);
     const payload = {
       name: form.name,
+      description: form.description,
       start_time: form.startTime,
       end_time: form.endTime,
       problems: selectedQuestions.length,
       anti_cheat: antiCheat,
       question_ids: selectedQuestions,
+      logo_url: form.logo_url,
+      backdrop_url: form.backdrop_url,
     };
 
     try {
@@ -177,6 +183,38 @@ export default function AddContest() {
                     placeholder="e.g. Winter Coding Challenge"
                     className="w-full bg-[#000000] border border-white/5 rounded-2xl px-6 py-4 text-white font-semibold text-sm placeholder:text-[#2a2a2a] focus:border-[#0099ff]/50 transition-all outline-none"
                   />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="block text-[10px] font-semibold uppercase tracking-wider text-[#525252]">Description</label>
+                  <textarea
+                    value={form.description}
+                    onChange={(e) => setForm({ ...form, description: e.target.value })}
+                    placeholder="Brief description of the contest..."
+                    rows={3}
+                    className="w-full bg-[#000000] border border-white/5 rounded-2xl px-6 py-4 text-white font-semibold text-sm placeholder:text-[#2a2a2a] focus:border-[#0099ff]/50 transition-all outline-none resize-none"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-8">
+                  <div className="space-y-2">
+                    <label className="block text-[10px] font-semibold uppercase tracking-wider text-[#525252]">Logo URL</label>
+                    <input
+                      value={form.logo_url}
+                      onChange={(e) => setForm({ ...form, logo_url: e.target.value })}
+                      placeholder="https://example.com/logo.png"
+                      className="w-full bg-[#000000] border border-white/5 rounded-2xl px-6 py-4 text-white font-semibold text-sm placeholder:text-[#2a2a2a] focus:border-[#0099ff]/50 transition-all outline-none"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="block text-[10px] font-semibold uppercase tracking-wider text-[#525252]">Backdrop URL</label>
+                    <input
+                      value={form.backdrop_url}
+                      onChange={(e) => setForm({ ...form, backdrop_url: e.target.value })}
+                      placeholder="https://example.com/bg.jpg"
+                      className="w-full bg-[#000000] border border-white/5 rounded-2xl px-6 py-4 text-white font-semibold text-sm placeholder:text-[#2a2a2a] focus:border-[#0099ff]/50 transition-all outline-none"
+                    />
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-8">

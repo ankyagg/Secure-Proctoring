@@ -13,7 +13,7 @@ export default function AdminLogin() {
     e.preventDefault();
     setLoading(true);
 
-    const allowedEmails = ["mansiparande2006@gmail.com", "ixaaniketwalanj@gmail.com"];
+    const allowedEmails = (import.meta.env.VITE_ADMIN_EMAILS || "").split(",");
     
     if (allowedEmails.includes(email) && password === "am@1234") {
       localStorage.setItem("admin_auth", "true");

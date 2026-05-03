@@ -14,6 +14,8 @@ export type Contest = {
   endTime?: string;
   status?: string;
   question_ids?: string[];
+  logo_url?: string;
+  backdrop_url?: string;
 };
 
 export const fetchContests = async (): Promise<Contest[]> => {
@@ -36,12 +38,15 @@ export const fetchContests = async (): Promise<Contest[]> => {
       return {
         id: doc.$id,
         name: doc.name,
+        description: doc.description,
         startTime: doc.start_time,
         endTime: doc.end_time,
         problems: doc.problems,
         antiCheat,
         question_ids: questionIds,
         status: getStatus(doc.start_time, doc.end_time),
+        logo_url: doc.logo_url,
+        backdrop_url: doc.backdrop_url,
       } as Contest;
     });
   } catch (error) {
@@ -62,12 +67,21 @@ function getStatus(start: string, end: string) {
 
 export async function createContest(data: any) {
     const payload = {
-      ...data,
+      name: data.name,
+      description: data.description,
+      active: data.active ?? true,
       startTime: data.start_time,
       endTime: data.end_time,
+      totalProblems: data.problems,
+      maxScore: data.maxScore ?? 100,
+      status: data.status || getStatus(data.start_time, data.end_time),
+      start_time: data.start_time,
+      end_time: data.end_time,
+      problems: data.problems,
       anti_cheat: typeof data.anti_cheat === 'object' ? JSON.stringify(data.anti_cheat) : data.anti_cheat,
       question_ids: Array.isArray(data.question_ids) ? JSON.stringify(data.question_ids) : data.question_ids,
-      createdAt: new Date().toISOString()
+      logo_url: data.logo_url,
+      backdrop_url: data.backdrop_url
     };
     const response = await databases.createDocument(APPWRITE_DB_ID, COLLECTION_ID, ID.unique(), payload);
     return { id: response.$id, ...data };
@@ -75,12 +89,21 @@ export async function createContest(data: any) {
 
 export async function updateContest(id: string, data: any) {
   const payload = {
-    ...data,
+    name: data.name,
+    description: data.description,
+    active: data.active ?? true,
     startTime: data.start_time,
     endTime: data.end_time,
+    totalProblems: data.problems,
+    maxScore: data.maxScore ?? 100,
+    status: data.status || getStatus(data.start_time, data.end_time),
+    start_time: data.start_time,
+    end_time: data.end_time,
+    problems: data.problems,
     anti_cheat: typeof data.anti_cheat === 'object' ? JSON.stringify(data.anti_cheat) : data.anti_cheat,
     question_ids: Array.isArray(data.question_ids) ? JSON.stringify(data.question_ids) : data.question_ids,
-    updatedAt: new Date().toISOString()
+    logo_url: data.logo_url,
+    backdrop_url: data.backdrop_url
   };
   await databases.updateDocument(APPWRITE_DB_ID, COLLECTION_ID, id, payload);
 }

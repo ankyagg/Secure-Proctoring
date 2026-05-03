@@ -39,8 +39,8 @@ async function judgeSubmission(sourceCode, languageId, testCases) {
       console.log(`  Expected: "${expected}"`);
 
       // SUPER-TOKEN SPLIT: Handles \r, \n, and multiple spaces
-      const actualTokens = actual.split(/[\s\r\n]+/).filter(Boolean).sort();
-      const expectedTokens = expected.split(/[\s\r\n]+/).filter(Boolean).sort();
+      const actualTokens = actual.split(/[\s\r\n]+/).filter(Boolean);
+      const expectedTokens = expected.split(/[\s\r\n]+/).filter(Boolean);
       
       const passed = actualTokens.length === expectedTokens.length && 
                      actualTokens.every((val, index) => val === expectedTokens[index]);

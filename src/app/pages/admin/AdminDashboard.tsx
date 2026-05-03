@@ -11,11 +11,7 @@ import {
 import { Query } from "appwrite";
 import { motion } from "framer-motion";
 
-const admins = [
-  "mansiparande2006@gmail.com",
-  "ixaaniketwalanj@gmail.com",
-  "admin@proctor.com"
-];
+const admins = (import.meta.env.VITE_ADMIN_EMAILS || "").split(",");
 
 export default function AdminDashboard() {
   const navigate = useNavigate();

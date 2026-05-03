@@ -18,7 +18,8 @@ import {
   Target,
   Maximize2,
   Layout,
-  TerminalSquare
+  TerminalSquare,
+  AlertTriangle
 } from "lucide-react";
 import WebcamPreview from "../../components/WebcamPreview";
 import { useStudentContext } from "../../components/StudentLayout";
@@ -78,7 +79,7 @@ const difficultyConfig = {
 export default function CodingWorkspace() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { currentUser, setCurrentCode } = useStudentContext();
+  const { currentUser, setCurrentCode, timeRemaining, warningCount } = useStudentContext();
 
   const [problem, setProblem] = useState<FirestoreProblem | null>(null);
   const [loadingProblem, setLoadingProblem] = useState(true);
@@ -188,11 +189,10 @@ export default function CodingWorkspace() {
     return () => clearInterval(interval);
   }, [timeLeft]);
 
-  const formatTime = (ms: number) => {
-    const totalSec = Math.floor(ms / 1000);
-    const h = Math.floor(totalSec / 3600);
-    const m = Math.floor((totalSec % 3600) / 60);
-    const s = totalSec % 60;
+  const formatTimeSeconds = (seconds: number) => {
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = seconds % 60;
     return `${h > 0 ? `${h}:` : ""}${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
   };
 
@@ -287,13 +287,36 @@ export default function CodingWorkspace() {
         
         {/* Workspace Toolbar */}
         <div className="px-8 h-16 border-b border-white/5 flex items-center justify-between bg-[#050505]/80 backdrop-blur-md sticky top-0 z-50">
-          <div className="flex items-center gap-4">
-            <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center">
-              <TerminalSquare className="w-4 h-4 text-[#0099ff]" />
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-4">
+              <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center">
+                <TerminalSquare className="w-4 h-4 text-[#0099ff]" />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-[9px] font-bold text-[#525252] uppercase tracking-[0.2em] leading-none mb-1">Workspace</span>
+                <span className="text-[10px] font-bold text-white uppercase tracking-wider">{problem.title}</span>
+              </div>
             </div>
-            <div className="flex flex-col">
-              <span className="text-[9px] font-bold text-[#525252] uppercase tracking-[0.2em] leading-none mb-1">Workspace</span>
-              <span className="text-[10px] font-bold text-white uppercase tracking-wider">{problem.title}</span>
+
+            <div className="h-6 w-px bg-white/5" />
+
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2.5 px-3 py-1.5 rounded-lg bg-[#0099ff]/5 border border-[#0099ff]/10 text-[#0099ff]">
+                <div className="w-1.5 h-1.5 bg-[#0099ff] rounded-full animate-ping" />
+                <span className="text-[8px] font-bold uppercase tracking-wider">Secure</span>
+              </div>
+
+              <div className="flex items-center gap-3 px-4 py-1.5 rounded-lg bg-white/5 border border-white/5 text-[#525252]">
+                <Clock className="w-3.5 h-3.5 text-[#0099ff]" />
+                <span className="text-[10px] font-bold tabular-nums tracking-widest">{formatTimeSeconds(timeRemaining)}</span>
+              </div>
+
+              {warningCount > 0 && (
+                <div className="flex items-center gap-3 px-4 py-1.5 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-500 animate-pulse">
+                  <AlertTriangle className="w-3.5 h-3.5" />
+                  <span className="text-[10px] font-bold">{warningCount}</span>
+                </div>
+              )}
             </div>
           </div>
           
@@ -306,7 +329,7 @@ export default function CodingWorkspace() {
             className="flex items-center gap-2 h-9 px-4 rounded-lg text-[#525252] hover:text-white bg-white/5 border border-white/5 transition-all group active:scale-95 hover:bg-white/[0.08]"
           >
             <ChevronLeft className="w-3.5 h-3.5 group-hover:-translate-x-0.5 transition-transform" />
-            <span className="text-[9px] font-bold uppercase tracking-[0.15em]">Exit Workspace</span>
+            <span className="text-[9px] font-bold uppercase tracking-[0.15em]">Exit</span>
           </button>
         </div>
 
@@ -548,7 +571,7 @@ export default function CodingWorkspace() {
             {timeLeft !== null && (
               <div className={`flex items-center gap-2.5 h-10 px-6 rounded-xl border transition-all duration-700 ${timeLeft < 300000 ? 'bg-rose-500/10 border-rose-500/20 text-rose-500 animate-pulse' : 'bg-[#0099ff]/5 border-[#0099ff]/10 text-[#0099ff]'}`}>
                 <Clock className="w-3.5 h-3.5" />
-                <span className="text-[12px] font-bold tabular-nums tracking-[0.2em]">{formatTime(timeLeft)}</span>
+                <span className="text-[12px] font-bold tabular-nums tracking-[0.2em]">{formatTimeSeconds(Math.floor(timeLeft / 1000))}</span>
               </div>
             )}
             

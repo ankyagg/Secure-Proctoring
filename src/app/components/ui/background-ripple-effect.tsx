@@ -1,14 +1,10 @@
 "use client";
-import React, { useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { cn } from "@/app/components/ui/utils";
 
 export const BackgroundRippleEffect = ({
-  rows = 8,
-  cols = 27,
   cellSize = 56,
 }: {
-  rows?: number;
-  cols?: number;
   cellSize?: number;
 }) => {
   const [clickedCell, setClickedCell] = useState<{
@@ -16,24 +12,35 @@ export const BackgroundRippleEffect = ({
     col: number;
   } | null>(null);
   const [rippleKey, setRippleKey] = useState(0);
-  const ref = useRef<any>(null);
+  const [dimensions, setDimensions] = useState({ rows: 10, cols: 20 });
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const updateDimensions = () => {
+      const rows = Math.ceil(window.innerHeight / cellSize) + 2;
+      const cols = Math.ceil(window.innerWidth / cellSize) + 2;
+      setDimensions({ rows, cols });
+    };
+
+    updateDimensions();
+    window.addEventListener("resize", updateDimensions);
+    return () => window.removeEventListener("resize", updateDimensions);
+  }, [cellSize]);
 
   return (
     <div
       ref={ref}
       className={cn(
         "absolute inset-0 h-full w-full",
-        "[--cell-border-color:var(--color-neutral-300)] [--cell-fill-color:var(--color-neutral-100)] [--cell-shadow-color:var(--color-neutral-500)]",
-        "dark:[--cell-border-color:var(--color-neutral-700)] dark:[--cell-fill-color:var(--color-neutral-900)] dark:[--cell-shadow-color:var(--color-neutral-800)]",
+        "[--cell-border-color:rgba(255,255,255,0.05)] [--cell-fill-color:rgba(0,153,255,0.02)] [--cell-shadow-color:rgba(0,153,255,0.1)]",
       )}
     >
-      <div className="relative h-auto w-auto overflow-hidden">
-        <div className="pointer-events-none absolute inset-0 z-[2] h-full w-full overflow-hidden" />
+      <div className="relative h-full w-full overflow-hidden">
         <DivGrid
           key={`base-${rippleKey}`}
-          className="mask-radial-from-20% mask-radial-at-top opacity-600"
-          rows={rows}
-          cols={cols}
+          className="opacity-100"
+          rows={dimensions.rows}
+          cols={dimensions.cols}
           cellSize={cellSize}
           borderColor="var(--cell-border-color)"
           fillColor="var(--cell-fill-color)"
@@ -49,11 +56,12 @@ export const BackgroundRippleEffect = ({
   );
 };
 
+
 type DivGridProps = {
   className?: string;
   rows: number;
   cols: number;
-  cellSize: number; // in pixels
+  cellSize: number;
   borderColor: string;
   fillColor: string;
   clickedCell: { row: number; col: number } | null;
@@ -68,13 +76,13 @@ type CellStyle = React.CSSProperties & {
 
 const DivGrid = ({
   className,
-  rows = 7,
-  cols = 30,
-  cellSize = 56,
-  borderColor = "#3f3f46",
-  fillColor = "rgba(14,165,233,0.3)",
-  clickedCell = null,
-  onCellClick = () => {},
+  rows,
+  cols,
+  cellSize,
+  borderColor,
+  fillColor,
+  clickedCell,
+  onCellClick,
   interactive = true,
 }: DivGridProps) => {
   const cells = useMemo(
@@ -88,7 +96,6 @@ const DivGrid = ({
     gridTemplateRows: `repeat(${rows}, ${cellSize}px)`,
     width: cols * cellSize,
     height: rows * cellSize,
-    marginInline: "auto",
   };
 
   return (
@@ -104,8 +111,8 @@ const DivGrid = ({
 
         const style: CellStyle = clickedCell
           ? {
-              "--delay": `${delay}ms`,
-              "--duration": `${duration}ms`,
+               "--delay": `${delay}ms`,
+               "--duration": `${duration}ms`,
             }
           : {};
 
@@ -113,7 +120,7 @@ const DivGrid = ({
           <div
             key={idx}
             className={cn(
-              "cell relative border-[0.5px] opacity-40 transition-opacity duration-150 will-change-transform hover:opacity-80 dark:shadow-[0px_0px_40px_1px_var(--cell-shadow-color)_inset]",
+              "cell relative border-[0.5px] opacity-40 transition-opacity duration-150 hover:opacity-80",
               clickedCell && "animate-cell-ripple [animation-fill-mode:none]",
               !interactive && "pointer-events-none",
             )}
@@ -131,3 +138,4 @@ const DivGrid = ({
     </div>
   );
 };
+

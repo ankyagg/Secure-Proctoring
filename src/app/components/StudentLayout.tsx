@@ -301,71 +301,88 @@ export default function StudentLayout() {
 
         {/* Global Toolbar */}
         {!isWorkspace && (
-          <header className="h-24 sticky top-0 z-50 flex items-center justify-between px-12 border-b border-white/5 bg-black/40 backdrop-blur-xl">
-            <div className="flex items-center gap-10">
-              <Link to="/student/lobby" className="flex items-center gap-4 group">
-                <div className="w-12 h-12 bg-white border border-white/10 rounded-2xl flex items-center justify-center shadow-2xl group-hover:scale-110 transition-all">
-                  <Code2 className="w-6 h-6 text-black" />
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-white text-[11px] font-semibold tracking-wider uppercase leading-none mb-1.5">Proctor</span>
-                  <span className="text-[9px] text-[#525252] font-semibold uppercase tracking-wider flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 bg-[#0099ff] rounded-full shadow-[0_0_8px_rgba(0,153,255,1)] animate-pulse" />
-                    System Online
-                  </span>
-                </div>
-              </Link>
+          <header className="flex items-center justify-between px-8 py-3.5 border-b border-white/5 bg-black/50 backdrop-blur-3xl sticky top-0 z-[100]">
+            <div className="max-w-[90rem] mx-auto w-full flex items-center justify-between relative">
+              <div className="flex items-center gap-8">
+                <Link to="/" className="flex items-center gap-4 group">
+                  <div className="w-10 h-10 bg-[#0099ff] rounded-[1rem] flex items-center justify-center shadow-[0_0_20px_rgba(0,153,255,0.3)] group-hover:rotate-12 transition-all duration-500">
+                    <Shield className="w-5 h-5 text-white" />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-white text-[11px] font-semibold tracking-wider uppercase leading-none mb-1.5">Proctor</span>
+                    <span className="text-[9px] text-[#525252] font-semibold uppercase tracking-wider flex items-center gap-2">
+                      <div className="w-1.5 h-1.5 bg-[#0099ff] rounded-full shadow-[0_0_8px_rgba(0,153,255,1)] animate-pulse" />
+                      System Online
+                    </span>
+                  </div>
+                </Link>
 
-              <div className="h-8 w-px bg-white/5 hidden md:block" />
+                <div className="h-8 w-px bg-white/5 hidden md:block" />
 
-              <div className="hidden md:flex items-center gap-10">
-                {[
-                  { to: "/student/problems", label: "Library", icon: LayoutList },
-                  { to: "/student/leaderboard", label: "Rankings", icon: Trophy }
-                ].map((item) => {
-                  const isActive = location.pathname.includes(item.to);
-                  return (
-                    <Link
-                      key={item.to}
-                      to={`${item.to}${location.search}`}
-                      className={`flex items-center gap-3 text-[10px] font-semibold uppercase tracking-wider transition-all ${isActive ? "text-[#0099ff]" : "text-[#525252] hover:text-white"}`}
+                <div className="hidden md:flex items-center gap-10">
+                  <div className="flex items-center gap-10 text-[10px] font-semibold uppercase tracking-wider">
+                    <Link 
+                      to="/student/lobby" 
+                      className={`transition-colors ${location.pathname.includes("/student/lobby") ? "text-[#0099ff]" : "text-[#525252] hover:text-white"}`}
                     >
-                      <item.icon className="w-4 h-4" />
-                      {item.label}
+                      Active Contests
                     </Link>
-                  );
-                })}
+                    <Link 
+                      to="/student/problems" 
+                      className={`transition-colors ${location.pathname.includes("/student/problems") ? "text-[#0099ff]" : "text-[#525252] hover:text-white"}`}
+                    >
+                      Library
+                    </Link>
+                    <Link 
+                      to="/student/activity" 
+                      className={`transition-colors ${location.pathname.includes("/student/activity") ? "text-[#0099ff]" : "text-[#525252] hover:text-white"}`}
+                    >
+                      Recent Activity
+                    </Link>
+                    <Link 
+                      to="/student/leaderboard" 
+                      className={`transition-colors ${location.pathname.includes("/student/leaderboard") ? "text-[#0099ff]" : "text-[#525252] hover:text-white"}`}
+                    >
+                      Leaderboard
+                    </Link>
+                  </div>
+                </div>
               </div>
-            </div>
-
-            <div className="flex items-center gap-8">
-              <div className="flex items-center gap-3 px-6 py-3 rounded-2xl bg-[#0099ff]/5 border border-[#0099ff]/10 text-[#0099ff]">
-                 <div className="w-2 h-2 bg-[#0099ff] rounded-full animate-ping" />
-                 <span className="text-[10px] font-semibold uppercase tracking-wider">Anti-Cheat</span>
-              </div>
-
-              <div className="flex items-center gap-4">
-                 <div className="flex items-center gap-3 px-6 py-3 rounded-2xl bg-white/5 border border-white/5 text-[#525252]">
-                   <Clock className="w-4 h-4 text-[#0099ff]" />
-                   <span className="text-[11px] font-semibold tabular-nums tracking-widest">{formatTime(timeRemaining)}</span>
-                 </div>
-                 {warningCount > 0 && (
-                   <div className="flex items-center gap-3 px-6 py-3 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-500 animate-pulse">
-                     <AlertTriangle className="w-4 h-4" />
-                     <span className="text-[11px] font-semibold">{warningCount}</span>
-                   </div>
-                 )}
-              </div>
-
-              <div className="h-8 w-px bg-white/5" />
 
               <div className="flex items-center gap-6">
-                 <div className="w-12 h-12 rounded-2xl bg-white border border-white/10 flex items-center justify-center text-black font-semibold text-xs shadow-2xl">
-                   {user?.name?.substring(0, 2).toUpperCase() || "??"}
-                 </div>
-                 <button onClick={async () => { await account.deleteSession('current'); navigate("/"); }} className="p-3 text-[#2a2a2a] hover:text-white transition-colors">
-                   <LogOut className="w-5 h-5" />
-                 </button>
+
+                {!location.pathname.includes("/student/lobby") && (
+                  <div className="flex items-center gap-6">
+                    <div className="flex items-center gap-3 px-5 py-2 rounded-xl bg-[#0099ff]/5 border border-[#0099ff]/10 text-[#0099ff]">
+                      <div className="w-1.5 h-1.5 bg-[#0099ff] rounded-full animate-ping" />
+                      <span className="text-[9px] font-semibold uppercase tracking-wider">Anti-Cheat</span>
+                    </div>
+
+                    <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-3 px-5 py-2 rounded-xl bg-white/5 border border-white/5 text-[#525252]">
+                        <Clock className="w-3.5 h-3.5 text-[#0099ff]" />
+                        <span className="text-[10px] font-semibold tabular-nums tracking-widest">{formatTime(timeRemaining)}</span>
+                      </div>
+                      {warningCount > 0 && (
+                        <div className="flex items-center gap-3 px-5 py-2 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-500 animate-pulse">
+                          <AlertTriangle className="w-3.5 h-3.5" />
+                          <span className="text-[10px] font-semibold">{warningCount}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                <div className="h-8 w-px bg-white/5" />
+
+                <div className="flex items-center gap-6">
+                   <div className="w-12 h-12 rounded-2xl bg-white border border-white/10 flex items-center justify-center text-black font-semibold text-xs shadow-2xl">
+                     {user?.name?.substring(0, 2).toUpperCase() || "??"}
+                   </div>
+                   <button onClick={async () => { await account.deleteSession('current'); navigate("/"); }} className="p-3 text-[#2a2a2a] hover:text-white transition-colors">
+                    <LogOut className="w-5 h-5" />
+                  </button>
+                </div>
               </div>
             </div>
           </header>

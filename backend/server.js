@@ -214,7 +214,7 @@ app.get('/api/stats', async (req, res) => {
       questions: qDocs.total,
       contests: cDocs.total,
       submissions: sDocs.total,
-      users: uniqueUsers + 10
+      users: uniqueUsers
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
