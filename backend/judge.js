@@ -27,9 +27,8 @@ async function runCode(sourceCode, languageId, stdin) {
 }
 
 async function judgeSubmission(sourceCode, languageId, testCases) {
-  const results = [];
-
-  for (const tc of testCases) {
+  // Promise.all runs all test cases in parallel, slashing wait time from (N * latency) to (latency)
+  const results = await Promise.all(testCases.map(async (tc) => {
     try {
       const output = await runCode(sourceCode, languageId, tc.input);
       const actual = (output.stdout || '').trim();
@@ -48,24 +47,24 @@ async function judgeSubmission(sourceCode, languageId, testCases) {
       
       console.log(`  Passed: ${passed}`);
 
-      results.push({
+      return {
         test_case_id: tc.id,
         passed,
         stdout: output.stdout,
         stderr: output.stderr,
-        time: "0.1s", // Wandbox doesn't give precise per-case time easily
+        time: "0.1s", 
         memory: "128KB"
-      });
+      };
     } catch (err) {
       console.error("[JUDGE ERROR]", err);
-      results.push({
+      return {
         test_case_id: tc.id,
         passed: false,
         error: err.message,
         status: 'Error',
-      });
+      };
     }
-  }
+  }));
 
   return results;
 }
