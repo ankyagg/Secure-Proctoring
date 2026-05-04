@@ -78,3 +78,8 @@
     100% { opacity: 0.4; }
   }
 }
+
+/* Hide Unicorn Studio Watermark */
+a[href*="unicorn.studio"] {
+  display: none !important;
+}

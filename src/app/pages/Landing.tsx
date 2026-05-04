@@ -96,11 +96,7 @@ export default function Landing() {
         </motion.div>
 
         <div className="flex items-center gap-10">
-          <nav className="hidden md:flex items-center gap-10 text-[12px] font-semibold uppercase tracking-wider text-[#525252]">
-            <a href="#features" className="hover:text-white transition-colors" aria-label="Explore Features">Features</a>
-            <a href="#integrity" className="hover:text-white transition-colors" aria-label="Anti-Cheat Integrity">Anti-Cheat</a>
-            <a href="#stats" className="hover:text-white transition-colors" aria-label="Global Activity Stats">Activity</a>
-          </nav>
+          
           <button
             onClick={() => navigate("/login")}
             className="text-[10px] font-semibold uppercase tracking-wider text-white bg-white/5 border border-white/10 hover:bg-[#0099ff] hover:border-[#0099ff] rounded-2xl px-10 py-3 transition-all active:scale-95 shadow-2xl"
@@ -168,11 +164,11 @@ export default function Landing() {
             <div className="w-20 h-20 bg-[#0099ff]/10 border border-[#0099ff]/20 rounded-[2rem] flex items-center justify-center mb-10 shadow-[0_0_40px_rgba(0,153,255,0.15)] group-hover:scale-110 transition-transform duration-500">
               <Trophy className="w-8 h-8 text-[#0099ff]" />
             </div>
-            <h2 className="text-4xl font-semibold text-white mb-6 tracking-tight uppercase">For Candidates</h2>
+            <h2 className="text-4xl font-semibold text-white mb-4 tracking-tight uppercase">For Candidates</h2>
               Access the coding platform. High-quality editor, real-time feedback, and world-class problem sets.
             <button
               onClick={() => navigate("/signup")}
-              className="w-full flex items-center justify-center gap-3 text-white bg-white/5 border border-white/5 hover:bg-white/10 rounded-2xl py-5 text-[10px] font-semibold uppercase tracking-wider transition-all"
+              className="w-full flex items-center justify-center gap-3 text-white mt-3 bg-white/5 border border-white/5 hover:bg-white/10 rounded-2xl py-5 text-[10px] font-semibold uppercase tracking-wider transition-all"
             >
               Get Started
               <ChevronRight className="w-4 h-4" />
@@ -189,11 +185,11 @@ export default function Landing() {
             <div className="w-20 h-20 bg-white/5 border border-white/10 rounded-[2rem] flex items-center justify-center mb-10 group-hover:scale-110 transition-transform duration-500">
               <Shield className="w-8 h-8 text-white" />
             </div>
-            <h2 className="text-4xl font-semibold text-white mb-6 tracking-tight uppercase">For Commands</h2>
+            <h2 className="text-4xl font-semibold text-white mb-4 tracking-tight uppercase">For Commands</h2>
               Create and manage contests. AI-driven gaze tracking, real-time monitoring, and detailed reports.
             <button
               onClick={() => navigate("/admin/login")}
-              className="w-full flex items-center justify-center gap-3 text-white bg-white/5 border border-white/5 hover:bg-white/10 rounded-2xl py-5 text-[10px] font-semibold uppercase tracking-wider transition-all"
+              className="w-full flex items-center justify-center gap-3 text-white bg-white/5 border border-white/5 hover:bg-white/10 rounded-2xl py-5 mt-3 text-[10px] font-semibold uppercase tracking-wider transition-all"
             >
               Admin Login
               <ChevronRight className="w-4 h-4" />
