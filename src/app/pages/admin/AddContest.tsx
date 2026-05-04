@@ -132,7 +132,7 @@ export default function AddContest() {
   };
 
   return (
-    <div className="min-h-screen bg-[#000000] text-white font-sans selection:bg-[#0099ff]/30">
+    <div className="min-h-screen bg-transparent text-white font-sans selection:bg-[#0099ff]/30">
       <div className="bg-[#000000]/80 backdrop-blur-xl border-b border-white/5 px-8 py-6 flex items-center justify-between sticky top-0 z-50">
         <div className="flex items-center gap-6">
           <button

@@ -30,7 +30,7 @@ export default function StudentActivity() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-6 bg-[#000]">
+      <div className="min-h-screen flex flex-col items-center justify-center gap-6 bg-transparent">
         <div className="w-10 h-10 border-2 border-[#0099ff] border-t-transparent rounded-full animate-spin" />
         <span className="text-[10px] font-semibold text-[#525252] uppercase tracking-wider">Loading Activity...</span>
       </div>
@@ -38,7 +38,7 @@ export default function StudentActivity() {
   }
 
   return (
-    <div className="min-h-screen bg-[#000000] text-white selection:bg-[#0099ff]/30 pb-32">
+    <div className="min-h-screen bg-transparent text-white selection:bg-[#0099ff]/30 pb-32">
       
       {/* Background Ambience */}
       <div className="fixed inset-0 z-0 pointer-events-none">

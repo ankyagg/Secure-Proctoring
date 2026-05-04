@@ -1,10 +1,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import { Shield, ChevronRight, Trophy, Zap, Globe, Lock, Cpu, Activity, Layers } from "lucide-react";
-import { motion } from "framer-motion";
-import { BackgroundRippleEffect } from "../components/ui/background-ripple-effect";
+import { motion, AnimatePresence } from "framer-motion";
 import { databases, APPWRITE_DB_ID } from "../services/appwrite";
-import { AnimatePresence } from "framer-motion";
 import UnicornScene from "unicornstudio-react";
 
 export default function Landing() {
@@ -18,7 +16,6 @@ export default function Landing() {
   const [showIntro, setShowIntro] = useState(true);
 
   useEffect(() => {
-    // Show splash screen for 4 seconds then transition
     const timer = setTimeout(() => setShowIntro(false), 4000);
     return () => clearTimeout(timer);
   }, []);
@@ -40,18 +37,17 @@ export default function Landing() {
     };
     fetchStats();
   }, []);
-
   return (
-    <div className="min-h-screen bg-[#000000] text-white flex flex-col font-sans selection:bg-[#0099ff]/30 overflow-x-hidden">
+    <div className="min-h-screen text-white flex flex-col font-sans selection:bg-[#0099ff]/30 overflow-x-hidden">
       
+      {/* Intro Splash Screen */}
       <AnimatePresence>
         {showIntro && (
-          <motion.div 
-            key="intro-splash"
+          <motion.div
             initial={{ opacity: 1 }}
             exit={{ opacity: 0, scale: 1.1, filter: "blur(20px)" }}
             transition={{ duration: 1.5, ease: [0.16, 1, 0.3, 1] }}
-            className="fixed inset-0 z-[1000] bg-black flex items-center justify-center overflow-hidden"
+            className="fixed inset-0 z-[1000] bg-[#0a0c10] flex items-center justify-center overflow-hidden"
           >
              <div className="w-full h-full scale-110">
                <UnicornScene
@@ -77,11 +73,6 @@ export default function Landing() {
           </motion.div>
         )}
       </AnimatePresence>
-      
-      {/* Dynamic Background */}
-      <div className="fixed inset-0 z-0 opacity-40">
-        <BackgroundRippleEffect />
-      </div>
 
       {/* Glass Navigation */}
       <header className="px-8 py-3 flex items-center justify-between border-b border-white/5 bg-black/50 backdrop-blur-3xl sticky top-0 z-[100]">
@@ -230,7 +221,7 @@ export default function Landing() {
       </main>
 
       {/* Minimalist Footer */}
-      <footer className="px-12 py-16 flex flex-col md:flex-row items-center justify-between border-t border-white/5 bg-[#000000] relative z-10">
+      <footer className="px-12 py-16 flex flex-col md:flex-row items-center justify-between border-t border-white/5 bg-transparent relative z-10">
         <div className="flex items-center gap-5 opacity-40">
           <Shield className="w-5 h-5 text-white" />
           <span className="text-white text-[9px] font-semibold uppercase tracking-wider">

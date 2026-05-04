@@ -46,7 +46,7 @@ export default function Login() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="min-h-screen flex flex-col bg-[#000000] text-white selection:bg-[#0099ff]/30 overflow-hidden font-sans"
+      className="min-h-screen flex flex-col bg-transparent text-white selection:bg-[#0099ff]/30 overflow-hidden font-sans"
     >
       
       {/* Background Ambience */}

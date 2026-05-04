@@ -49,7 +49,7 @@ export default function ContestLobby() {
   });
 
   return (
-    <div className="min-h-screen bg-[#000000] text-white selection:bg-[#0099ff]/30">
+    <div className="min-h-screen bg-transparent text-white selection:bg-[#0099ff]/30">
       
       {/* Background Ambience */}
       <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">

@@ -99,7 +99,7 @@ export default function AdminLayout() {
   }
 
   return (
-    <div className="flex h-screen bg-[#000000] text-white font-sans selection:bg-[#0099ff]/30 overflow-hidden relative">
+    <div className="flex h-screen bg-transparent text-white font-sans selection:bg-[#0099ff]/30 overflow-hidden relative">
       
       {/* Exit Overlay */}
       <AnimatePresence>
@@ -120,7 +120,7 @@ export default function AdminLayout() {
       <motion.aside
         initial={false}
         animate={{ width: isCollapsed ? 100 : 280 }}
-        className="relative flex flex-col bg-[#090909] border-r border-white/5 z-50 shadow-[20px_0_50px_rgba(0,0,0,0.5)] transition-all duration-500 ease-in-out"
+        className="relative flex flex-col bg-black/70 backdrop-blur-2xl border-r border-white/5 z-50 shadow-[20px_0_50px_rgba(0,0,0,0.5)] transition-all duration-500 ease-in-out"
       >
         {/* Brand Section */}
         <div className="h-24 flex items-center px-8 border-b border-white/5">
@@ -196,7 +196,7 @@ export default function AdminLayout() {
 
       {/* Main Area */}
       <div className="flex-1 flex flex-col min-w-0 relative">
-        <header className="bg-[#0a0a0a] border-b border-white/5 px-10 flex items-center justify-between h-24 z-40">
+        <header className="bg-black/40 backdrop-blur-xl border-b border-white/5 px-10 flex items-center justify-between h-24 z-40">
           <div className="flex flex-col">
             <h1 className="text-2xl font-semibold text-white tracking-tight uppercase leading-none">
               {menuItems.find(item => item.path === location.pathname)?.name || 'Admin Core'}
@@ -232,7 +232,7 @@ export default function AdminLayout() {
           </div>
         </header>
 
-        <main className="flex-1 overflow-auto relative custom-scrollbar bg-[#0a0a0a]">
+        <main className="flex-1 overflow-auto relative custom-scrollbar bg-transparent">
           <div className="p-10">
             <Outlet />
           </div>

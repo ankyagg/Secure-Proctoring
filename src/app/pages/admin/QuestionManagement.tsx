@@ -68,7 +68,7 @@ export default function QuestionManagement() {
   );
 
   return (
-    <div className="space-y-12 animate-in fade-in slide-in-from-bottom-8 duration-1000 bg-[#000000] text-white p-8 min-h-screen font-sans selection:bg-[#0099ff]/30">
+    <div className="space-y-12 animate-in fade-in slide-in-from-bottom-8 duration-1000 bg-transparent text-white p-8 min-h-screen font-sans selection:bg-[#0099ff]/30">
       {/* Header Section */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
         <div>

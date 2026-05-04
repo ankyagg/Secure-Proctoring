@@ -302,7 +302,7 @@ export default function CodingWorkspace() {
 
   if (loadingProblem) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-6 bg-[#000]">
+      <div className="min-h-screen flex flex-col items-center justify-center gap-6 bg-transparent">
         <div className="w-10 h-10 border-2 border-[#0099ff] border-t-transparent rounded-full animate-spin" />
         <span className="text-[10px] font-semibold text-[#525252] uppercase tracking-wider">Loading Workspace...</span>
       </div>

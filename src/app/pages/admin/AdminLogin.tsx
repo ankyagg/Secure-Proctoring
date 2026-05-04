@@ -38,7 +38,7 @@ export default function AdminLogin() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="min-h-screen flex items-center justify-center bg-[#000000] font-sans selection:bg-[#0099ff]/30 p-4"
+      className="min-h-screen flex items-center justify-center bg-transparent font-sans selection:bg-[#0099ff]/30 p-4"
     >
       
       {/* Site Logo */}
