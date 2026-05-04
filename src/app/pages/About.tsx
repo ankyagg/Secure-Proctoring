@@ -79,7 +79,7 @@ export default function About() {
         </div>
 
         {/* Creators Section */}
-        <section className="mb-40">
+        <section className="mt-60 mb-40">
           <div className="text-center mb-24">
              <h2 className="text-[10px] font-semibold uppercase tracking-[0.4em] text-[#525252] mb-6">The Command Unit</h2>
              <div className="h-[1px] w-20 bg-[#0099ff] mx-auto opacity-30" />
@@ -89,10 +89,15 @@ export default function About() {
             <motion.div 
               initial={{ opacity: 0, x: -20 }}
               whileInView={{ opacity: 1, x: 0 }}
-              className="group cursor-default"
+              className="group cursor-default relative z-20"
             >
-              <div className="aspect-[4/5] bg-[#090909] border border-white/5 rounded-[4rem] mb-10 flex items-center justify-center overflow-hidden grayscale group-hover:grayscale-0 transition-all duration-700">
-                <Users className="w-32 h-32 text-[#2a2a2a] group-hover:text-[#0099ff] transition-colors" />
+              <div className="aspect-[4/5] bg-white border border-white/10 rounded-[4rem] mb-10 flex items-center justify-center overflow-hidden transition-all duration-700 shadow-[0_0_50px_rgba(255,255,255,0.05)] group-hover:scale-[1.02]">
+                <img 
+                  src="/aniket.png" 
+                  alt="Aniket Walanj" 
+                  className="w-full h-full object-cover object-[center_15%] transition-all duration-700 block"
+                  onError={(e) => console.error("Aniket image load failed:", e)}
+                />
               </div>
               <h4 className="text-4xl font-semibold text-white uppercase tracking-tight mb-2">Aniket Walanj</h4>
               <p className="text-[10px] font-semibold text-[#0099ff] uppercase tracking-widest">Co-Founder & Lead Architect</p>
@@ -101,10 +106,15 @@ export default function About() {
             <motion.div 
               initial={{ opacity: 0, x: 20 }}
               whileInView={{ opacity: 1, x: 0 }}
-              className="group cursor-default"
+              className="group cursor-default relative z-20"
             >
-              <div className="aspect-[4/5] bg-[#090909] border border-white/5 rounded-[4rem] mb-10 flex items-center justify-center overflow-hidden grayscale group-hover:grayscale-0 transition-all duration-700">
-                <Users className="w-32 h-32 text-[#2a2a2a] group-hover:text-[#0099ff] transition-colors" />
+              <div className="aspect-[4/5] bg-white border border-white/10 rounded-[4rem] mb-10 flex items-center justify-center overflow-hidden transition-all duration-700 shadow-[0_0_50px_rgba(255,255,255,0.05)] group-hover:scale-[1.02]">
+                <img 
+                  src="/mansi.png" 
+                  alt="Mansi Parande" 
+                  className="w-full h-full object-cover object-[center_40%] transition-all duration-700 block"
+                  onError={(e) => console.error("Image load failed:", e)}
+                />
               </div>
               <h4 className="text-4xl font-semibold text-white uppercase tracking-tight mb-2">Mansi Parande</h4>
               <p className="text-[10px] font-semibold text-[#0099ff] uppercase tracking-widest">Co-Founder & Security Strategist</p>
