@@ -38,17 +38,32 @@ export default function AdminLayout() {
   const [userName, setUserName] = useState("ADMINISTRATOR");
   const [userInitials, setUserInitials] = useState("AD");
 
+  const [loading, setLoading] = useState(true);
+  const admins = (import.meta.env.VITE_ADMIN_EMAILS || "").split(",");
+
   useEffect(() => {
-    account.get().then(user => {
-      setUserName(user.name.toUpperCase());
-      const initials = user.name
-        .split(" ")
-        .map(n => n[0])
-        .join("")
-        .toUpperCase();
-      setUserInitials(initials.slice(0, 2));
-    }).catch(() => {});
-  }, []);
+    const checkAuth = async () => {
+      try {
+        const user = await account.get();
+        if (admins.includes(user.email)) {
+          setUserName(user.name.toUpperCase());
+          const initials = user.name
+            .split(" ")
+            .map(n => n[0])
+            .join("")
+            .toUpperCase();
+          setUserInitials(initials.slice(0, 2));
+        } else {
+          navigate("/admin/login");
+        }
+      } catch (e) {
+        navigate("/admin/login");
+      } finally {
+        setLoading(false);
+      }
+    };
+    checkAuth();
+  }, [navigate]);
 
   useEffect(() => {
     if (theme === "dark") {
@@ -73,6 +88,15 @@ export default function AdminLayout() {
       }
     }, 800);
   };
+
+  if (loading) {
+    return (
+      <div className="h-screen bg-black flex flex-col items-center justify-center gap-6">
+        <div className="w-10 h-10 border-2 border-[#0099ff] border-t-transparent rounded-full animate-spin" />
+        <span className="text-[10px] font-bold text-[#525252] uppercase tracking-[0.3em]">Authenticating Terminal...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen bg-[#000000] text-white font-sans selection:bg-[#0099ff]/30 overflow-hidden relative">
