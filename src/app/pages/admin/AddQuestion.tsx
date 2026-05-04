@@ -5,6 +5,8 @@ import { ID } from "appwrite";
 import { motion, AnimatePresence } from "framer-motion";
 import JSZip from "jszip";
 
+import { API_BASE } from "../../config";
+
 export default function AddQuestion() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -604,7 +606,7 @@ export default function AddQuestion() {
                         setError(null);
                         
                         try {
-                          const response = await fetch("http://localhost:3000/api/ai/generate", {
+                          const response = await fetch(`${API_BASE}/ai/generate`, {
                             method: "POST",
                             headers: { "Content-Type": "application/json" },
                             body: JSON.stringify({

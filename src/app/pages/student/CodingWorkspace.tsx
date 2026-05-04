@@ -28,8 +28,7 @@ import Editor from "@monaco-editor/react";
 import { motion, AnimatePresence } from "framer-motion";
 import { databases, APPWRITE_DB_ID } from "../../services/appwrite";
 import Watermark from "../../components/Watermark";
-
-const API_BASE = "http://localhost:3000/api";
+import { API_BASE } from "../../config";
 
 const LANGUAGES = ["C++", "Java", "Python"];
 const MONACO_LANGS: Record<string, string> = {

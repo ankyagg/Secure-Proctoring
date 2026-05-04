@@ -2,7 +2,7 @@ import { Navigate, Outlet } from "react-router";
 import { account } from "../../services/appwrite";
 import { useEffect, useState } from "react";
 
-const admins = (import.meta.env.VITE_ADMIN_EMAILS || "").split(",");
+import { isEmailAdmin } from "../../config";
 
 export default function AdminProtectedRoute({ children }: any) {
   const [user, setUser] = useState<any>(null);
@@ -34,7 +34,7 @@ export default function AdminProtectedRoute({ children }: any) {
     return <Navigate to="/admin/login" replace />;
   }
 
-  if (!admins.includes(user.email || "")) {
+  if (!isEmailAdmin(user.email || "")) {
     console.warn("Unauthorized access attempt by:", user.email);
     return <Navigate to="/admin/login" replace />;
   }

@@ -3,6 +3,7 @@ import { useNavigate } from "react-router";
 import { useStudentContext } from "../../components/StudentLayout";
 import { ChevronLeft, History, CheckCircle2, XCircle, Target, Clock, Terminal } from "lucide-react";
 import { motion } from "framer-motion";
+import { API_BASE } from "../../config";
 
 export default function StudentActivity() {
   const navigate = useNavigate();
@@ -15,7 +16,7 @@ export default function StudentActivity() {
 
     const fetchActivity = async () => {
       try {
-        const response = await fetch(`http://localhost:3000/api/submissions?user_email=${encodeURIComponent(currentUser.email!)}`);
+        const response = await fetch(`${API_BASE}/submissions?user_email=${encodeURIComponent(currentUser.email!)}`);
         const data = await response.json();
         setSubmissions(data);
       } catch (err) {

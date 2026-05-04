@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { account } from "../services/appwrite";
+import { isEmailAdmin } from "../config";
 
 const menuItems = [
   { name: "Dashboard", path: "/admin", icon: LayoutDashboard },
@@ -37,15 +38,13 @@ export default function AdminLayout() {
   const [theme, setTheme] = useState(() => localStorage.getItem("theme") || "dark");
   const [userName, setUserName] = useState("ADMINISTRATOR");
   const [userInitials, setUserInitials] = useState("AD");
-
   const [loading, setLoading] = useState(true);
-  const admins = (import.meta.env.VITE_ADMIN_EMAILS || "").split(",");
 
   useEffect(() => {
     const checkAuth = async () => {
       try {
         const user = await account.get();
-        if (admins.includes(user.email)) {
+        if (isEmailAdmin(user.email)) {
           setUserName(user.name.toUpperCase());
           const initials = user.name
             .split(" ")

@@ -4,6 +4,7 @@ import { Shield, ChevronRight, Trophy, Zap, Globe, Lock, Cpu, Activity, Layers }
 import { motion, AnimatePresence } from "framer-motion";
 import { databases, APPWRITE_DB_ID } from "../services/appwrite";
 import UnicornScene from "unicornstudio-react";
+import { API_BASE } from "../config";
 
 export default function Landing() {
   const navigate = useNavigate();
@@ -23,7 +24,7 @@ export default function Landing() {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const response = await fetch("http://localhost:3000/api/stats");
+        const response = await fetch(`${API_BASE}/stats`);
         const data = await response.json();
         setStats({
           questions: data.questions.toLocaleString(),

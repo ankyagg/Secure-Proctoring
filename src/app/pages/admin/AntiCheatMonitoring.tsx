@@ -32,6 +32,8 @@ type ProctorLog = {
   contest_id: string;
 };
 
+import { API_BASE } from "../../config";
+
 export default function AntiCheatMonitoring() {
   const [logs, setLogs] = useState<ProctorLog[]>([]);
   const [loading, setLoading] = useState(true);
@@ -59,7 +61,7 @@ export default function AntiCheatMonitoring() {
 
   const fetchStats = async () => {
     try {
-      const url = new URL("http://localhost:3000/api/proctor/stats");
+      const url = new URL(`${API_BASE}/proctor/stats`);
       if (selectedContest !== "All") {
         url.searchParams.append("contest_id", selectedContest);
       }

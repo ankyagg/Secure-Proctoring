@@ -11,7 +11,7 @@ import {
 import { Query } from "appwrite";
 import { motion } from "framer-motion";
 
-const admins = (import.meta.env.VITE_ADMIN_EMAILS || "").split(",");
+import { isEmailAdmin } from "../../config";
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
@@ -26,15 +26,15 @@ export default function AdminDashboard() {
     const checkAuth = async () => {
       try {
         const user = await account.get();
-        if (!admins.includes(user.email)) {
+        if (!isEmailAdmin(user.email)) {
           navigate("/");
         }
       } catch (e) {
-        navigate("/login");
+        navigate("/admin/login");
       }
     };
     checkAuth();
-  }, []);
+  }, [navigate]);
 
   const [totalParticipants, setTotalParticipants] = useState(0);
   const [totalContestsCount, setTotalContestsCount] = useState(0);
