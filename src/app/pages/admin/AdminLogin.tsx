@@ -34,7 +34,12 @@ export default function AdminLogin() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#000000] font-sans selection:bg-[#0099ff]/30 p-4">
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="min-h-screen flex items-center justify-center bg-[#000000] font-sans selection:bg-[#0099ff]/30 p-4"
+    >
       
       {/* Site Logo */}
       <motion.div 
@@ -55,8 +60,10 @@ export default function AdminLogin() {
       </motion.div>
 
       <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
+        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: -20 }}
+        transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
         className="w-full max-w-md p-10 space-y-8 bg-[#090909] rounded-[2.5rem] shadow-2xl border border-white/5 relative overflow-hidden"
       >
         <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-[#0099ff] to-transparent opacity-50" />
@@ -124,6 +131,7 @@ export default function AdminLogin() {
           </button>
         </form>
       </motion.div>
-    </div>
+    </motion.div>
+
   );
 }

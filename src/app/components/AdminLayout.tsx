@@ -61,8 +61,36 @@ export default function AdminLayout() {
 
   const toggleTheme = () => setTheme(t => t === "dark" ? "light" : "dark");
 
+  const [isExiting, setIsExiting] = useState(false);
+  const handleLogout = async () => {
+    setIsExiting(true);
+    setTimeout(async () => {
+      try {
+        await account.deleteSession('current');
+        navigate("/");
+      } catch (e) {
+        setIsExiting(false);
+      }
+    }, 800);
+  };
+
   return (
-    <div className="flex h-screen bg-[#000000] text-white font-sans selection:bg-[#0099ff]/30 overflow-hidden">
+    <div className="flex h-screen bg-[#000000] text-white font-sans selection:bg-[#0099ff]/30 overflow-hidden relative">
+      
+      {/* Exit Overlay */}
+      <AnimatePresence>
+        {isExiting && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[10000] bg-black flex flex-col items-center justify-center gap-6"
+          >
+            <div className="w-10 h-10 border-2 border-[#0099ff] border-t-transparent rounded-full animate-spin" />
+            <span className="text-[10px] font-bold text-[#525252] uppercase tracking-[0.3em]">Exiting Admin Terminal...</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
       
       {/* Sidebar */}
       <motion.aside
@@ -131,13 +159,13 @@ export default function AdminLayout() {
         </button>
 
         <div className="px-4 py-6 border-t border-white/5">
-            <Link
-                to="/"
-                className="flex items-center gap-3 px-4 py-3.5 rounded-xl text-[11px] font-semibold uppercase tracking-wider text-[#525252] hover:text-white hover:bg-white/5 transition-all"
+            <button
+                onClick={handleLogout}
+                className="w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-[11px] font-semibold uppercase tracking-wider text-[#525252] hover:text-white hover:bg-white/5 transition-all"
               >
                 <LogOut className="w-4 h-4" />
                 {!isCollapsed && <span>Exit Admin</span>}
-              </Link>
+              </button>
         </div>
 
       </motion.aside>
@@ -153,10 +181,6 @@ export default function AdminLayout() {
           </div>
           
           <div className="flex items-center gap-6">
-            <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#0099ff]/5 border border-[#0099ff]/10">
-               <div className="w-1.5 h-1.5 bg-[#0099ff] rounded-full animate-pulse shadow-[0_0_10px_#0099ff]" />
-               <span className="text-[9px] font-semibold text-[#0099ff] uppercase tracking-wider">System Online</span>
-            </div>
 
             <div className="flex items-center gap-3 bg-white/5 border border-white/5 p-1.5 rounded-2xl">
               <button className="p-2.5 rounded-xl hover:bg-white/5 text-[#525252] hover:text-white transition-all">

@@ -42,7 +42,12 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#000000] text-white selection:bg-[#0099ff]/30 overflow-hidden font-sans">
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="min-h-screen flex flex-col bg-[#000000] text-white selection:bg-[#0099ff]/30 overflow-hidden font-sans"
+    >
       
       {/* Background Ambience */}
       <div className="fixed inset-0 z-0 pointer-events-none">
@@ -72,6 +77,7 @@ export default function Login() {
         <motion.div 
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.95, y: -20 }}
           transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
           className="w-full max-w-xl bg-[#090909] border border-white/5 rounded-[4rem] p-16 shadow-[0_0_100px_rgba(0,0,0,1)] relative overflow-hidden"
         >
@@ -160,6 +166,7 @@ export default function Login() {
            <div className="h-px w-12 bg-white/50" />
         </div>
       </div>
-    </div>
+    </motion.div>
+
   );
 }

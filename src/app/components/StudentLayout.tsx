@@ -239,6 +239,33 @@ export default function StudentLayout() {
     document.documentElement.requestFullscreen().catch(console.error);
   };
 
+  useEffect(() => {
+    // Revoke all restrictions when returning to lobby
+    if (location.pathname === "/student/lobby") {
+      setAntiCheat(null);
+      setWarningCount(0);
+      setWatchdogState('happy');
+      setProctorStatus('inactive');
+      if (document.fullscreenElement) {
+        document.exitFullscreen().catch(() => {});
+      }
+    }
+  }, [location.pathname]);
+
+  const [isExiting, setIsExiting] = useState(false);
+
+  const handleLogout = async () => {
+    setIsExiting(true);
+    setTimeout(async () => {
+      try {
+        await account.deleteSession('current');
+        navigate("/");
+      } catch (e) {
+        setIsExiting(false);
+      }
+    }, 800);
+  };
+
   const isWorkspace = location.pathname.includes("/workspace");
 
   return (
@@ -262,7 +289,22 @@ export default function StudentLayout() {
         setProctorStatus
       }}
     >
-      <div className="h-screen bg-[#000000] flex flex-col text-white font-sans selection:bg-[#0099ff]/30 overflow-hidden">
+      <div className="h-screen bg-[#000000] flex flex-col text-white font-sans selection:bg-[#0099ff]/30 overflow-hidden relative">
+        
+        {/* Logout/Exit Overlay */}
+        <AnimatePresence>
+          {isExiting && (
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[10000] bg-black flex flex-col items-center justify-center gap-6"
+            >
+              <div className="w-10 h-10 border-2 border-[#0099ff] border-t-transparent rounded-full animate-spin" />
+              <span className="text-[10px] font-bold text-[#525252] uppercase tracking-[0.3em]">Securing Session...</span>
+            </motion.div>
+          )}
+        </AnimatePresence>
         
         {/* Background Ambience */}
         <div className="fixed inset-0 z-0 pointer-events-none">
@@ -289,7 +331,9 @@ export default function StudentLayout() {
                 </div>
                 <div className="space-y-6">
                   <h2 className="text-4xl font-semibold text-white tracking-tight uppercase leading-none">Security Required</h2>
+                  <p className="text-[#525252] text-sm font-semibold uppercase tracking-widest">
                     This test requires fullscreen mode. Please click the button below to start.
+                  </p>
                 </div>
                 <button
                   onClick={enterFullscreen}
@@ -339,10 +383,32 @@ export default function StudentLayout() {
                     <span className="text-white text-[15px] tracking-tight font-semibold leading-none uppercase">
                       Secure<span className="text-[#0099ff]">Proctor</span>
                     </span>
-                    <span className="text-[9px] text-[#525252] font-semibold uppercase tracking-wider flex items-center gap-2 mt-1">
-                      <div className="w-1.5 h-1.5 bg-[#0099ff] rounded-full shadow-[0_0_8px_rgba(0,153,255,1)] animate-pulse" />
-                      System Online
-                    </span>
+                    <div className="flex items-center gap-2 mt-1.5 overflow-hidden w-48 relative border-l border-white/5 pl-3">
+                      <motion.div 
+                        animate={{ x: [0, -460] }}
+                        transition={{ repeat: Infinity, duration: 20, ease: "linear" }}
+                        className="flex items-center gap-8 whitespace-nowrap text-[8px] font-bold uppercase tracking-[0.2em]"
+                      >
+                        <div className="flex items-center gap-8">
+                          <span className="flex items-center gap-2 text-[#0099ff]">
+                            <div className="w-1 h-1 bg-[#0099ff] rounded-full shadow-[0_0_8px_#0099ff]" />
+                            System Encrypted
+                          </span>
+                          <span className="text-[#333333]">Active_Guard: v4.2</span>
+                          <span className="text-[#0099ff]">Neural_Shield: Active</span>
+                          <span className="text-[#333333]">VOID_PROTOCOL_STABLE</span>
+                        </div>
+                        <div className="flex items-center gap-8">
+                          <span className="flex items-center gap-2 text-[#0099ff]">
+                            <div className="w-1 h-1 bg-[#0099ff] rounded-full shadow-[0_0_8px_#0099ff]" />
+                            System Encrypted
+                          </span>
+                          <span className="text-[#333333]">Active_Guard: v4.2</span>
+                          <span className="text-[#0099ff]">Neural_Shield: Active</span>
+                          <span className="text-[#333333]">VOID_PROTOCOL_STABLE</span>
+                        </div>
+                      </motion.div>
+                    </div>
                   </div>
                 </Link>
 
@@ -408,7 +474,7 @@ export default function StudentLayout() {
                    <div className="w-12 h-12 rounded-2xl bg-white border border-white/10 flex items-center justify-center text-black font-semibold text-xs shadow-2xl">
                      {user?.name ? user.name.substring(0, 2).toUpperCase() : (user?.email ? user.email.substring(0, 2).toUpperCase() : "??")}
                    </div>
-                   <button onClick={async () => { await account.deleteSession('current'); navigate("/"); }} className="p-3 text-[#2a2a2a] hover:text-white transition-colors">
+                   <button onClick={handleLogout} className="p-3 text-[#2a2a2a] hover:text-white transition-colors">
                     <LogOut className="w-5 h-5" />
                   </button>
                 </div>
@@ -418,7 +484,18 @@ export default function StudentLayout() {
         )}
 
         <main className="flex-1 relative flex flex-col overflow-y-auto">
-          <Outlet />
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={location.pathname}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+              className="flex-1 flex flex-col"
+            >
+              <Outlet />
+            </motion.div>
+          </AnimatePresence>
         </main>
 
         <AIProctor />
@@ -426,8 +503,9 @@ export default function StudentLayout() {
         <AnimatePresence>
           {antiCheat?.webcam && (
             <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
               className="fixed bottom-12 right-12 z-[100]"
             >
               <div className="relative p-2 rounded-[2.5rem] bg-black border border-white/10 shadow-[0_0_80px_rgba(0,0,0,1)] overflow-hidden group">

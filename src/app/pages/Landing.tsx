@@ -191,7 +191,7 @@ export default function Landing() {
         <div className="flex items-center gap-5 opacity-40">
           <Shield className="w-5 h-5 text-white" />
           <span className="text-white text-[9px] font-semibold uppercase tracking-wider">
-            © 2026 Void Protocol · Secure Proctoring System
+            © 2026 Aniket Walanj & Mansi Parande · All Rights Reserved · Proprietary Software
           </span>
         </div>
         <div className="flex gap-12 text-[9px] text-[#525252] font-semibold uppercase tracking-wider mt-8 md:mt-0">

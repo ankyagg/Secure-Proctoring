@@ -97,6 +97,8 @@ export default function CodingWorkspace() {
   const [showModal, setShowModal] = useState(false);
   const [activeTab, setActiveTab] = useState<"statement" | "input" | "output">("statement");
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
+  const [allQuestionIds, setAllQuestionIds] = useState<string[]>([]);
+  const [nextQuestionId, setNextQuestionId] = useState<string | null>(null);
 
   const handleEditorChange = (value: string | undefined) => {
     const newCode = value || "";
@@ -164,6 +166,7 @@ export default function CodingWorkspace() {
 
     databases.getDocument(APPWRITE_DB_ID, "contests", contestId)
       .then((data: any) => {
+        // Handle Timer
         const end = new Date(data.end_time).getTime();
         const now = Date.now();
         const diff = end - now;
@@ -173,9 +176,24 @@ export default function CodingWorkspace() {
         } else {
           setTimeLeft(diff);
         }
+
+        // Handle Navigation
+        let qIds = data.question_ids;
+        if (typeof qIds === 'string') {
+          try { qIds = JSON.parse(qIds); } catch(e) { qIds = []; }
+        }
+        if (Array.isArray(qIds)) {
+          setAllQuestionIds(qIds);
+          const currentIndex = qIds.indexOf(id || "");
+          if (currentIndex !== -1 && currentIndex < qIds.length - 1) {
+            setNextQuestionId(qIds[currentIndex + 1]);
+          } else {
+            setNextQuestionId(null);
+          }
+        }
       })
       .catch(err => console.error("Appwrite Contest fetch failed:", err));
-  }, [navigate]);
+  }, [id, navigate]);
 
   useEffect(() => {
     if (timeLeft === null || timeLeft <= 0) return;
@@ -314,24 +332,12 @@ export default function CodingWorkspace() {
 
             <div className="h-6 w-px bg-white/5" />
 
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2.5 px-3 py-1.5 rounded-lg bg-[#0099ff]/5 border border-[#0099ff]/10 text-[#0099ff]">
-                <div className="w-1.5 h-1.5 bg-[#0099ff] rounded-full animate-ping" />
-                <span className="text-[8px] font-bold uppercase tracking-wider">Secure</span>
+            {warningCount > 0 && (
+              <div className="flex items-center gap-3 px-4 py-1.5 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-500 animate-pulse">
+                <AlertTriangle className="w-3.5 h-3.5" />
+                <span className="text-[10px] font-bold">{warningCount}</span>
               </div>
-
-              <div className="flex items-center gap-3 px-4 py-1.5 rounded-lg bg-white/5 border border-white/5 text-[#525252]">
-                <Clock className="w-3.5 h-3.5 text-[#0099ff]" />
-                <span className="text-[10px] font-bold tabular-nums tracking-widest">{formatTimeSeconds(timeRemaining)}</span>
-              </div>
-
-              {warningCount > 0 && (
-                <div className="flex items-center gap-3 px-4 py-1.5 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-500 animate-pulse">
-                  <AlertTriangle className="w-3.5 h-3.5" />
-                  <span className="text-[10px] font-bold">{warningCount}</span>
-                </div>
-              )}
-            </div>
+            )}
           </div>
           
           <button
@@ -599,6 +605,20 @@ export default function CodingWorkspace() {
               <Play className={`w-3 h-3 ${isRunning ? 'animate-spin' : 'text-[#0099ff]'}`} />
               Run Code
             </button>
+
+            {nextQuestionId && (
+              <button
+                onClick={() => {
+                  const qp = new URLSearchParams(window.location.search);
+                  const cId = qp.get("contestId");
+                  navigate(`/student/workspace/${nextQuestionId}${cId ? `?contestId=${cId}` : ""}`);
+                }}
+                className="group flex items-center gap-3 h-10 px-6 rounded-xl text-[11px] font-bold uppercase tracking-[0.15em] text-[#0099ff] hover:text-white bg-[#0099ff]/10 border border-[#0099ff]/20 hover:bg-[#0099ff] transition-all shadow-2xl active:scale-95"
+              >
+                Next
+                <ChevronLeft className="w-3.5 h-3.5 rotate-180" />
+              </button>
+            )}
 
             <button
               onClick={handleSubmit}

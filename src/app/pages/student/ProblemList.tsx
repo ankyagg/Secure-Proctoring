@@ -32,6 +32,7 @@ export default function ProblemList() {
 
   const [problems, setProblems] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [contest, setContest] = useState<any>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -39,8 +40,9 @@ export default function ProblemList() {
       try {
         if (contestId) {
           // 1. Fetch contest to get question_ids
-          const contest = await databases.getDocument(APPWRITE_DB_ID, 'contests', contestId);
-          let questionIds = contest.question_ids;
+          const contestDoc = await databases.getDocument(APPWRITE_DB_ID, 'contests', contestId);
+          setContest(contestDoc);
+          let questionIds = contestDoc.question_ids;
           
           if (typeof questionIds === 'string') {
             try { questionIds = JSON.parse(questionIds); } catch(e) { questionIds = []; }
@@ -85,14 +87,14 @@ export default function ProblemList() {
         <div className="absolute top-[-10%] left-[-5%] w-[600px] h-[600px] bg-[#0099ff]/[0.02] blur-[150px] rounded-full" />
       </div>
 
-      <div className="relative z-10 max-w-7xl mx-auto px-8 pt-20">
+      <div className="relative z-10 max-w-[90rem] mx-auto px-8 pt-10">
         
         {/* Navigation */}
         <motion.button 
           initial={{ opacity: 0, x: -10 }}
           animate={{ opacity: 1, x: 0 }}
           onClick={() => navigate("/student/lobby")}
-          className="flex items-center gap-3 text-[#525252] hover:text-white transition-all text-[10px] font-semibold uppercase tracking-wider group mb-20"
+          className="flex items-center gap-3 text-[#525252] hover:text-white transition-all text-[10px] font-semibold uppercase tracking-wider group mb-10"
         >
           <ChevronLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
           Back to Lobby
@@ -106,10 +108,12 @@ export default function ProblemList() {
                Test Started
             </div>
             <h1 className="text-4xl md:text-4xl font-semibold tracking-tight leading-[0.85] uppercase">
-              Coding <span className="text-[#0099ff] italic">Challenges.</span>
+              {contest ? contest.name : (
+                <>Coding <span className="text-[#0099ff] italic">Challenges.</span></>
+              )}
             </h1>
             <p className="text-lg md:text-xl text-[#525252] font-medium tracking-tight max-w-xl text-balance">
-              Solve the challenges below. Your work is being saved in real-time.
+              {contest ? contest.description : "Solve the challenges below. Your work is being saved in real-time."}
             </p>
           </div>
 
