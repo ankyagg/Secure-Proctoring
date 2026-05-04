@@ -135,10 +135,10 @@ export default function Leaderboard() {
             <div className="absolute top-0 left-0 w-full h-1.5 bg-white/5" />
             <div className="text-4xl font-semibold text-[#2a2a2a] absolute top-12 left-12 italic opacity-20">#02</div>
             <div className="w-24 h-24 bg-white/5 rounded-[2rem] mx-auto flex items-center justify-center text-white font-semibold text-2xl border border-white/10 mb-10">
-              {top3[1]?.user_name?.substring(0, 2).toUpperCase() || "??"}
+              {top3[1]?.user?.substring(0, 2).toUpperCase() || "??"}
             </div>
             <div>
-              <div className="text-2xl font-semibold text-white uppercase tracking-tighter mb-2">{top3[1]?.user_name || "---"}</div>
+              <div className="text-2xl font-semibold text-white uppercase tracking-tighter mb-2">{top3[1]?.user || "---"}</div>
               <div className="text-[10px] text-[#0099ff] font-semibold uppercase tracking-wider">{top3[1]?.total_points || 0} POINTS</div>
             </div>
           </motion.div>
@@ -154,10 +154,10 @@ export default function Leaderboard() {
             <Crown className="w-20 h-20 text-[#0099ff] mx-auto mb-10 animate-bounce shadow-2xl" />
             <div className="text-4xl font-semibold text-[#0099ff]/10 absolute top-16 left-16 italic uppercase">#01</div>
             <div className="w-32 h-32 bg-white text-black rounded-[2.5rem] mx-auto flex items-center justify-center font-semibold text-4xl shadow-2xl group-hover:scale-105 transition-all mb-10">
-              {top3[0]?.user_name?.substring(0, 2).toUpperCase() || "??"}
+              {top3[0]?.user?.substring(0, 2).toUpperCase() || "??"}
             </div>
             <div>
-              <div className="text-4xl font-semibold text-white uppercase tracking-tight mb-3">{top3[0]?.user_name || "---"}</div>
+              <div className="text-4xl font-semibold text-white uppercase tracking-tight mb-3">{top3[0]?.user || "---"}</div>
               <div className="text-[12px] text-[#0099ff] font-semibold uppercase tracking-wider">{top3[0]?.total_points || 0} POINTS</div>
             </div>
           </motion.div>
@@ -172,10 +172,10 @@ export default function Leaderboard() {
             <div className="absolute top-0 left-0 w-full h-1.5 bg-white/5" />
             <div className="text-4xl font-semibold text-[#2a2a2a] absolute top-10 left-10 italic opacity-20">#03</div>
             <div className="w-20 h-20 bg-white/5 rounded-[1.5rem] mx-auto flex items-center justify-center text-white font-semibold text-xl border border-white/10 mb-8">
-              {top3[2]?.user_name?.substring(0, 2).toUpperCase() || "??"}
+              {top3[2]?.user?.substring(0, 2).toUpperCase() || "??"}
             </div>
             <div>
-              <div className="text-xl font-semibold text-white uppercase tracking-tighter mb-2">{top3[2]?.user_name || "---"}</div>
+              <div className="text-xl font-semibold text-white uppercase tracking-tighter mb-2">{top3[2]?.user || "---"}</div>
               <div className="text-[10px] text-[#0099ff] font-semibold uppercase tracking-wider">{top3[2]?.total_points || 0} POINTS</div>
             </div>
           </motion.div>
@@ -194,7 +194,7 @@ export default function Leaderboard() {
           <div className="divide-y divide-white/5">
             {data.map((entry, index) => (
               <motion.div
-                key={entry.user_email}
+                key={entry.email}
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: index * 0.03 }}
@@ -210,14 +210,14 @@ export default function Leaderboard() {
                   <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-xs font-semibold uppercase border transition-all ${
                     index === 0 ? "bg-white text-black border-transparent" : "bg-black border-white/5 text-[#525252]"
                   }`}>
-                    {entry.user_name.substring(0, 2).toUpperCase()}
+                    {entry.user?.substring(0, 2).toUpperCase() || "??"}
                   </div>
                   <div>
                     <div className="text-xl font-semibold text-white uppercase tracking-tighter group-hover:text-[#0099ff] transition-colors">
-                      {entry.user_name}
+                      {entry.user}
                     </div>
                     <div className="text-[9px] text-[#2a2a2a] font-bold uppercase tracking-widest mt-1">
-                      {entry.user_email}
+                      {entry.email}
                     </div>
                   </div>
                 </div>
@@ -225,7 +225,7 @@ export default function Leaderboard() {
                 <div className="flex justify-center">
                    <div className="flex items-center gap-3 px-6 py-2.5 rounded-2xl bg-white/5 border border-white/5">
                       <Target className="w-4 h-4 text-[#0099ff]" />
-                      <span className="text-[10px] font-semibold text-white uppercase tracking-widest">{entry.solved_count} Challenges</span>
+                      <span className="text-[10px] font-semibold text-white uppercase tracking-widest">{entry.solved} Challenges</span>
                    </div>
                 </div>
 
@@ -236,7 +236,7 @@ export default function Leaderboard() {
                 <div className="flex items-center justify-end gap-3 text-[#2a2a2a]">
                   <Clock className="w-4 h-4" />
                   <span className="text-[12px] font-semibold tabular-nums tracking-tighter uppercase">
-                    {new Date(entry.last_sync).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    {new Date(entry.last_submission).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </span>
                 </div>
               </motion.div>

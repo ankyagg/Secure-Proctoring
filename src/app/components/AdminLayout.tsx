@@ -16,7 +16,8 @@ import {
   BookOpen,
   BarChart3,
   Menu,
-  ChevronLeft
+  ChevronLeft,
+  Shield
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -56,9 +57,9 @@ export default function AdminLayout() {
       >
         {/* Brand Section */}
         <div className="h-24 flex items-center px-8 border-b border-white/5">
-          <div className="flex items-center gap-4">
-            <div className="w-10 h-10 bg-[#0099ff] rounded-xl flex items-center justify-center shadow-[0_0_20px_rgba(0,153,255,0.4)]">
-              <Command className="w-5 h-5 text-white" />
+          <div className="flex items-center gap-4 group">
+            <div className="w-10 h-10 bg-[#0099ff] rounded-[1rem] flex items-center justify-center shadow-[0_0_20px_rgba(0,153,255,0.4)] group-hover:rotate-12 transition-all duration-500">
+              <Shield className="w-5 h-5 text-white" />
             </div>
             {!isCollapsed && (
               <motion.div
@@ -66,7 +67,9 @@ export default function AdminLayout() {
                 animate={{ opacity: 1, x: 0 }}
                 className="flex flex-col"
               >
-                <span className="text-lg font-semibold tracking-tight uppercase leading-none">Proctor</span>
+                <span className="text-white text-[15px] tracking-tight font-semibold leading-none uppercase">
+                  Secure<span className="text-[#0099ff]">Proctor</span>
+                </span>
                 <span className="text-[9px] font-bold text-[#525252] uppercase tracking-wider mt-1.5">Admin v4.0</span>
               </motion.div>
             )}

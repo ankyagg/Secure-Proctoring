@@ -15,6 +15,13 @@ export default function Signup() {
     e.preventDefault();
     setLoading(true);
     try {
+      // Clear any existing session to prevent "session is active" error
+      try {
+        await account.deleteSession("current");
+      } catch (e) {
+        // Ignore if no active session
+      }
+
       const userId = ID.unique();
       await account.create(userId, email, password, username);
       
@@ -22,9 +29,7 @@ export default function Signup() {
       await databases.createDocument(APPWRITE_DB_ID, 'users', userId, {
         username: username,
         email: email,
-        score: 0,
-        id: userId,
-        created_at: new Date().toISOString()
+        score: 0
       });
 
       await account.createEmailPasswordSession(email, password);
@@ -47,21 +52,28 @@ export default function Signup() {
       <div className="relative z-10 flex-1 flex flex-col items-center justify-center p-8">
         
         {/* Navigation */}
-        <motion.button 
-          initial={{ opacity: 0, x: -10 }}
-          animate={{ opacity: 1, x: 0 }}
+        <motion.div 
+          initial={{ x: -20, opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          className="absolute top-12 left-12 flex items-center gap-4 cursor-pointer group z-50"
           onClick={() => navigate("/")}
-          className="absolute top-12 left-12 flex items-center gap-3 text-[#525252] hover:text-white transition-all text-[10px] font-semibold uppercase tracking-wider group"
         >
-          <ChevronLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-          Go Back
-        </motion.button>
+          <div className="w-12 h-12 bg-[#0099ff] rounded-[1.25rem] flex items-center justify-center shadow-[0_0_30px_rgba(0,153,255,0.4)] group-hover:rotate-12 transition-all duration-500">
+            <Shield className="w-6 h-6 text-white" />
+          </div>
+          <div className="flex flex-col">
+            <span className="text-white text-2xl tracking-tight font-semibold leading-none uppercase">
+              Secure<span className="text-[#0099ff]">Proctor</span>
+            </span>
+            <span className="text-[9px] text-[#525252] font-semibold uppercase tracking-wider mt-1">Global Security Standard</span>
+          </div>
+        </motion.div>
 
         <motion.div 
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-          className="w-full max-w-xl bg-[#090909] border border-white/5 rounded-[4rem] p-16 shadow-[0_0_100px_rgba(0,0,0,1)] relative overflow-hidden"
+          className="w-full max-w-md bg-[#090909] border border-white/5 rounded-[3rem] p-10 shadow-[0_0_100px_rgba(0,0,0,1)] relative overflow-hidden"
         >
           <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-transparent via-[#0099ff]/50 to-transparent" />
           

@@ -205,24 +205,24 @@ export default function ContestLobby() {
               initial={{ opacity: 0, scale: 0.95, y: 30 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 30 }}
-              className="relative w-full max-w-2xl bg-[#090909] border border-white/10 rounded-[4rem] p-16 shadow-[0_0_100px_rgba(0,0,0,1)] overflow-hidden"
+              className="relative w-full max-w-md bg-[#090909] border border-white/10 rounded-[3rem] p-8 shadow-[0_0_100px_rgba(0,0,0,1)] overflow-hidden"
               onClick={e => e.stopPropagation()}
             >
               <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-transparent via-[#0099ff]/50 to-transparent" />
               
               <div className="flex flex-col relative z-10 text-center items-center">
-                <div className="w-24 h-24 rounded-[2.5rem] bg-white border border-white/10 flex items-center justify-center mb-10 shadow-[0_30px_60px_-15px_rgba(255,255,255,0.2)]">
-                  <Lock className="w-12 h-12 text-black" />
+                <div className="w-16 h-16 rounded-[1.5rem] bg-white border border-white/10 flex items-center justify-center mb-6 shadow-[0_30px_60px_-15px_rgba(255,255,255,0.2)]">
+                  <Lock className="w-8 h-8 text-black" />
                 </div>
                 
                 <h2 className="text-4xl font-semibold text-white tracking-tight uppercase leading-[0.9] mb-4">
                   Join <span className="text-[#0099ff]">Contest</span>
                 </h2>
                 <div className="text-[10px] font-semibold text-[#525252] uppercase tracking-wider">Problems Solved</div>
-                <p className="text-[10px] font-semibold text-[#525252] uppercase tracking-wider mb-12">Joining Contest: {selectedContest.name}</p>
+                <p className="text-[10px] font-semibold text-[#525252] uppercase tracking-wider mb-8">Joining Contest: {selectedContest.name}</p>
 
-                <div className="grid grid-cols-1 gap-4 w-full mb-16 text-left">
-                  <div className="p-8 rounded-[2rem] bg-white/5 border border-white/5 flex items-center gap-8 group hover:bg-[#0099ff]/5 hover:border-[#0099ff]/20 transition-all">
+                <div className="grid grid-cols-1 gap-3 w-full mb-10 text-left">
+                  <div className="p-5 rounded-[1.5rem] bg-white/5 border border-white/5 flex items-center gap-6 group hover:bg-[#0099ff]/5 hover:border-[#0099ff]/20 transition-all">
                     <div className="w-14 h-14 rounded-2xl bg-black border border-white/10 flex items-center justify-center text-[#0099ff] shadow-2xl">
                       <Eye className="w-6 h-6" />
                     </div>
@@ -233,9 +233,9 @@ export default function ContestLobby() {
                     </div>
                   </div>
 
-                  <div className="p-8 rounded-[2rem] bg-white/5 border border-white/5 flex items-center gap-8 group hover:bg-[#0099ff]/5 hover:border-[#0099ff]/20 transition-all">
-                    <div className="w-14 h-14 rounded-2xl bg-black border border-white/10 flex items-center justify-center text-[#0099ff] shadow-2xl">
-                      <Shield className="w-6 h-6" />
+                  <div className="p-5 rounded-[1.5rem] bg-white/5 border border-white/5 flex items-center gap-6 group hover:bg-[#0099ff]/5 hover:border-[#0099ff]/20 transition-all">
+                    <div className="w-12 h-12 rounded-[1rem] bg-black border border-white/10 flex items-center justify-center text-[#0099ff] shadow-2xl">
+                      <Shield className="w-5 h-5" />
                     </div>
                     <div>
                       <h4 className="text-sm font-semibold text-white uppercase tracking-tight mb-1">Security Scan</h4>
@@ -247,13 +247,13 @@ export default function ContestLobby() {
                 <div className="flex gap-6 w-full">
                   <button 
                     onClick={() => setSelectedContest(null)}
-                    className="flex-1 px-10 py-6 rounded-[1.5rem] bg-[#000000] border border-white/5 text-[#525252] text-[10px] font-semibold uppercase tracking-wider hover:text-white transition-all"
+                    className="flex-1 px-8 py-4 rounded-[1rem] bg-[#000000] border border-white/5 text-[#525252] text-[10px] font-semibold uppercase tracking-wider hover:text-white transition-all"
                   >
                     All Problems
                   </button>
                   <button 
                     onClick={confirmEnterContest}
-                    className="flex-[2] px-12 py-6 rounded-[1.5rem] bg-[#0099ff] text-white text-[11px] font-semibold uppercase tracking-wider hover:bg-white hover:text-black transition-all duration-500 shadow-[0_20px_50px_-10px_rgba(0,153,255,0.4)] active:scale-95"
+                    className="flex-[2] px-10 py-4 rounded-[1rem] bg-[#0099ff] text-white text-[11px] font-semibold uppercase tracking-wider hover:bg-white hover:text-black transition-all duration-500 shadow-[0_20px_50px_-10px_rgba(0,153,255,0.4)] active:scale-95"
                   >
                     Start Contest
                   </button>

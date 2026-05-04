@@ -38,25 +38,65 @@ export default function AntiCheatMonitoring() {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("All");
   const [selectedLog, setSelectedLog] = useState<ProctorLog | null>(null);
+  
+  // New states for Contest Filtering and Stats
+  const [contests, setContests] = useState<{id: string, name: string}[]>([]);
+  const [selectedContest, setSelectedContest] = useState<string>("All");
+  const [totalViolations, setTotalViolations] = useState(0);
 
   // Derived stats
   const riskyStudentsCount = new Set(logs.map(log => log.user_email)).size;
   const violationTypes = ["All", ...Array.from(new Set(logs.map(log => log.type).filter(Boolean)))];
 
+  const fetchContests = async () => {
+    try {
+      const response = await databases.listDocuments(APPWRITE_DB_ID, "contests");
+      setContests(response.documents.map((d: any) => ({ id: d.$id, name: d.name })));
+    } catch (error) {
+      console.error("Failed to fetch contests:", error);
+    }
+  };
+
+  const fetchStats = async () => {
+    try {
+      const url = new URL("http://localhost:3000/api/proctor/stats");
+      if (selectedContest !== "All") {
+        url.searchParams.append("contest_id", selectedContest);
+      }
+      const res = await fetch(url.toString());
+      const data = await res.json();
+      const total = data.reduce((acc: number, curr: any) => acc + (curr.total_violations || 0), 0);
+      setTotalViolations(total);
+    } catch (error) {
+      console.error("Failed to fetch stats:", error);
+      // Fallback
+      setTotalViolations(logs.length);
+    }
+  };
+
   const fetchLogs = async () => {
     try {
       setLoading(true);
-      const response = await databases.listDocuments(APPWRITE_DB_ID, "proctor_logs", [
+      const queries = [
         Query.orderDesc("$createdAt"),
         Query.limit(50)
-      ]);
+      ];
+      if (selectedContest !== "All") {
+        queries.push(Query.equal("contest_id", selectedContest));
+      }
+      const response = await databases.listDocuments(APPWRITE_DB_ID, "proctor_logs", queries);
       setLogs(response.documents as any);
+      fetchStats();
     } catch (error) {
       console.error("Failed to fetch proctor logs:", error);
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchContests();
+  }, []);
 
   useEffect(() => {
     fetchLogs();
@@ -116,6 +156,18 @@ export default function AntiCheatMonitoring() {
 
         <div className="flex items-center gap-4">
           <div className="relative group">
+            <select
+              value={selectedContest}
+              onChange={(e) => setSelectedContest(e.target.value)}
+              className="pl-6 pr-10 py-4 bg-[#090909] border border-white/5 rounded-full text-[9px] font-semibold uppercase tracking-wider text-white outline-none focus:border-[#0099ff]/50 transition-all placeholder:text-[#2a2a2a] shadow-[rgba(0,153,255,0.05)_0px_0px_20px_0px] appearance-none"
+            >
+              <option value="All">All Contests</option>
+              {contests.map(c => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
+          </div>
+          <div className="relative group">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#2a2a2a] group-focus-within:text-[#0099ff] transition-colors" />
             <input
               value={search}
@@ -137,8 +189,8 @@ export default function AntiCheatMonitoring() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         {[
           { label: "Active Sessions", value: "142", icon: Activity, color: "text-[#0099ff]" },
-          { label: "Violations Captured", value: logs.length.toString(), icon: ShieldAlert, color: "text-rose-500" },
-          { label: "Integrity Score", value: "94.2%", icon: ShieldCheck, color: "text-emerald-500" },
+          { label: "Total Violations", value: totalViolations.toString(), icon: ShieldAlert, color: "text-rose-500" },
+          { label: "Integrity Score", value: Math.max(0, 100 - (totalViolations * 2)).toFixed(1) + "%", icon: ShieldCheck, color: "text-emerald-500" },
           { label: "Risky Students", value: riskyStudentsCount.toString(), icon: Zap, color: "text-amber-500" },
         ].map((stat, i) => (
           <div key={i} className="bg-[#090909] border border-white/5 rounded-[2rem] p-8 space-y-4 shadow-[rgba(0,153,255,0.05)_0px_0px_0px_1px]">

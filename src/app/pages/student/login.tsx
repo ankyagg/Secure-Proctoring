@@ -52,15 +52,22 @@ export default function Login() {
       <div className="relative z-10 flex-1 flex flex-col items-center justify-center p-8">
         
         {/* Navigation */}
-        <motion.button 
-          initial={{ opacity: 0, x: -10 }}
-          animate={{ opacity: 1, x: 0 }}
+        <motion.div 
+          initial={{ x: -20, opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          className="absolute top-12 left-12 flex items-center gap-4 cursor-pointer group z-50"
           onClick={() => navigate("/")}
-          className="absolute top-12 left-12 flex items-center gap-3 text-[#525252] hover:text-white transition-all text-[10px] font-semibold uppercase tracking-wider group"
         >
-          <ChevronLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-          Go Back
-        </motion.button>
+          <div className="w-12 h-12 bg-[#0099ff] rounded-[1.25rem] flex items-center justify-center shadow-[0_0_30px_rgba(0,153,255,0.4)] group-hover:rotate-12 transition-all duration-500">
+            <Shield className="w-6 h-6 text-white" />
+          </div>
+          <div className="flex flex-col">
+            <span className="text-white text-2xl tracking-tight font-semibold leading-none uppercase">
+              Secure<span className="text-[#0099ff]">Proctor</span>
+            </span>
+            <span className="text-[9px] text-[#525252] font-semibold uppercase tracking-wider mt-1">Global Security Standard</span>
+          </div>
+        </motion.div>
 
         <motion.div 
           initial={{ opacity: 0, scale: 0.95, y: 20 }}

@@ -309,8 +309,10 @@ export default function StudentLayout() {
                     <Shield className="w-5 h-5 text-white" />
                   </div>
                   <div className="flex flex-col">
-                    <span className="text-white text-[11px] font-semibold tracking-wider uppercase leading-none mb-1.5">Proctor</span>
-                    <span className="text-[9px] text-[#525252] font-semibold uppercase tracking-wider flex items-center gap-2">
+                    <span className="text-white text-[15px] tracking-tight font-semibold leading-none uppercase">
+                      Secure<span className="text-[#0099ff]">Proctor</span>
+                    </span>
+                    <span className="text-[9px] text-[#525252] font-semibold uppercase tracking-wider flex items-center gap-2 mt-1">
                       <div className="w-1.5 h-1.5 bg-[#0099ff] rounded-full shadow-[0_0_8px_rgba(0,153,255,1)] animate-pulse" />
                       System Online
                     </span>

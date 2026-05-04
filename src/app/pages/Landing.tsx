@@ -154,7 +154,7 @@ export default function Landing() {
             <h2 className="text-4xl font-semibold text-white mb-6 tracking-tight uppercase">For Commands</h2>
               Create and manage contests. AI-driven gaze tracking, real-time monitoring, and detailed reports.
             <button
-              onClick={() => navigate("/admin")}
+              onClick={() => navigate("/admin/login")}
               className="w-full flex items-center justify-center gap-3 text-white bg-white/5 border border-white/5 hover:bg-white/10 rounded-2xl py-5 text-[10px] font-semibold uppercase tracking-wider transition-all"
             >
               Admin Login

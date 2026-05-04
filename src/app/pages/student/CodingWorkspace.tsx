@@ -324,7 +324,7 @@ export default function CodingWorkspace() {
             onClick={() => {
               const queryParams = new URLSearchParams(window.location.search);
               const cId = queryParams.get("contestId");
-              navigate(cId ? `/student/problems?contestId=${cId}` : "/student/lobby");
+              navigate(cId ? `/student/problems?contestId=${cId}` : "/student/problems");
             }}
             className="flex items-center gap-2 h-9 px-4 rounded-lg text-[#525252] hover:text-white bg-white/5 border border-white/5 transition-all group active:scale-95 hover:bg-white/[0.08]"
           >

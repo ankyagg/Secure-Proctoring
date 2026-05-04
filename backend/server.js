@@ -146,10 +146,15 @@ app.post('/api/contests', async (req, res) => {
 // ── GET /api/submissions ───────────────────────────────────
 app.get('/api/submissions', async (req, res) => {
   try {
-    const response = await databases.listDocuments(DATABASE_ID, 'submissions', [
+    const { user_email } = req.query;
+    const queries = [
       sdk.Query.orderDesc('$createdAt'),
       sdk.Query.limit(100),
-    ]);
+    ];
+    if (user_email) {
+      queries.push(sdk.Query.equal('user_email', user_email));
+    }
+    const response = await databases.listDocuments(DATABASE_ID, 'submissions', queries);
     res.json(response.documents.map(d => ({ id: d.$id, ...d })));
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -252,6 +257,21 @@ app.delete('/api/proctor/logs', async (req, res) => {
   }
 });
 
+// ── GET /api/proctor/stats ─────────────────────────────────────────
+app.get('/api/proctor/stats', async (req, res) => {
+  try {
+    const { user_email, contest_id } = req.query;
+    const queries = [];
+    if (user_email) queries.push(sdk.Query.equal('user_email', user_email));
+    if (contest_id) queries.push(sdk.Query.equal('contest_id', contest_id));
+    
+    const docs = await listAll('violation_stats', queries);
+    res.json(docs);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ── POST /api/proctor/logs ───────────────────────────────────
 app.post('/api/proctor/logs', async (req, res) => {
   try {
@@ -259,6 +279,64 @@ app.post('/api/proctor/logs', async (req, res) => {
       ...req.body,
       timestamp: req.body.timestamp || new Date().toISOString()
     };
+    
+    const { user_email, contest_id } = logData;
+    
+    if (user_email) {
+      // 1. Maintain persistent violation stats
+      const statsQueries = [sdk.Query.equal('user_email', user_email)];
+      if (contest_id) {
+        statsQueries.push(sdk.Query.equal('contest_id', contest_id));
+      } else {
+        // Since we didn't make contest_id required in Appwrite, fallback to global
+        // We'll just search for docs that have no contest_id or global
+      }
+      
+      try {
+        const statsDocs = await listAll('violation_stats', statsQueries);
+        
+        // Exact match for contest
+        const exactStat = statsDocs.find(d => (d.contest_id || '') === (contest_id || ''));
+        
+        if (exactStat) {
+          await databases.updateDocument(DATABASE_ID, 'violation_stats', exactStat.$id, {
+            total_violations: (exactStat.total_violations || 0) + 1
+          });
+        } else {
+          await databases.createDocument(DATABASE_ID, 'violation_stats', sdk.ID.unique(), {
+            user_email,
+            contest_id: contest_id || '',
+            total_violations: 1
+          });
+        }
+      } catch (statsErr) {
+        console.error('Failed to update violation_stats:', statsErr.message);
+      }
+      
+      // 2. Perform Log Rotation (Max 5 logs per user per contest)
+      try {
+        const logQueries = [
+          sdk.Query.equal('user_email', user_email),
+          sdk.Query.orderAsc('$createdAt')
+        ];
+        if (contest_id) {
+          logQueries.push(sdk.Query.equal('contest_id', contest_id));
+        }
+        
+        const existingLogs = await listAll('proctor_logs', logQueries);
+        
+        // If 5 or more existing logs, delete the oldest to make room for this new 1
+        if (existingLogs.length >= 5) {
+          const toDelete = existingLogs.length - 4; // Keeps 4, plus new 1 = 5
+          for (let i = 0; i < toDelete; i++) {
+            await databases.deleteDocument(DATABASE_ID, 'proctor_logs', existingLogs[i].$id);
+          }
+        }
+      } catch (rotErr) {
+        console.error('Failed log rotation:', rotErr.message);
+      }
+    }
+
     const doc = await databases.createDocument(DATABASE_ID, 'proctor_logs', sdk.ID.unique(), logData);
     res.status(201).json({ id: doc.$id, message: 'Log recorded' });
   } catch (err) {

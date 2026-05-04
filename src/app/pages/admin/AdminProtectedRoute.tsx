@@ -31,12 +31,12 @@ export default function AdminProtectedRoute({ children }: any) {
   }
 
   if (!user) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/admin/login" replace />;
   }
 
   if (!admins.includes(user.email || "")) {
     console.warn("Unauthorized access attempt by:", user.email);
-    return <Navigate to="/" replace />;
+    return <Navigate to="/admin/login" replace />;
   }
 
   return children ? children : <Outlet />;

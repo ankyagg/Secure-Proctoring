@@ -13,6 +13,7 @@ import ContestLobby from "./pages/student/ContestLobby";
 import ProblemList from "./pages/student/ProblemList";
 import CodingWorkspace from "./pages/student/CodingWorkspace";
 import Leaderboard from "./pages/student/Leaderboard";
+import StudentActivity from "./pages/student/StudentActivity";
 
 import AdminLogin from "./pages/admin/AdminLogin";
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -45,7 +46,9 @@ export const router = createBrowserRouter([
 
       { path: "workspace/:id", element: <CodingWorkspace /> },
 
-      { path: "leaderboard", element: <Leaderboard /> }
+      { path: "leaderboard", element: <Leaderboard /> },
+
+      { path: "activity", element: <StudentActivity /> }
 
     ]
   },

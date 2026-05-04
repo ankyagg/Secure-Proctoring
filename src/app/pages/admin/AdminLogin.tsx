@@ -3,23 +3,31 @@ import { useNavigate } from "react-router";
 import { Shield, Lock, ArrowRight, Code2 } from "lucide-react";
 import { motion } from "framer-motion";
 
+import { account } from "../../services/appwrite";
+
 export default function AdminLogin() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
-    const allowedEmails = (import.meta.env.VITE_ADMIN_EMAILS || "").split(",");
-    
-    if (allowedEmails.includes(email) && password === "am@1234") {
+    try {
+      // First try to delete any existing session to prevent "user already logged in" error
+      try {
+        await account.deleteSession("current");
+      } catch (err) {
+        // Ignore if no session
+      }
+
+      await account.createEmailPasswordSession(email, password);
       localStorage.setItem("admin_auth", "true");
       navigate("/admin");
-    } else {
-      alert("Invalid admin credentials");
+    } catch (err: any) {
+      alert("Authentication Failed: " + err.message);
     }
     
     setLoading(false);
@@ -27,6 +35,25 @@ export default function AdminLogin() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#000000] font-sans selection:bg-[#0099ff]/30 p-4">
+      
+      {/* Site Logo */}
+      <motion.div 
+        initial={{ x: -20, opacity: 0 }}
+        animate={{ x: 0, opacity: 1 }}
+        className="absolute top-12 left-12 flex items-center gap-4 cursor-pointer group z-50"
+        onClick={() => navigate("/")}
+      >
+        <div className="w-12 h-12 bg-[#0099ff] rounded-[1.25rem] flex items-center justify-center shadow-[0_0_30px_rgba(0,153,255,0.4)] group-hover:rotate-12 transition-all duration-500">
+          <Shield className="w-6 h-6 text-white" />
+        </div>
+        <div className="flex flex-col text-left">
+          <span className="text-white text-2xl tracking-tight font-semibold leading-none uppercase">
+            Secure<span className="text-[#0099ff]">Proctor</span>
+          </span>
+          <span className="text-[9px] text-[#525252] font-semibold uppercase tracking-wider mt-1">Global Security Standard</span>
+        </div>
+      </motion.div>
+
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
