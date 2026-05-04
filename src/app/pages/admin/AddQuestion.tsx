@@ -114,9 +114,19 @@ export default function AddQuestion() {
             explanation: doc.explanation || "",
             points: doc.points || 100,
           });
+          if (doc.testCases) {
+            try {
+              setTestCases(JSON.parse(doc.testCases));
+            } catch(e){}
+          }
           if (doc.boilerplates) {
             try {
-              setBoilerplates(JSON.parse(doc.boilerplates));
+              const bp = JSON.parse(doc.boilerplates);
+              if (bp.__test_cases__) {
+                setTestCases(JSON.parse(bp.__test_cases__));
+                delete bp.__test_cases__;
+              }
+              setBoilerplates(bp);
             } catch(e){}
           }
         }).catch(err => {
@@ -151,7 +161,10 @@ export default function AddQuestion() {
       constraints: form.constraints,
       explanation: form.explanation,
       category: form.category,
-      boilerplates: JSON.stringify(boilerplates),
+      boilerplates: JSON.stringify({
+        ...boilerplates,
+        __test_cases__: JSON.stringify(testCases)
+      }),
     };
 
     try {
@@ -574,39 +587,146 @@ export default function AddQuestion() {
 
                     <button 
                       onClick={async () => {
+                        if (!aiPrompt.trim()) return;
                         setGenerating(true);
-                        // Heuristic: If prompt contains "array", generate arrays. 
-                        // In a real app, this would call an LLM.
-                        setTimeout(() => {
-                          const newCases = [];
-                          for(let i=0; i<5; i++) {
-                            const n = Math.floor(Math.random() * 10) + 1;
-                            const arr = Array.from({length: n}, () => Math.floor(Math.random() * 100));
-                            newCases.push({
-                              input: `${n}\n${arr.join(' ')}`,
-                              output: "Auto-generated"
-                            });
+                        setError(null);
+                        
+                        try {
+                          const response = await fetch("http://localhost:3000/api/ai/generate", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                              title: form.title,
+                              statement: form.statement,
+                              inputFormat: form.inputFormat,
+                              outputFormat: form.outputFormat,
+                              timeComplexity: form.timeComplexity,
+                              spaceComplexity: form.spaceComplexity,
+                              prompt: aiPrompt
+                            })
+                          });
+
+                          if (!response.ok) {
+                            const rawText = await response.text();
+                            let errorMessage = `Server Error (${response.status})`;
+                            try {
+                              const errData = JSON.parse(rawText);
+                              errorMessage = errData.error || errorMessage;
+                            } catch (e) {
+                              errorMessage = `${errorMessage}: ${rawText.substring(0, 100)}`;
+                            }
+                            throw new Error(errorMessage);
                           }
-                          setTestCases(newCases);
+                          
+                          const data = await response.json();
+                          const rawCases = data.testCases || data || [];
+                          
+                          if (Array.isArray(rawCases)) {
+                            const formattedCases = rawCases.map((tc: any, idx: number) => ({
+                              id: `ai_${Date.now()}_${idx}`,
+                              input: tc.input || "",
+                              expected_output: tc.output || tc.expected_output || "",
+                            }));
+                            
+                            setTestCases(formattedCases);
+                            if (data.suggestedTimeComplexity || data.suggestedSpaceComplexity) {
+                              setForm({
+                                ...form,
+                                timeComplexity: data.suggestedTimeComplexity || form.timeComplexity,
+                                spaceComplexity: data.suggestedSpaceComplexity || form.spaceComplexity
+                              });
+                            }
+                            setAiPrompt("");
+                            setActiveTab("basic");
+                          } else {
+                            throw new Error("Invalid response from AI");
+                          }
+                        } catch (err: any) {
+                          console.error("AI Generation Error:", err);
+                          setError(err.message || "Failed to generate test cases. Check backend logs.");
+                        } finally {
                           setGenerating(false);
-                          setActiveTab("basic");
-                        }, 2000);
+                        }
                       }}
                       disabled={generating || !aiPrompt.trim()}
-                      className="w-full py-6 bg-[#0099ff] hover:bg-white text-white hover:text-black rounded-3xl text-[11px] font-semibold uppercase tracking-wider shadow-[0_20px_50px_-10px_rgba(0,153,255,0.4)] transition-all duration-500 flex items-center justify-center gap-3 group disabled:opacity-50"
+                      className="w-full h-16 rounded-3xl bg-[#0099ff] hover:bg-[#0099ff]/90 disabled:bg-[#333] disabled:cursor-not-allowed text-white font-bold uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-3 active:scale-[0.98] shadow-lg shadow-[#0099ff]/20"
                     >
                       {generating ? (
-                        <>
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                          Analyzing Patterns...
-                        </>
+                        <Loader2 className="w-5 h-5 animate-spin" />
                       ) : (
                         <>
-                          <Sparkles className="w-4 h-4 group-hover:rotate-12 transition-transform" />
-                          Generate Test Cases
+                          <Zap className="w-5 h-5" />
+                          <span>Generate Lab Dataset</span>
                         </>
                       )}
                     </button>
+
+                    {testCases.length > 0 && (
+                      <motion.div 
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="space-y-6 pt-10 border-t border-white/5"
+                      >
+                        <div className="flex items-center justify-between px-4">
+                          <div className="flex items-center gap-3">
+                            <FileCheck className="w-5 h-5 text-emerald-500" />
+                            <h3 className="text-sm font-bold text-white uppercase tracking-widest">Review Dataset</h3>
+                          </div>
+                          <span className="text-[10px] font-bold text-[#525252] uppercase">{testCases.length} Cases Generated</span>
+                        </div>
+
+                        <div className="bg-[#050505] border border-white/5 rounded-3xl overflow-hidden">
+                          <table className="w-full text-left text-xs">
+                            <thead className="bg-[#090909] border-b border-white/5">
+                              <tr>
+                                <th className="px-6 py-4 font-bold text-[#2a2a2a] uppercase tracking-wider">#</th>
+                                <th className="px-6 py-4 font-bold text-[#2a2a2a] uppercase tracking-wider w-1/2">Input</th>
+                                <th className="px-6 py-4 font-bold text-[#2a2a2a] uppercase tracking-wider">Expected Output</th>
+                                <th className="px-6 py-4 font-bold text-[#2a2a2a] uppercase tracking-wider text-right">Actions</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-white/5">
+                              {testCases.map((tc, idx) => (
+                                <tr key={tc.id} className="group hover:bg-white/[0.02] transition-colors">
+                                  <td className="px-6 py-4 font-mono text-[#333]">{idx + 1}</td>
+                                  <td className="px-6 py-4">
+                                    <textarea 
+                                      value={tc.input}
+                                      onChange={(e) => {
+                                        const newCases = [...testCases];
+                                        newCases[idx].input = e.target.value;
+                                        setTestCases(newCases);
+                                      }}
+                                      className="w-full bg-transparent border-none outline-none text-[#a6a6a6] font-mono resize-none focus:text-white"
+                                      rows={2}
+                                    />
+                                  </td>
+                                  <td className="px-6 py-4">
+                                    <input 
+                                      value={tc.expected_output}
+                                      onChange={(e) => {
+                                        const newCases = [...testCases];
+                                        newCases[idx].expected_output = e.target.value;
+                                        setTestCases(newCases);
+                                      }}
+                                      className="w-full bg-transparent border-none outline-none text-[#0099ff] font-mono font-bold focus:text-[#0099ff]/100"
+                                    />
+                                  </td>
+                                  <td className="px-6 py-4 text-right">
+                                    <button 
+                                      onClick={() => setTestCases(testCases.filter((_, i) => i !== idx))}
+                                      className="p-2 rounded-lg hover:bg-rose-500/10 text-[#333] hover:text-rose-500 transition-all opacity-0 group-hover:opacity-100"
+                                    >
+                                      <X className="w-4 h-4" />
+                                    </button>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </motion.div>
+                    )}
                   </div>
                 </div>
 

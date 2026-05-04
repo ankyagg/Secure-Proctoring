@@ -26,13 +26,12 @@ async function runCode(sourceCode, languageId, stdin) {
 }
 
 async function judgeSubmission(sourceCode, languageId, testCases) {
-  // Promise.all launches everything simultaneously for true parallel speed
-  const results = await Promise.all(testCases.map(async (tc, index) => {
+  const results = [];
+  
+  for (const tc of testCases) {
     let attempts = 0;
     const maxAttempts = 3;
-
-    // Small staggered start (10ms per TC) to prevent Wandbox from instantly dropping connections
-    await new Promise(resolve => setTimeout(resolve, index * 20));
+    let tcResult = null;
 
     while (attempts < maxAttempts) {
       try {
@@ -40,19 +39,28 @@ async function judgeSubmission(sourceCode, languageId, testCases) {
         const actual = (output.stdout || '').trim();
         const expected = (tc.expected_output || '').trim();
         
-        // If we got an empty response from Wandbox but expected output, retry silently
+        console.log(`[JUDGE] TC ${tc.id} Debug:`);
+        console.log(`  Input:    [${tc.input.replace(/\n/g, '\\n')}]`);
+        if (output.stderr) console.error(`  Stderr:   ${output.stderr}`);
+        
+        // If we got an empty response from Wandbox but expected output, retry
         if (actual === "" && expected !== "" && attempts < maxAttempts - 1) {
+          console.warn(`[JUDGE] TC ${tc.id} returned empty, retrying (${attempts + 1}/${maxAttempts})...`);
           attempts++;
+          await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1s before retry
           continue;
         }
 
-        const actualTokens = actual.split(/[\s\r\n]+/).filter(Boolean);
-        const expectedTokens = expected.split(/[\s\r\n]+/).filter(Boolean);
+        const actualTokens = actual.split(/[\s\r\n,\[\]]+/).filter(Boolean);
+        const expectedTokens = expected.split(/[\s\r\n,\[\]]+/).filter(Boolean);
+        
         const passed = actualTokens.length === expectedTokens.length && 
                        actualTokens.every((val, i) => val === expectedTokens[i]);
         
-        console.log(`[JUDGE] TC ${tc.id}: ${passed ? '✅ PASSED' : '❌ FAILED'}`);
-        return {
+        console.log(`[JUDGE] TC ${tc.id} Tokens: Actual:[${actualTokens}] Expected:[${expectedTokens}]`);
+        console.log(`[JUDGE] Verdict: ${passed ? '✅ PASSED' : '❌ FAILED'}`);
+
+        tcResult = {
           test_case_id: tc.id,
           passed,
           stdout: output.stdout,
@@ -60,20 +68,26 @@ async function judgeSubmission(sourceCode, languageId, testCases) {
           time: "0.1s", 
           memory: "128KB"
         };
+        break; // Success or WA, move to next TC
       } catch (err) {
         attempts++;
+        console.error(`[JUDGE ERROR] TC ${tc.id} Attempt ${attempts}:`, err.message);
         if (attempts >= maxAttempts) {
-          console.error(`[JUDGE FATAL] TC ${tc.id}:`, err.message);
-          return {
+          tcResult = {
             test_case_id: tc.id,
             passed: false,
             error: err.message,
             status: 'Error'
           };
+        } else {
+          await new Promise(resolve => setTimeout(resolve, 2000));
         }
       }
     }
-  }));
+    results.push(tcResult);
+    // Add a small pause between different test cases to be safe
+    await new Promise(resolve => setTimeout(resolve, 500));
+  }
 
   return results;
 }

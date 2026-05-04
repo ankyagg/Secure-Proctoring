@@ -1,8 +1,12 @@
 const express = require('express');
 const cors = require('cors');
 const sdk = require('node-appwrite');
+const axios = require('axios');
+require('dotenv').config(); 
+require('dotenv').config({ path: '../.env' }); 
+require('dotenv').config({ path: './.env' }); 
+require('dotenv').config({ path: '../../.env' }); 
 const { judgeSubmission } = require('./judge');
-require('dotenv').config({ path: '../.env' });
 
 const app = express();
 app.use(cors());
@@ -358,16 +362,32 @@ app.post('/api/submit', async (req, res) => {
   try {
     const qDoc = await databases.getDocument(DATABASE_ID, 'questions', question_id);
 
-    const tcDocs = await listAll('test_cases', [
-      sdk.Query.equal('question_id', question_id),
-    ]);
+    // Look for stealth test cases in the question document first
+    let testCases = [];
+    try {
+      if (qDoc.boilerplates) {
+        const bp = JSON.parse(qDoc.boilerplates);
+        if (bp.__test_cases__) {
+          testCases = JSON.parse(bp.__test_cases__);
+        }
+      }
+    } catch (e) {
+      console.warn("Stealth TC extraction failed, falling back to collection...");
+    }
 
-    const testCases = tcDocs.map(d => ({
-      id: d.$id,
-      input: d.input,
-      expected_output: d.expected_output,
-      is_hidden: d.is_hidden,
-    }));
+    // Fallback to separate collection if stealth cases aren't found
+    if (!testCases.length) {
+      const tcDocs = await listAll('test_cases', [
+        sdk.Query.equal('question_id', question_id),
+      ]);
+
+      testCases = tcDocs.map(d => ({
+        id: d.$id,
+        input: d.input,
+        expected_output: d.expected_output,
+        is_hidden: d.is_hidden,
+      }));
+    }
 
     if (!testCases.length)
       return res.status(404).json({ error: 'No test cases found' });
@@ -404,7 +424,7 @@ app.post('/api/submit', async (req, res) => {
       id: submissionDoc.$id,
       passed,
       total,
-      score: Math.round((passed / total) * 100),
+      score: passed_all ? 100 : 0,
       passed_all,
       points: passed_all ? (qDoc.points || 100) : 0,
       results
@@ -412,6 +432,122 @@ app.post('/api/submit', async (req, res) => {
   } catch (err) {
     if (err.code === 404) return res.status(404).json({ error: 'Question not found' });
     res.status(500).json({ error: err.message });
+  }
+});
+
+// AI Test Case Generation
+app.post('/api/ai/generate', async (req, res) => {
+  const { title, statement, inputFormat, outputFormat, prompt } = req.body;
+  const apiKey = process.env.XAI_API_KEY;
+
+  if (!apiKey) {
+    console.error("❌ XAI_API_KEY is missing in .env");
+    return res.status(500).json({ error: "XAI_API_KEY not configured on server" });
+  }
+
+  console.log(`🤖 AI Generation requested for: "${title}"`);
+
+  const systemPrompt = `You are an expert Competitive Programming test case generator.
+  Your task is to generate high-quality test cases based on the provided problem title and statement.
+  
+  PROBLEM TITLE: ${title}
+  PROBLEM STATEMENT: ${statement}
+  INPUT FORMAT: ${inputFormat || "Not specified"}
+  OUTPUT FORMAT: ${outputFormat || "Not specified"}
+  
+  You must follow the INPUT FORMAT and OUTPUT FORMAT strictly.
+  You must provide a JSON array of objects, where each object has "input" and "output" fields.
+  Include edge cases (empty/minimum values, maximum constraints) and random distributions.
+  
+  When generating the "input" and "output", you MUST calculate them step-by-step internally to ensure 100% mathematical accuracy. 
+  
+  CRITICAL: 
+  1. Both "input" and "output" must be RAW space-separated values only. 
+  2. DO NOT use commas, brackets, or any formatting. 
+  3. DO NOT include "Input:" or "Output:" labels inside the strings.
+  Example Input: "3\n1 2 3\n4 5 6\n7 8 9" is CORRECT.
+  Example Output: "15" is CORRECT. 
+  "1, 2, 3" is WRONG. "[1, 2, 3]" is WRONG.
+
+  RESPONSE FORMAT (STRICT JSON ONLY):
+  {
+    "testCases": [
+      { "input": "raw_input_string", "expected_output": "expected_output_string" }
+    ],
+    "suggestedTimeComplexity": "O(...)",
+    "suggestedSpaceComplexity": "O(...)"
+  }`;
+
+  try {
+    console.log("📤 Sending request to Groq...");
+    const response = await axios.post('https://api.groq.com/openai/v1/chat/completions', {
+      model: "llama-3.3-70b-versatile", // Powerful and fast Groq model
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: prompt }
+      ],
+      temperature: 0.7
+    }, {
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    const content = response.data.choices[0].message.content.trim();
+    console.log("✅ Groq Response received successfully");
+
+    // Extract JSON if model included markdown blocks
+    const jsonMatch = content.match(/\{[\s\S]*\}/);
+    const finalJson = jsonMatch ? jsonMatch[0] : content;
+    
+    res.json(JSON.parse(finalJson));
+  } catch (err) {
+    if (err.response) {
+      console.error("❌ Groq API Error Details:");
+      console.error("Status:", err.response.status);
+      console.error("Data:", JSON.stringify(err.response.data, null, 2));
+      
+      const detailedMsg = err.response.data?.error?.message || JSON.stringify(err.response.data);
+      res.status(err.response.status).json({ error: `Groq API Error: ${detailedMsg}` });
+    } else {
+      console.error("❌ Network/Unknown Error:", err.message);
+      res.status(500).json({ error: `Connection Error: ${err.message}` });
+    }
+  }
+});
+
+// AI Code Analysis (Complexity & Feedback)
+app.post('/api/ai/analyze-code', async (req, res) => {
+  const { code, language } = req.body;
+  const apiKey = process.env.XAI_API_KEY;
+
+  if (!apiKey) return res.status(500).json({ error: "XAI_API_KEY missing" });
+
+  const systemPrompt = `You are a senior software engineer. Analyze the provided ${language} code and determine its Big O Time and Space Complexity.
+  Be precise and concise. Return ONLY a JSON object.
+  
+  FORMAT:
+  {
+    "timeComplexity": "O(...)",
+    "spaceComplexity": "O(...)",
+    "explanation": "One short sentence explaining why."
+  }`;
+
+  try {
+    const response = await axios.post('https://api.groq.com/openai/v1/chat/completions', {
+      model: "llama-3.3-70b-versatile",
+      messages: [{ role: "system", content: systemPrompt }, { role: "user", content: code }],
+      temperature: 0.1
+    }, {
+      headers: { 'Authorization': `Bearer ${apiKey}` }
+    });
+
+    const content = response.data.choices[0].message.content.trim();
+    const jsonMatch = content.match(/\{[\s\S]*\}/);
+    res.json(JSON.parse(jsonMatch ? jsonMatch[0] : content));
+  } catch (err) {
+    res.status(500).json({ error: "Failed to analyze code" });
   }
 });
 

@@ -19,7 +19,8 @@ import {
   Maximize2,
   Layout,
   TerminalSquare,
-  AlertTriangle
+  AlertTriangle,
+  Sparkles
 } from "lucide-react";
 import WebcamPreview from "../../components/WebcamPreview";
 import { useStudentContext } from "../../components/StudentLayout";
@@ -66,6 +67,8 @@ type FirestoreProblem = {
   sampleOutput?: string;
   explanation?: string;
   points?: number;
+  timeComplexity?: string;
+  spaceComplexity?: string;
 };
 
 type Verdict = "Accepted" | "Wrong Answer" | "TLE" | "MLE" | "CE" | null;
@@ -254,7 +257,18 @@ export default function CodingWorkspace() {
           ? `✅ SUCCESS: ALL TESTCASES PASSED (${data.total}/${data.total})`
           : `❌ FAILED: ${data.passed}/${data.total} TESTCASES PASSED.`
         );
-        setVerdictDetails(data);
+        
+        // Parallel call to AI Analyzer to save time
+        fetch(`${API_BASE}/ai/analyze-code`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ code, language })
+        }).then(res => res.json()).then(aiData => {
+           setVerdictDetails(prev => ({ ...prev, ...data, aiAnalysis: aiData }));
+        }).catch(e => {
+           setVerdictDetails(prev => ({ ...prev, ...data }));
+        });
+
         setShowModal(true);
       } else {
         setOutputText(`❌ ERROR: ${data.error || "Submission failed"}`);
@@ -670,6 +684,28 @@ export default function CodingWorkspace() {
                       <div className="text-4xl font-semibold text-[#0099ff] tracking-tighter italic">+{verdictDetails.points}</div>
                     </div>
                   </div>
+
+                  {verdictDetails.aiAnalysis && (
+                    <motion.div 
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="p-8 bg-[#0099ff]/5 border border-[#0099ff]/10 rounded-[2rem] space-y-4 text-left"
+                    >
+                       <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                             <Sparkles className="w-4 h-4 text-[#0099ff]" />
+                             <h4 className="text-[10px] font-bold text-white uppercase tracking-widest">AI Intelligence Report</h4>
+                          </div>
+                          <div className="flex gap-4">
+                             <div className="text-[9px] font-bold text-[#0099ff] uppercase">{verdictDetails.aiAnalysis.timeComplexity} Time</div>
+                             <div className="text-[9px] font-bold text-emerald-500 uppercase">{verdictDetails.aiAnalysis.spaceComplexity} Space</div>
+                          </div>
+                       </div>
+                       <p className="text-[11px] text-[#525252] font-medium leading-relaxed italic">
+                         "{verdictDetails.aiAnalysis.explanation}"
+                       </p>
+                    </motion.div>
+                  )}
 
                   <div className="flex gap-6">
                     <button 
