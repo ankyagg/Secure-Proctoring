@@ -20,6 +20,7 @@ import {
   Shield
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { account } from "../services/appwrite";
 
 const menuItems = [
   { name: "Dashboard", path: "/admin", icon: LayoutDashboard },
@@ -34,6 +35,20 @@ export default function AdminLayout() {
   const location = useLocation();
   const navigate = useNavigate();
   const [theme, setTheme] = useState(() => localStorage.getItem("theme") || "dark");
+  const [userName, setUserName] = useState("ADMINISTRATOR");
+  const [userInitials, setUserInitials] = useState("AD");
+
+  useEffect(() => {
+    account.get().then(user => {
+      setUserName(user.name.toUpperCase());
+      const initials = user.name
+        .split(" ")
+        .map(n => n[0])
+        .join("")
+        .toUpperCase();
+      setUserInitials(initials.slice(0, 2));
+    }).catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (theme === "dark") {
@@ -159,11 +174,11 @@ export default function AdminLayout() {
 
             <div className="flex items-center gap-4">
               <div className="flex flex-col items-end">
-                <span className="text-[10px] font-semibold text-white uppercase tracking-tighter">ANIKET WALANJ</span>
+                <span className="text-[10px] font-semibold text-white uppercase tracking-tighter">{userName}</span>
                  <span className="text-[8px] font-bold text-[#0099ff] uppercase tracking-wider">Administrator</span>
               </div>
               <div className="w-10 h-10 rounded-2xl bg-white border border-white/10 flex items-center justify-center shadow-2xl">
-                <span className="font-semibold text-black text-[10px]">AW</span>
+                <span className="font-semibold text-black text-[10px]">{userInitials}</span>
               </div>
             </div>
           </div>

@@ -164,7 +164,13 @@ export default function Signup() {
 
           <div className="mt-12 text-center">
             <p className="text-[10px] font-semibold text-[#525252] uppercase tracking-wider">
+              Already have an account?{" "}
+              <button
+                onClick={() => navigate("/login")}
+                className="text-[#0099ff] hover:text-white transition-colors"
+              >
                 Sign In
+              </button>
             </p>
           </div>
         </motion.div>

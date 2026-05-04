@@ -142,6 +142,13 @@ export default function AIProctor() {
 
   useEffect(() => {
     if (!antiCheat?.enabled) return;
+    
+    // Admin Bypass
+    const adminEmails = (import.meta.env.VITE_ADMIN_EMAILS || "").split(",");
+    if (userRef.current?.email && adminEmails.includes(userRef.current.email)) {
+      return;
+    }
+
     const handleKeyDown = (e: KeyboardEvent) => {
       const forbidden = [(e.ctrlKey || e.metaKey) && ['c','v','f'].includes(e.key), e.key === 'PrintScreen', e.key === 'F12'];
       if (forbidden.some(cond => cond)) {
@@ -161,6 +168,13 @@ export default function AIProctor() {
 
   useEffect(() => {
     if (!antiCheat?.enabled) return;
+
+    // Admin Bypass
+    const adminEmails = (import.meta.env.VITE_ADMIN_EMAILS || "").split(",");
+    if (userRef.current?.email && adminEmails.includes(userRef.current.email)) {
+      return;
+    }
+
     const handleVisibilityChange = () => {
       if (document.hidden) {
         // Don't log here — StudentLayout.tsx already logs TAB_SWITCH
@@ -179,6 +193,15 @@ export default function AIProctor() {
 
   useEffect(() => {
     if (!antiCheat?.enabled) return;
+
+    // Admin Bypass
+    const adminEmails = (import.meta.env.VITE_ADMIN_EMAILS || "").split(",");
+    if (userRef.current?.email && adminEmails.includes(userRef.current.email)) {
+       setProctorStatus('inactive');
+       setProctorReason('Admin Access: Proctoring Disabled');
+       return;
+    }
+
     let audioCtx: AudioContext;
     let stream: MediaStream;
     const startAudio = async () => {

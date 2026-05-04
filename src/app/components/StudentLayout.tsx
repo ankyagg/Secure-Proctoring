@@ -107,6 +107,17 @@ export default function StudentLayout() {
     return null;
   });
 
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    const adminEmails = (import.meta.env.VITE_ADMIN_EMAILS || "").split(",");
+    if (user?.email && adminEmails.includes(user.email)) {
+      setIsAdmin(true);
+      // Automatically disable anti-cheat for admins
+      setAntiCheat(null);
+    }
+  }, [user]);
+
   useEffect(() => {
     const checkUser = async () => {
       try {
@@ -122,7 +133,7 @@ export default function StudentLayout() {
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const cid = params.get("contestId");
-    if (cid) {
+    if (cid && !isAdmin) {
       fetchContests().then((cs: any[]) => {
         const found = cs.find((x) => String(x.id) === String(cid));
         if (found) {
@@ -140,7 +151,7 @@ export default function StudentLayout() {
         }
       });
     }
-  }, [location.search]);
+  }, [location.search, isAdmin]);
 
   useEffect(() => {
     if ((antiCheat?.webcam || antiCheat?.faceDetection) && !webcamStream) {

@@ -641,8 +641,16 @@ export default function CodingWorkspace() {
           {/* Neural Guard Overlay */}
           <div className="absolute bottom-10 right-10 z-30 pointer-events-none">
              <div className="flex items-center gap-3 px-6 py-3 rounded-full bg-black/80 border border-[#0099ff]/20 backdrop-blur-xl shadow-2xl">
-                <div className="w-1.5 h-1.5 rounded-full bg-[#0099ff] animate-pulse" />
-                <span className="text-[8px] font-bold text-[#0099ff] uppercase tracking-[0.2em]">Anti-Cheat Active</span>
+                <div className={`w-1.5 h-1.5 rounded-full animate-pulse ${
+                  (import.meta.env.VITE_ADMIN_EMAILS || "").split(",").includes(currentUser?.email || "") 
+                  ? "bg-emerald-500 shadow-[0_0_10px_#10b981]" 
+                  : "bg-[#0099ff] shadow-[0_0_10px_#0099ff]"
+                }`} />
+                <span className="text-[8px] font-bold text-white uppercase tracking-[0.2em]">
+                  {(import.meta.env.VITE_ADMIN_EMAILS || "").split(",").includes(currentUser?.email || "") 
+                  ? "Admin Mode" 
+                  : "Anti-Cheat Active"}
+                </span>
              </div>
           </div>
         </div>
@@ -652,81 +660,81 @@ export default function CodingWorkspace() {
       <AnimatePresence>
         {showModal && verdictDetails && (
           <div className="fixed inset-0 z-[200] flex items-center justify-center p-8 bg-black/95 backdrop-blur-2xl">
-             <motion.div 
-               initial={{ scale: 0.95, opacity: 0, y: 30 }}
-               animate={{ scale: 1, opacity: 1, y: 0 }}
-               exit={{ scale: 0.95, opacity: 0, y: 30 }}
-               className="bg-[#090909] border border-white/10 rounded-[4rem] w-full max-w-2xl overflow-hidden shadow-[0_0_150px_rgba(0,0,0,1)] relative"
-             >
-                <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-transparent via-[#0099ff] to-transparent" />
-                
-                <div className="p-20 text-center space-y-12">
-                  <div className={`w-32 h-32 mx-auto rounded-[2.5rem] flex items-center justify-center border shadow-2xl ${verdictDetails.passed_all ? 'border-emerald-500/20 bg-emerald-500/5' : 'border-rose-500/20 bg-rose-500/5'}`}>
-                     {verdictDetails.passed_all ? <CheckCircle2 className="w-16 h-16 text-emerald-500" /> : <XCircle className="w-16 h-16 text-rose-500" />}
-                  </div>
-                  
-                  <div className="space-y-4">
-                    <h2 className={`text-4xl font-semibold tracking-tight uppercase ${verdictDetails.passed_all ? 'text-white' : 'text-rose-500'}`}>
-                      {verdictDetails.passed_all ? "Correct" : "Wrong Answer"}
-                    </h2>
-                    <p className="text-[#525252] font-semibold uppercase tracking-wider text-[10px]">
-                      {verdictDetails.passed} / {verdictDetails.total} Testcases Passed
-                    </p>
-                  </div>
+              <motion.div 
+                initial={{ scale: 0.95, opacity: 0, y: 30 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                exit={{ scale: 0.95, opacity: 0, y: 30 }}
+                className="bg-[#090909] border border-white/10 rounded-[3rem] w-full max-w-xl overflow-hidden shadow-[0_0_150px_rgba(0,0,0,1)] relative"
+              >
+                 <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-transparent via-[#0099ff] to-transparent" />
+                 
+                 <div className="p-12 text-center space-y-8">
+                   <div className={`w-20 h-20 mx-auto rounded-2xl flex items-center justify-center border shadow-2xl ${verdictDetails.passed_all ? 'border-emerald-500/20 bg-emerald-500/5' : 'border-rose-500/20 bg-rose-500/5'}`}>
+                      {verdictDetails.passed_all ? <CheckCircle2 className="w-10 h-10 text-emerald-500" /> : <XCircle className="w-10 h-10 text-rose-500" />}
+                   </div>
+                   
+                   <div className="space-y-3">
+                     <h2 className={`text-3xl font-semibold tracking-tight uppercase ${verdictDetails.passed_all ? 'text-white' : 'text-rose-500'}`}>
+                       {verdictDetails.passed_all ? "Correct" : "Wrong Answer"}
+                     </h2>
+                     <p className="text-[#525252] font-semibold uppercase tracking-wider text-[9px]">
+                       {verdictDetails.passed} / {verdictDetails.total} Testcases Passed
+                     </p>
+                   </div>
 
-                  <div className="bg-black border border-white/5 rounded-[2.5rem] p-10 grid grid-cols-2 gap-10 shadow-2xl">
-                    <div className="space-y-3">
-                      <span className="text-[10px] text-[#2a2a2a] font-semibold uppercase tracking-wider">Score</span>
-                      <div className="text-4xl font-semibold text-white tracking-tighter italic">{verdictDetails.score}</div>
-                    </div>
-                    <div className="space-y-3">
-                      <span className="text-[10px] text-[#2a2a2a] font-semibold uppercase tracking-wider">Points</span>
-                      <div className="text-4xl font-semibold text-[#0099ff] tracking-tighter italic">+{verdictDetails.points}</div>
-                    </div>
-                  </div>
+                   <div className="bg-black border border-white/5 rounded-[2rem] p-8 grid grid-cols-2 gap-8 shadow-2xl">
+                     <div className="space-y-2">
+                       <span className="text-[9px] text-[#2a2a2a] font-semibold uppercase tracking-wider">Score</span>
+                       <div className="text-3xl font-semibold text-white tracking-tighter italic">{verdictDetails.score}</div>
+                     </div>
+                     <div className="space-y-2">
+                       <span className="text-[9px] text-[#2a2a2a] font-semibold uppercase tracking-wider">Points</span>
+                       <div className="text-3xl font-semibold text-[#0099ff] tracking-tighter italic">+{verdictDetails.points}</div>
+                     </div>
+                   </div>
 
-                  {verdictDetails.aiAnalysis && (
-                    <motion.div 
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="p-8 bg-[#0099ff]/5 border border-[#0099ff]/10 rounded-[2rem] space-y-4 text-left"
-                    >
-                       <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                             <Sparkles className="w-4 h-4 text-[#0099ff]" />
-                             <h4 className="text-[10px] font-bold text-white uppercase tracking-widest">AI Intelligence Report</h4>
-                          </div>
-                          <div className="flex gap-4">
-                             <div className="text-[9px] font-bold text-[#0099ff] uppercase">{verdictDetails.aiAnalysis.timeComplexity} Time</div>
-                             <div className="text-[9px] font-bold text-emerald-500 uppercase">{verdictDetails.aiAnalysis.spaceComplexity} Space</div>
-                          </div>
-                       </div>
-                       <p className="text-[11px] text-[#525252] font-medium leading-relaxed italic">
-                         "{verdictDetails.aiAnalysis.explanation}"
-                       </p>
-                    </motion.div>
-                  )}
+                   {verdictDetails.aiAnalysis && (
+                     <motion.div 
+                       initial={{ opacity: 0, y: 10 }}
+                       animate={{ opacity: 1, y: 0 }}
+                       className="p-6 bg-[#0099ff]/5 border border-[#0099ff]/10 rounded-[1.5rem] space-y-3 text-left"
+                     >
+                        <div className="flex items-center justify-between">
+                           <div className="flex items-center gap-2">
+                              <Sparkles className="w-3.5 h-3.5 text-[#0099ff]" />
+                              <h4 className="text-[9px] font-bold text-white uppercase tracking-widest">AI Intelligence Report</h4>
+                           </div>
+                           <div className="flex gap-3">
+                              <div className="text-[8px] font-bold text-[#0099ff] uppercase">{verdictDetails.aiAnalysis.timeComplexity}</div>
+                              <div className="text-[8px] font-bold text-emerald-500 uppercase">{verdictDetails.aiAnalysis.spaceComplexity}</div>
+                           </div>
+                        </div>
+                        <p className="text-[10px] text-[#525252] font-medium leading-relaxed italic">
+                          "{verdictDetails.aiAnalysis.explanation}"
+                        </p>
+                     </motion.div>
+                   )}
 
-                  <div className="flex gap-6">
-                    <button 
-                      onClick={() => {
-                        const qp = new URLSearchParams(window.location.search);
-                        const cId = qp.get("contestId");
-                        navigate(cId ? `/student/problems?contestId=${cId}` : "/student/problems");
-                      }}
-                      className="flex-1 py-6 bg-black border border-white/10 text-[#525252] font-semibold uppercase tracking-wider text-[11px] rounded-[1.5rem] hover:text-white transition-all shadow-2xl"
-                    >
-                      Exit
-                    </button>
-                    <button 
-                      onClick={() => setShowModal(false)}
-                      className="flex-[1.5] py-6 bg-[#0099ff] text-white font-semibold uppercase tracking-wider text-[11px] rounded-[1.5rem] hover:bg-white hover:text-black transition-all shadow-[0_20px_50px_-10px_rgba(0,153,255,0.4)]"
-                    >
-                      Try Again
-                    </button>
-                  </div>
-                </div>
-             </motion.div>
+                   <div className="flex gap-4">
+                     <button 
+                       onClick={() => {
+                         const qp = new URLSearchParams(window.location.search);
+                         const cId = qp.get("contestId");
+                         navigate(cId ? `/student/problems?contestId=${cId}` : "/student/problems");
+                       }}
+                       className="flex-1 py-4 bg-black border border-white/10 text-[#525252] font-semibold uppercase tracking-wider text-[10px] rounded-2xl hover:text-white transition-all shadow-2xl"
+                     >
+                       Exit
+                     </button>
+                     <button 
+                       onClick={() => setShowModal(false)}
+                       className="flex-[1.5] py-4 bg-[#0099ff] text-white font-semibold uppercase tracking-wider text-[10px] rounded-2xl hover:bg-white hover:text-black transition-all shadow-[0_20px_50px_-10px_rgba(0,153,255,0.4)]"
+                     >
+                       Try Again
+                     </button>
+                   </div>
+                 </div>
+              </motion.div>
           </div>
         )}
       </AnimatePresence>

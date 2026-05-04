@@ -36,6 +36,9 @@ export default function AdminDashboard() {
     checkAuth();
   }, []);
 
+  const [totalParticipants, setTotalParticipants] = useState(0);
+  const [totalContestsCount, setTotalContestsCount] = useState(0);
+
   const fetchData = async () => {
     setLoading(true);
     setError(null);
@@ -50,6 +53,8 @@ export default function AdminDashboard() {
       setContests(cs.documents);
       setSubmissions(subs.documents);
       setUsers(us.documents);
+      setTotalParticipants(us.total);
+      setTotalContestsCount(cs.total);
     } catch (err: any) {
       console.error(err);
       setError("Failed to load data from Appwrite.");
@@ -62,7 +67,6 @@ export default function AdminDashboard() {
     fetchData();
   }, []);
 
-  const totalParticipants = users.length;
   const activeContests = contests.filter(c => {
     const now = new Date();
     const start = new Date(c.start_time);
@@ -74,7 +78,7 @@ export default function AdminDashboard() {
     { label: "Live Contests", value: String(activeContests), sub: "Running now", icon: Activity, color: "text-[#0099ff]" },
     { label: "Submissions", value: String(submissions.length), sub: "Total today", icon: Layers, color: "text-emerald-500" },
     { label: "Total Users", value: String(totalParticipants), sub: "Unique students", icon: Users, color: "text-purple-500" },
-    { label: "Total Contests", value: String(contests.length), sub: "Hosted so far", icon: Trophy, color: "text-amber-500" },
+    { label: "Total Contests", value: String(totalContestsCount), sub: "Hosted so far", icon: Trophy, color: "text-amber-500" },
   ];
 
   const submissionsChartData = submissions.slice(0, 15).reverse().map(s => ({

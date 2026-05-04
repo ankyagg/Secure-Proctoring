@@ -8,10 +8,10 @@ import { databases, APPWRITE_DB_ID } from "../services/appwrite";
 export default function Landing() {
   const navigate = useNavigate();
   const [stats, setStats] = useState({
-    questions: "87",
-    contests: "12",
-    submissions: "4.2k",
-    users: "1,284"
+    questions: "...",
+    contests: "...",
+    submissions: "...",
+    users: "..."
   });
 
   useEffect(() => {

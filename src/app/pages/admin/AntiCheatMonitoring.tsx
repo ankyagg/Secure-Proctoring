@@ -188,10 +188,30 @@ export default function AntiCheatMonitoring() {
       {/* Analytics Overview */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         {[
-          { label: "Active Sessions", value: "142", icon: Activity, color: "text-[#0099ff]" },
-          { label: "Total Violations", value: totalViolations.toString(), icon: ShieldAlert, color: "text-rose-500" },
-          { label: "Integrity Score", value: Math.max(0, 100 - (totalViolations * 2)).toFixed(1) + "%", icon: ShieldCheck, color: "text-emerald-500" },
-          { label: "Risky Students", value: riskyStudentsCount.toString(), icon: Zap, color: "text-amber-500" },
+          { 
+            label: "Active Sessions", 
+            value: new Set(logs.map(l => l.user_email)).size.toString(), 
+            icon: Activity, 
+            color: "text-[#0099ff]" 
+          },
+          { 
+            label: "Total Violations", 
+            value: totalViolations.toString(), 
+            icon: ShieldAlert, 
+            color: "text-rose-500" 
+          },
+          { 
+            label: "Integrity Score", 
+            value: Math.max(0, 100 - (totalViolations * 0.5)).toFixed(1) + "%", 
+            icon: ShieldCheck, 
+            color: "text-emerald-500" 
+          },
+          { 
+            label: "Risky Students", 
+            value: riskyStudentsCount.toString(), 
+            icon: Zap, 
+            color: "text-amber-500" 
+          },
         ].map((stat, i) => (
           <div key={i} className="bg-[#090909] border border-white/5 rounded-[2rem] p-8 space-y-4 shadow-[rgba(0,153,255,0.05)_0px_0px_0px_1px]">
             <div className="flex items-center justify-between">
