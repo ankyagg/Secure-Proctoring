@@ -4,6 +4,8 @@ import { Shield, ChevronRight, Trophy, Zap, Globe, Lock, Cpu, Activity, Layers }
 import { motion } from "framer-motion";
 import { BackgroundRippleEffect } from "../components/ui/background-ripple-effect";
 import { databases, APPWRITE_DB_ID } from "../services/appwrite";
+import { AnimatePresence } from "framer-motion";
+import UnicornScene from "unicornstudio-react";
 
 export default function Landing() {
   const navigate = useNavigate();
@@ -13,6 +15,13 @@ export default function Landing() {
     submissions: "...",
     users: "..."
   });
+  const [showIntro, setShowIntro] = useState(true);
+
+  useEffect(() => {
+    // Show splash screen for 4 seconds then transition
+    const timer = setTimeout(() => setShowIntro(false), 4000);
+    return () => clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -34,6 +43,40 @@ export default function Landing() {
 
   return (
     <div className="min-h-screen bg-[#000000] text-white flex flex-col font-sans selection:bg-[#0099ff]/30 overflow-x-hidden">
+      
+      <AnimatePresence>
+        {showIntro && (
+          <motion.div 
+            key="intro-splash"
+            initial={{ opacity: 1 }}
+            exit={{ opacity: 0, scale: 1.1, filter: "blur(20px)" }}
+            transition={{ duration: 1.5, ease: [0.16, 1, 0.3, 1] }}
+            className="fixed inset-0 z-[1000] bg-black flex items-center justify-center overflow-hidden"
+          >
+             <div className="w-full h-full scale-110">
+               <UnicornScene
+                  projectId="XOzJK3ockAKSf2LKRLbE"
+                  width="100%"
+                  height="100%"
+                  scale={1}
+                  dpi={1.5}
+                  sdkUrl="https://cdn.jsdelivr.net/gh/hiunicornstudio/unicornstudio.js@2.1.11/dist/unicornStudio.umd.js"
+                />
+             </div>
+             
+             {/* Skip Interaction */}
+             <motion.button 
+               initial={{ opacity: 0 }}
+               animate={{ opacity: 1 }}
+               transition={{ delay: 2 }}
+               onClick={() => setShowIntro(false)}
+               className="absolute bottom-12 right-12 text-[10px] text-white/20 hover:text-white uppercase tracking-[0.3em] transition-all border border-white/5 px-6 py-2 rounded-full bg-black/20 backdrop-blur-md"
+             >
+               Skip Intro
+             </motion.button>
+          </motion.div>
+        )}
+      </AnimatePresence>
       
       {/* Dynamic Background */}
       <div className="fixed inset-0 z-0 opacity-40">
