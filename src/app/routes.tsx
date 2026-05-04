@@ -4,6 +4,7 @@ import StudentLayout from "./components/StudentLayout";
 import AdminLayout from "./components/AdminLayout";
 
 import Landing from "./pages/Landing";
+import About from "./pages/About";
 
 import Signup from "../app/pages/student/signup";
 import Login from "../app/pages/student/login";
@@ -28,6 +29,7 @@ import AdminProtectedRoute from "./pages/admin/AdminProtectedRoute";
 export const router = createBrowserRouter([
 
   { path: "/", element: <Landing /> },
+  { path: "/about", element: <About /> },
 
   { path: "/signup", element: <Signup /> },
 

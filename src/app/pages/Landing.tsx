@@ -82,9 +82,10 @@ export default function Landing() {
           animate={{ x: 0, opacity: 1 }}
           className="flex items-center gap-4 cursor-pointer group"
           onClick={() => navigate("/")}
+          aria-label="Secure Proctoring Home"
         >
           <div className="w-12 h-12 bg-[#0099ff] rounded-[1.25rem] flex items-center justify-center shadow-[0_0_30px_rgba(0,153,255,0.4)] group-hover:rotate-12 transition-all duration-500">
-            <Shield className="w-6 h-6 text-white" />
+            <Shield className="w-6 h-6 text-white" aria-hidden="true" />
           </div>
           <div className="flex flex-col">
             <span className="text-white text-2xl tracking-tight font-semibold leading-none uppercase">
@@ -96,13 +97,14 @@ export default function Landing() {
 
         <div className="flex items-center gap-10">
           <nav className="hidden md:flex items-center gap-10 text-[12px] font-semibold uppercase tracking-wider text-[#525252]">
-            <a href="#features" className="hover:text-white transition-colors">Features</a>
-            <a href="#integrity" className="hover:text-white transition-colors">Anti-Cheat</a>
-            <a href="#stats" className="hover:text-white transition-colors">Activity</a>
+            <a href="#features" className="hover:text-white transition-colors" aria-label="Explore Features">Features</a>
+            <a href="#integrity" className="hover:text-white transition-colors" aria-label="Anti-Cheat Integrity">Anti-Cheat</a>
+            <a href="#stats" className="hover:text-white transition-colors" aria-label="Global Activity Stats">Activity</a>
           </nav>
           <button
             onClick={() => navigate("/login")}
             className="text-[10px] font-semibold uppercase tracking-wider text-white bg-white/5 border border-white/10 hover:bg-[#0099ff] hover:border-[#0099ff] rounded-2xl px-10 py-3 transition-all active:scale-95 shadow-2xl"
+            aria-label="Access the Login System"
           >
             Login System
           </button>
@@ -144,8 +146,9 @@ export default function Landing() {
               <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </button>
             <button
-              onClick={() => navigate("/login")}
+              onClick={() => navigate("/about")}
               className="flex items-center justify-center gap-4 bg-white/5 hover:bg-white/10 border border-white/5 text-white rounded-[2rem] px-10 py-3 text-sm font-semibold uppercase tracking-wider transition-all backdrop-blur-3xl"
+              aria-label="Learn more about us"
             >
               About Us
             </button>

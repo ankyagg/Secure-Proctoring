@@ -4,46 +4,13 @@ import { Trophy, RefreshCw, Crown, Zap, Clock, ChevronLeft, Binary, Target, Shie
 import { motion, AnimatePresence } from "framer-motion";
 import { databases, APPWRITE_DB_ID } from "../../services/appwrite";
 import { Query } from "appwrite";
+import { API_BASE } from "../../config";
 
 export default function Leaderboard() {
   const navigate = useNavigate();
   const [data, setData] = useState<any[]>([]);
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
-
-  const calculateLeaderboard = (submissions: any[]) => {
-    const userStats: Record<string, any> = {};
-
-    submissions.forEach(sub => {
-      const email = sub.user_email;
-      if (!userStats[email]) {
-        userStats[email] = {
-          user_email: email,
-          user_name: sub.user_name || email.split('@')[0],
-          solved: new Set(),
-          total_points: 0,
-          last_sync: sub.$createdAt
-        };
-      }
-
-      if (sub.passed_all) {
-        userStats[email].solved.add(sub.question_id);
-        // Note: we'd need points from the question, but for simplicity let's assume 100 per unique solved
-      }
-      
-      if (new Date(sub.$createdAt) > new Date(userStats[email].last_sync)) {
-        userStats[email].last_sync = sub.$createdAt;
-      }
-    });
-
-    return Object.values(userStats)
-      .map(u => ({
-        ...u,
-        solved_count: u.solved.size,
-        total_points: u.solved.size * 100 // Mock points logic
-      }))
-      .sort((a, b) => b.total_points - a.total_points || new Date(a.last_sync).getTime() - new Date(b.last_sync).getTime());
-  };
 
   const fetchLeaderboard = async () => {
     setRefreshing(true);
