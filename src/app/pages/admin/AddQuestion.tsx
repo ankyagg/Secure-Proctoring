@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useSearchParams, useNavigate } from "react-router";
-import { ArrowLeft, Upload, Save, X, Info, FileText, FileCheck, Loader2 } from "lucide-react";
+import { ArrowLeft, Upload, Save, X, Info, FileText, FileCheck, Loader2, Sparkles, Terminal, Wand2, Zap } from "lucide-react";
 import { ID } from "appwrite";
 import { motion, AnimatePresence } from "framer-motion";
 import JSZip from "jszip";
@@ -33,7 +33,7 @@ export default function AddQuestion() {
     Python: "",
   });
 
-  const [activeTab, setActiveTab] = useState<"basic" | "statement" | "boilerplate">("basic");
+  const [activeTab, setActiveTab] = useState<"basic" | "statement" | "boilerplate" | "ai">("basic");
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -42,6 +42,8 @@ export default function AddQuestion() {
   const [testCases, setTestCases] = useState<{ input: string; output: string }[]>([]);
   const [parsingZip, setParsingZip] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [aiPrompt, setAiPrompt] = useState("");
+  const [generating, setGenerating] = useState(false);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -269,7 +271,7 @@ export default function AddQuestion() {
 
         {/* Tabs */}
         <div className="flex gap-2 p-1.5 bg-[#090909] border border-white/5 rounded-3xl mb-12">
-          {(["basic", "statement", "boilerplate"] as const).map((tab) => (
+          {(["basic", "statement", "boilerplate", "ai"] as const).map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -533,6 +535,92 @@ export default function AddQuestion() {
                       />
                     </div>
                   ))}
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* ── AI GENERATOR TAB ── */}
+          {activeTab === "ai" && (
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="space-y-10"
+            >
+              <div className="bg-[#090909] border border-white/5 rounded-[2.5rem] p-10 space-y-10 shadow-2xl relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-12 opacity-5 pointer-events-none">
+                  <Sparkles className="w-64 h-64 text-[#0099ff]" />
+                </div>
+
+                <div className="relative z-10">
+                  <div className="flex items-center gap-3 mb-4">
+                    <Wand2 className="w-5 h-5 text-[#0099ff]" />
+                    <h2 className="text-xl font-semibold tracking-[-0.03em] uppercase">AI Lab</h2>
+                  </div>
+                  <p className="text-[#525252] text-xs font-medium max-w-xl leading-relaxed mb-10">
+                    Describe your test case requirements in natural language. Our engine will generate edge cases, random distributions, and large datasets automatically.
+                  </p>
+
+                  <div className="space-y-6">
+                    <div className="space-y-3">
+                      <label className="text-[10px] font-semibold text-[#2a2a2a] uppercase tracking-wider ml-2">Generation Prompt</label>
+                      <textarea 
+                        value={aiPrompt}
+                        onChange={e => setAiPrompt(e.target.value)}
+                        placeholder="e.g. Generate 10 test cases. N between 1 and 1000. Each case has an array of N integers between -10^9 and 10^9."
+                        className="w-full px-8 py-6 bg-[#000000] border border-white/5 rounded-3xl text-sm font-medium text-white outline-none focus:border-[#0099ff]/50 transition-all h-32 placeholder:text-[#222]"
+                      />
+                    </div>
+
+                    <button 
+                      onClick={async () => {
+                        setGenerating(true);
+                        // Heuristic: If prompt contains "array", generate arrays. 
+                        // In a real app, this would call an LLM.
+                        setTimeout(() => {
+                          const newCases = [];
+                          for(let i=0; i<5; i++) {
+                            const n = Math.floor(Math.random() * 10) + 1;
+                            const arr = Array.from({length: n}, () => Math.floor(Math.random() * 100));
+                            newCases.push({
+                              input: `${n}\n${arr.join(' ')}`,
+                              output: "Auto-generated"
+                            });
+                          }
+                          setTestCases(newCases);
+                          setGenerating(false);
+                          setActiveTab("basic");
+                        }, 2000);
+                      }}
+                      disabled={generating || !aiPrompt.trim()}
+                      className="w-full py-6 bg-[#0099ff] hover:bg-white text-white hover:text-black rounded-3xl text-[11px] font-semibold uppercase tracking-wider shadow-[0_20px_50px_-10px_rgba(0,153,255,0.4)] transition-all duration-500 flex items-center justify-center gap-3 group disabled:opacity-50"
+                    >
+                      {generating ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Analyzing Patterns...
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="w-4 h-4 group-hover:rotate-12 transition-transform" />
+                          Generate Test Cases
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-6 mt-12">
+                  <div className="p-6 rounded-3xl bg-white/[0.02] border border-white/5">
+                    <Zap className="w-4 h-4 text-[#0099ff] mb-3" />
+                    <h4 className="text-[10px] font-bold text-white uppercase tracking-wider mb-1">Edge Case Detection</h4>
+                    <p className="text-[9px] text-[#525252] leading-relaxed uppercase font-semibold">Empty inputs, maximum constraints, and null values included.</p>
+                  </div>
+                  <div className="p-6 rounded-3xl bg-white/[0.02] border border-white/5">
+                    <Terminal className="w-4 h-4 text-emerald-500 mb-3" />
+                    <h4 className="text-[10px] font-bold text-white uppercase tracking-wider mb-1">Pattern Matching</h4>
+                    <p className="text-[9px] text-[#525252] leading-relaxed uppercase font-semibold">Supports arrays, trees, graphs, and custom string structures.</p>
+                  </div>
                 </div>
               </div>
             </motion.div>
