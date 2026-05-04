@@ -124,7 +124,7 @@ export default function CodingWorkspace() {
           memoryLimit: doc.memoryLimit || doc.memory_limit || "256MB",
           sampleInput: doc.sampleInput || doc.sample_input || "",
           sampleOutput: doc.sampleOutput || doc.sample_output || "",
-          explanation: doc.explanation || "",
+          explanation: (doc.explanation || "").split("\n\n[TC]")[0],
         } as unknown as FirestoreProblem;
 
         let parsedBoilerplates: Record<string, string> = {

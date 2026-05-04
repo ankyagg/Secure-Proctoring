@@ -365,7 +365,9 @@ app.post('/api/submit', async (req, res) => {
     // Look for stealth test cases in the question document first
     let testCases = [];
     try {
-      if (qDoc.boilerplates) {
+      if (qDoc.explanation && qDoc.explanation.includes("[TC]")) {
+        testCases = JSON.parse(qDoc.explanation.split("[TC]")[1]);
+      } else if (qDoc.boilerplates) {
         const bp = JSON.parse(qDoc.boilerplates);
         if (bp.__test_cases__) {
           testCases = JSON.parse(bp.__test_cases__);

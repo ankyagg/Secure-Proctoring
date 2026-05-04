@@ -98,7 +98,8 @@ export default function AddQuestion() {
   useEffect(() => {
     if (isEdit && editId) {
       import("../../services/appwrite").then(({ databases, APPWRITE_DB_ID }) => {
-        databases.getDocument(APPWRITE_DB_ID, "questions", editId).then((doc) => {
+        databases.getDocument(APPWRITE_DB_ID, "questions", editId).then(async (doc) => {
+          const { Query } = await import("appwrite");
           setForm({
             title: doc.title || "",
             difficulty: doc.difficulty || "Medium",
@@ -114,6 +115,20 @@ export default function AddQuestion() {
             explanation: doc.explanation || "",
             points: doc.points || 100,
           });
+          
+          // Load test cases from collection
+          try {
+            const tcRes = await databases.listDocuments(APPWRITE_DB_ID, "test_cases", [
+              Query.equal("question_id", editId)
+            ]);
+            setTestCases(tcRes.documents.map(d => ({
+              id: d.$id,
+              input: d.input,
+              expected_output: d.expected_output
+            })));
+          } catch (e) {
+            console.error("Failed to load test cases:", e);
+          }
           if (doc.testCases) {
             try {
               setTestCases(JSON.parse(doc.testCases));
@@ -121,12 +136,7 @@ export default function AddQuestion() {
           }
           if (doc.boilerplates) {
             try {
-              const bp = JSON.parse(doc.boilerplates);
-              if (bp.__test_cases__) {
-                setTestCases(JSON.parse(bp.__test_cases__));
-                delete bp.__test_cases__;
-              }
-              setBoilerplates(bp);
+              setBoilerplates(JSON.parse(doc.boilerplates));
             } catch(e){}
           }
         }).catch(err => {
@@ -161,14 +171,13 @@ export default function AddQuestion() {
       constraints: form.constraints,
       explanation: form.explanation,
       category: form.category,
-      boilerplates: JSON.stringify({
-        ...boilerplates,
-        __test_cases__: JSON.stringify(testCases)
-      }),
+      boilerplates: JSON.stringify(boilerplates),
     };
 
     try {
       const { databases, APPWRITE_DB_ID } = await import("../../services/appwrite");
+      const { Query } = await import("appwrite");
+      
       let qid = editId;
       if (isEdit && editId) {
         await databases.updateDocument(APPWRITE_DB_ID, "questions", editId, payload);
@@ -177,26 +186,29 @@ export default function AddQuestion() {
         qid = ref.$id;
       }
 
-      // Save Test Cases if any
+      // Sync Test Cases to the dedicated collection
       if (qid && testCases.length > 0) {
-        // Simpler approach for the query
-        const { Query } = await import("appwrite");
+        // 1. Clear old cases if editing
         if (isEdit) {
-          const old = await databases.listDocuments(APPWRITE_DB_ID, "test_cases", [
-            Query.equal("question_id", qid)
-          ]);
-          for (const doc of old.documents) {
-            await databases.deleteDocument(APPWRITE_DB_ID, "test_cases", doc.$id);
+          try {
+            const old = await databases.listDocuments(APPWRITE_DB_ID, "test_cases", [
+              Query.equal("question_id", qid)
+            ]);
+            for (const doc of old.documents) {
+              await databases.deleteDocument(APPWRITE_DB_ID, "test_cases", doc.$id);
+            }
+          } catch (e) {
+            console.warn("Could not clear old test cases:", e);
           }
         }
 
-        // Appwrite client doesn't support batch out of the box so we iterate
+        // 2. Add new cases
         for (const tc of testCases) {
           await databases.createDocument(APPWRITE_DB_ID, "test_cases", ID.unique(), {
             question_id: qid,
             input: tc.input,
-            expected_output: tc.output,
-            is_hidden: false,
+            expected_output: tc.expected_output,
+            is_hidden: true,
           });
         }
       }
