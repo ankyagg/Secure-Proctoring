@@ -81,7 +81,16 @@ export default function StudentLayout() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [timeRemaining, setTimeRemaining] = useState(6332);
+  const [timeRemaining, setTimeRemaining] = useState(0);
+
+  useEffect(() => {
+    if (!timeRemaining || timeRemaining <= 0) return;
+    const timer = setInterval(() => {
+      setTimeRemaining((prev) => Math.max(0, prev - 1));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [timeRemaining]);
+
   const [warningCount, setWarningCount] = useState(0);
   const [user, setUser] = useState<any>(null);
   const [activeContest, setActiveContest] = useState<any>(null);
@@ -138,6 +147,13 @@ export default function StudentLayout() {
         const found = cs.find((x) => String(x.id) === String(cid));
         if (found) {
           setActiveContest(found);
+          
+          // Calculate time remaining
+          const end = new Date(found.end_time || found.endTime).getTime();
+          const now = new Date().getTime();
+          const remaining = Math.max(0, Math.floor((end - now) / 1000));
+          setTimeRemaining(remaining);
+
           const config = found.antiCheat || found.anti_cheat;
           if (config && typeof config === "object") {
             setAntiCheat({
@@ -390,7 +406,7 @@ export default function StudentLayout() {
 
                 <div className="flex items-center gap-6">
                    <div className="w-12 h-12 rounded-2xl bg-white border border-white/10 flex items-center justify-center text-black font-semibold text-xs shadow-2xl">
-                     {user?.name?.substring(0, 2).toUpperCase() || "??"}
+                     {user?.name ? user.name.substring(0, 2).toUpperCase() : (user?.email ? user.email.substring(0, 2).toUpperCase() : "??")}
                    </div>
                    <button onClick={async () => { await account.deleteSession('current'); navigate("/"); }} className="p-3 text-[#2a2a2a] hover:text-white transition-colors">
                     <LogOut className="w-5 h-5" />
