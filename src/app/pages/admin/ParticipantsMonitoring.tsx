@@ -64,7 +64,16 @@ export default function ParticipantsMonitoring() {
     return () => unsubscribe();
   }, []);
 
-  const filtered = participants.filter(p => {
+  // Deduplicate participants: keep only the latest record for each user per contest
+  const deduplicatedParticipants = Array.from(
+    participants.reduce((map, p) => {
+      const key = `${p.user_email}_${p.contest_id}`;
+      if (!map.has(key)) map.set(key, p);
+      return map;
+    }, new Map()).values()
+  );
+
+  const filtered = deduplicatedParticipants.filter((p: any) => {
     const matchesSearch = (p.user_email || "").toLowerCase().includes(search.toLowerCase()) || 
                           (p.user_name || "").toLowerCase().includes(search.toLowerCase());
     const matchesContest = selectedContest === "All" || p.contest_id === selectedContest;
@@ -92,7 +101,7 @@ export default function ParticipantsMonitoring() {
                     </h1>
                 </div>
                 <p className="text-[#0099ff] text-[10px] font-bold uppercase tracking-widest px-1">
-                  {contests.find(c => c.$id === selectedContest)?.name || "Participant Metrics"}
+                   {selectedContest === "All" ? "Global Participant Metrics" : (contests.find(c => c.$id === selectedContest)?.name || "Participant Metrics")}
                 </p>
              </div>
           </div>
@@ -119,8 +128,8 @@ export default function ParticipantsMonitoring() {
       {/* Tabs */}
       <div className="flex items-center gap-4 border-b border-white/5 pb-6">
         {[
-          { id: 'live', label: 'Live Now', icon: Activity, count: participants.filter(p => p.status === 'active').length },
-          { id: 'attended', label: 'Attended', icon: Users, count: participants.filter(p => p.status === 'finished').length }
+          { id: 'live', label: 'Live Now', icon: Activity, count: deduplicatedParticipants.filter((p: any) => p.status === 'active').length },
+          { id: 'attended', label: 'Attended', icon: Users, count: deduplicatedParticipants.filter((p: any) => p.status === 'finished').length }
         ].map(tab => (
           <button
             key={tab.id}
