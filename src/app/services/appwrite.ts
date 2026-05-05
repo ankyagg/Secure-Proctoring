@@ -12,7 +12,7 @@ const client = new Client()
 export const account = new Account(client);
 export const databases = new Databases(client);
 export const storage = new Storage(client);
-export { ID, Query };
+export { client, ID, Query };
 
 // We will export the collection IDs here once they are created
 // export const COLLECTIONS = {

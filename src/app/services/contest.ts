@@ -123,7 +123,8 @@ export async function registerParticipant(contest: any, user: any) {
       user_name: user.name || user.email.split('@')[0],
       contest_id: contest.id,
       contest_name: contest.name,
-      status: "active"
+      status: "active",
+      avatar: user.avatar || ""
     };
     const response = await databases.createDocument(APPWRITE_DB_ID, "participants", ID.unique(), payload);
     return response.$id;

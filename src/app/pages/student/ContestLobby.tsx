@@ -27,6 +27,26 @@ export default function ContestLobby() {
   const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
+    // Cleanup any lingering active sessions when entering the lobby
+    const cleanupActiveSessions = async () => {
+      for (let i = 0; i < sessionStorage.length; i++) {
+        const key = sessionStorage.key(i);
+        if (key && key.startsWith('active_session_')) {
+          const pId = sessionStorage.getItem(key);
+          if (pId) {
+            try {
+              const { finishParticipant } = await import("../../services/contest");
+              await finishParticipant(pId);
+              sessionStorage.removeItem(key);
+            } catch (err) {
+              console.error("Cleanup error:", err);
+            }
+          }
+        }
+      }
+    };
+    cleanupActiveSessions();
+
     const load = async () => {
       setLoading(true);
       const data = await fetchContests();

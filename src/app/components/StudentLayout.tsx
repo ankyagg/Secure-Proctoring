@@ -272,13 +272,35 @@ export default function StudentLayout() {
 
   useEffect(() => {
     // Revoke all restrictions when returning to lobby or library
-    const nonProctorPaths = ["/student/lobby", "/student/problems", "/student/activity", "/student/leaderboard"];
-    if (nonProctorPaths.includes(location.pathname) && !location.search.includes("contestId")) {
+    const nonProctorPaths = ["/student/lobby", "/student/problems", "/student/activity", "/student/leaderboard", "/student/settings"];
+    const contestIdInUrl = new URLSearchParams(location.search).get("contestId");
+
+    if (nonProctorPaths.includes(location.pathname) && !contestIdInUrl) {
       setAntiCheat(null);
       setWarningCount(0);
       setWatchdogState('happy');
       setProctorStatus('inactive');
       
+      // Cleanup lingering sessions
+      const cleanup = async () => {
+        for (let i = 0; i < sessionStorage.length; i++) {
+          const key = sessionStorage.key(i);
+          if (key && key.startsWith('active_session_')) {
+            const pId = sessionStorage.getItem(key);
+            if (pId) {
+              try {
+                const { finishParticipant } = await import("../services/contest");
+                await finishParticipant(pId);
+                sessionStorage.removeItem(key);
+              } catch (e) {
+                console.error("Layout cleanup error:", e);
+              }
+            }
+          }
+        }
+      };
+      cleanup();
+
       // Stop webcam tracks if they exist
       if (webcamStream) {
         webcamStream.getTracks().forEach(track => track.stop());
