@@ -210,7 +210,8 @@ export default function StudentLayout() {
   }, [antiCheat?.webcam, webcamStream]);
 
   const addWarning = async (type: string = "general", message: string = "Suspicious behavior detected", screenshot: string | null = null) => {
-    setWarningCount((w) => w + 1);
+    const newCount = warningCount + 1;
+    setWarningCount(newCount);
     
     // Log to Appwrite proctor_logs
     if (user) {
@@ -226,6 +227,11 @@ export default function StudentLayout() {
           timestamp: new Date().toISOString(),
           screenshot_url: screenshot
         });
+
+        // Global Violation Threshold: 10 warnings and you are out
+        if (newCount >= 10 && !isAdmin) {
+          handleDisqualification();
+        }
       } catch (err) {
         console.error("Failed to log proctor violation:", err);
       }
