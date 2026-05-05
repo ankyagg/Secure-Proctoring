@@ -198,6 +198,7 @@ async function setupSubmissions() {
   await addStringAttr(cid, 'status', 50, false, existing);
   await addStringAttr(cid, 'language', 50, false, existing);
   await addStringAttr(cid, 'code', 50000, false, existing);
+  await addIntAttr(cid, 'time_taken', false, existing);
   await addIntAttr(cid, 'runtime', false, existing);
   await addIntAttr(cid, 'memory', false, existing);
 }

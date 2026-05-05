@@ -18,6 +18,7 @@ import { databases, APPWRITE_DB_ID } from "../../services/appwrite";
 import { finishParticipant } from "../../services/contest";
 import { Query } from "appwrite";
 import { motion } from "framer-motion";
+import { useStudentContext } from "../../components/StudentLayout";
 
 const difficultyConfig: Record<string, { bg: string; text: string; border: string }> = {
   easy:   { bg: "bg-emerald-500/10",  text: "text-emerald-400",  border: "border-emerald-500/20" },
@@ -30,9 +31,13 @@ export default function ProblemList() {
   const [searchParams] = useSearchParams();
   const contestId = searchParams.get("contestId");
 
+  const { currentUser } = useStudentContext();
   const [problems, setProblems] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [contest, setContest] = useState<any>(null);
+  const [solvedProblemIds, setSolvedProblemIds] = useState<Set<string>>(new Set());
+  const [solvedCount, setSolvedCount] = useState(0);
+  const [totalScore, setTotalScore] = useState(0);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -54,6 +59,26 @@ export default function ProblemList() {
               Query.equal('$id', questionIds)
             ]);
             setProblems(response.documents);
+
+            // Fetch student's solved submissions for this contest
+            if (currentUser?.email) {
+              try {
+                const subs = await databases.listDocuments(APPWRITE_DB_ID, 'submissions', [
+                  Query.equal('user_email', currentUser.email),
+                  Query.equal('contest_id', contestId),
+                  Query.equal('passed_all', true)
+                ]);
+                const solvedIds = new Set<string>(subs.documents.map((s: any) => s.question_id));
+                setSolvedProblemIds(solvedIds);
+                setSolvedCount(solvedIds.size);
+                const score = response.documents
+                  .filter((p: any) => solvedIds.has(p.$id))
+                  .reduce((acc: number, p: any) => acc + (p.points || 100), 0);
+                setTotalScore(score);
+              } catch (e) {
+                console.warn('Could not fetch submission stats:', e);
+              }
+            }
           } else {
             setProblems([]);
           }
@@ -68,9 +93,9 @@ export default function ProblemList() {
       }
     };
     fetchData();
-  }, [contestId]);
+  }, [contestId, currentUser?.email]);
 
-  const masteryPercentage = Math.round((0 / (problems.length || 1)) * 100);
+  const masteryPercentage = Math.round((solvedCount / (problems.length || 1)) * 100);
 
   if (loading) return (
     <div className="min-h-screen flex flex-col items-center justify-center gap-6 bg-transparent">
@@ -169,15 +194,15 @@ export default function ProblemList() {
           <div className="bg-[#090909] border border-white/5 rounded-[2.5rem] p-8 flex flex-col justify-between shadow-2xl">
             <div className="text-[9px] font-semibold uppercase tracking-wider text-[#2a2a2a] mb-8">Solved</div>
             <div>
-              <div className="text-4xl font-semibold tracking-tight leading-none mb-3">00</div>
-              <div className="text-[9px] font-semibold text-[#525252] uppercase tracking-wider">Completed</div>
+              <div className="text-4xl font-semibold tracking-tight leading-none mb-3">{String(solvedCount).padStart(2, '0')}</div>
+              <div className="text-[9px] font-semibold text-[#525252] uppercase tracking-wider">{solvedCount === problems.length && problems.length > 0 ? 'All Completed!' : 'Completed'}</div>
             </div>
           </div>
 
           <div className="bg-[#090909] border border-white/5 rounded-[2.5rem] p-8 flex flex-col justify-between shadow-2xl">
             <div className="text-[9px] font-semibold uppercase tracking-wider text-[#2a2a2a] mb-8">Total Score</div>
             <div>
-              <div className="text-4xl font-semibold tracking-tight leading-none mb-3">000</div>
+              <div className="text-4xl font-semibold tracking-tight leading-none mb-3 text-[#0099ff]">{totalScore}</div>
               <div className="text-[9px] font-semibold text-[#525252] uppercase tracking-wider">Total Points</div>
             </div>
           </div>
@@ -240,10 +265,20 @@ export default function ProblemList() {
                   </div>
 
                   <div className="relative z-10 flex items-center gap-10">
-                    <div className="px-6 py-3 rounded-2xl bg-white/5 border border-white/5 text-[9px] font-semibold text-[#2a2a2a] uppercase tracking-wider">
-                      Locked
-                    </div>
-                    <div className="w-14 h-14 rounded-full bg-white/5 border border-white/5 flex items-center justify-center group-hover:bg-[#0099ff] group-hover:border-[#0099ff] group-hover:scale-110 transition-all shadow-2xl">
+                    {solvedProblemIds.has(problem.$id) ? (
+                      <div className="px-6 py-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-[9px] font-semibold text-emerald-400 uppercase tracking-wider flex items-center gap-2">
+                        <CheckCircle2 className="w-3.5 h-3.5" /> Solved
+                      </div>
+                    ) : (
+                      <div className="px-6 py-3 rounded-2xl bg-white/5 border border-white/5 text-[9px] font-semibold text-[#2a2a2a] uppercase tracking-wider">
+                        Unsolved
+                      </div>
+                    )}
+                    <div className={`w-14 h-14 rounded-full border flex items-center justify-center transition-all shadow-2xl group-hover:scale-110 ${
+                      solvedProblemIds.has(problem.$id)
+                        ? 'bg-emerald-500/10 border-emerald-500/30 group-hover:bg-emerald-500 group-hover:border-emerald-500'
+                        : 'bg-white/5 border-white/5 group-hover:bg-[#0099ff] group-hover:border-[#0099ff]'
+                    }`}>
                       <ArrowRight className="w-5 h-5 text-white" />
                     </div>
                   </div>

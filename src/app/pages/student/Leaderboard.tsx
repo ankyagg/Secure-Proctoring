@@ -119,7 +119,15 @@ export default function Leaderboard() {
             </div>
             <div>
               <div className="text-2xl font-semibold text-white uppercase tracking-tighter mb-2">{top3[1]?.user || "---"}</div>
-              <div className="text-[10px] text-[#0099ff] font-semibold uppercase tracking-wider">{top3[1]?.total_points || 0} POINTS</div>
+              <div className="flex flex-col items-center gap-1">
+                <div className="text-[10px] text-[#0099ff] font-semibold uppercase tracking-wider">{top3[1]?.total_points || 0} POINTS</div>
+                {top3[1]?.total_time > 0 && (
+                  <div className="text-[9px] text-[#525252] font-bold uppercase tracking-[0.1em] flex items-center gap-2">
+                    <Clock className="w-2.5 h-2.5" />
+                    {Math.floor(top3[1].total_time / 60)}m {Math.floor(top3[1].total_time % 60)}s
+                  </div>
+                )}
+              </div>
             </div>
           </motion.div>
 
@@ -142,7 +150,15 @@ export default function Leaderboard() {
             </div>
             <div>
               <div className="text-4xl font-semibold text-white uppercase tracking-tight mb-3">{top3[0]?.user || "---"}</div>
-              <div className="text-[12px] text-[#0099ff] font-semibold uppercase tracking-wider">{top3[0]?.total_points || 0} POINTS</div>
+              <div className="flex flex-col items-center gap-2">
+                <div className="text-[12px] text-[#0099ff] font-semibold uppercase tracking-wider">{top3[0]?.total_points || 0} POINTS</div>
+                {top3[0]?.total_time > 0 && (
+                  <div className="text-[10px] text-[#525252] font-bold uppercase tracking-[0.2em] flex items-center gap-2">
+                    <Clock className="w-3 h-3" />
+                    {Math.floor(top3[0].total_time / 60)}m {Math.floor(top3[0].total_time % 60)}s
+                  </div>
+                )}
+              </div>
             </div>
           </motion.div>
 
@@ -164,7 +180,15 @@ export default function Leaderboard() {
             </div>
             <div>
               <div className="text-xl font-semibold text-white uppercase tracking-tighter mb-2">{top3[2]?.user || "---"}</div>
-              <div className="text-[10px] text-[#0099ff] font-semibold uppercase tracking-wider">{top3[2]?.total_points || 0} POINTS</div>
+              <div className="flex flex-col items-center gap-1">
+                <div className="text-[10px] text-[#0099ff] font-semibold uppercase tracking-wider">{top3[2]?.total_points || 0} POINTS</div>
+                {top3[2]?.total_time > 0 && (
+                  <div className="text-[9px] text-[#525252] font-bold uppercase tracking-[0.1em] flex items-center gap-2">
+                    <Clock className="w-2.5 h-2.5" />
+                    {Math.floor(top3[2].total_time / 60)}m {Math.floor(top3[2].total_time % 60)}s
+                  </div>
+                )}
+              </div>
             </div>
           </motion.div>
         </div>

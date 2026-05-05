@@ -253,18 +253,57 @@ export default function StudentLayout() {
     return () => document.removeEventListener("fullscreenchange", checkFs);
   }, [antiCheat?.fullscreen, antiCheat?.enabled, user]);
 
+  const [isDisqualified, setIsDisqualified] = useState(false);
+  const [tabViolationCount, setTabViolationCount] = useState(() => {
+    const cid = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : "").get("contestId");
+    if (!cid) return 0;
+    return parseInt(sessionStorage.getItem(`tab_violations_${cid}`) || "0");
+  });
+
   useEffect(() => {
-    if (!antiCheat?.tabSwitch || !antiCheat?.enabled) return;
+    if (!antiCheat?.tabSwitch || !antiCheat?.enabled || isAdmin) return;
 
     const onVisibility = () => {
       if (document.visibilityState === "hidden") {
-        addWarning("TAB_SWITCH", "User switched tabs or minimized browser");
+        const newCount = tabViolationCount + 1;
+        setTabViolationCount(newCount);
+        
+        const cid = new URLSearchParams(location.search).get("contestId");
+        if (cid) sessionStorage.setItem(`tab_violations_${cid}`, newCount.toString());
+
+        if (newCount > 3) {
+          handleDisqualification();
+        } else {
+          addWarning("TAB_SWITCH", `Warning ${newCount}/3: Do not switch tabs! Your session will be terminated on the next violation.`);
+        }
       }
     };
 
     document.addEventListener("visibilitychange", onVisibility);
     return () => document.removeEventListener("visibilitychange", onVisibility);
-  }, [antiCheat?.tabSwitch, antiCheat?.enabled, user]);
+  }, [antiCheat?.tabSwitch, antiCheat?.enabled, isAdmin, tabViolationCount, location.search]);
+
+  const handleDisqualification = async () => {
+    setIsDisqualified(true);
+    const cid = new URLSearchParams(location.search).get("contestId");
+    if (cid) {
+      const pId = sessionStorage.getItem(`active_session_${cid}`);
+      if (pId) {
+        try {
+          const { finishParticipant } = await import("../services/contest");
+          await finishParticipant(pId, "disqualified");
+          sessionStorage.removeItem(`active_session_${cid}`);
+        } catch (e) {
+          console.error("Disqualification sync error:", e);
+        }
+      }
+    }
+    
+    // Auto-exit fullscreen to emphasize the kick
+    if (document.fullscreenElement) {
+      document.exitFullscreen().catch(() => {});
+    }
+  };
 
   const enterFullscreen = () => {
     document.documentElement.requestFullscreen().catch(console.error);
@@ -413,6 +452,44 @@ export default function StudentLayout() {
                 >
                   Enter Fullscreen
                 </button>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Disqualification Lockout Overlay */}
+        <AnimatePresence>
+          {isDisqualified && (
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="fixed inset-0 z-[10001] bg-black/98 backdrop-blur-3xl flex flex-col items-center justify-center p-12 text-center"
+            >
+              <motion.div 
+                initial={{ scale: 0.9, y: 20 }}
+                animate={{ scale: 1, y: 0 }}
+                className="max-w-xl space-y-12"
+              >
+                <div className="w-24 h-24 bg-rose-500 rounded-[2.5rem] flex items-center justify-center mx-auto shadow-[0_0_50px_rgba(244,63,94,0.4)]">
+                  <XCircle className="w-12 h-12 text-white animate-pulse" />
+                </div>
+                <div className="space-y-6">
+                  <h2 className="text-4xl font-semibold text-white tracking-tight uppercase leading-none">System Lockout</h2>
+                  <div className="space-y-2">
+                    <p className="text-rose-400 text-sm font-bold uppercase tracking-widest">Disqualified: Multiple Tab Switches</p>
+                    <p className="text-[#525252] text-xs font-medium leading-relaxed max-w-sm mx-auto">
+                      You have exceeded the maximum of 3 allowed tab switches for this contest. Your session has been terminated and flagged for administrator review.
+                    </p>
+                  </div>
+                </div>
+                <div className="pt-8">
+                  <button
+                    onClick={() => navigate("/student/lobby")}
+                    className="px-12 py-5 bg-white text-black font-bold text-[10px] uppercase tracking-wider rounded-[1.5rem] hover:bg-[#0099ff] hover:text-white transition-all active:scale-95 shadow-2xl"
+                  >
+                    Return to Lobby
+                  </button>
+                </div>
               </motion.div>
             </motion.div>
           )}

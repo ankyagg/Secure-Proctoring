@@ -186,12 +186,14 @@ app.get('/api/leaderboard', async (req, res) => {
           user: data.user_name || email.split('@')[0],
           solved: new Set(),
           total_points: 0,
+          total_time: 0,
           last_submission: data.timestamp || data.$createdAt
         };
       }
       if (!scores[email].solved.has(data.question_id)) {
         scores[email].solved.add(data.question_id);
         scores[email].total_points += (data.points || 100);
+        scores[email].total_time += (data.time_taken || 0);
       }
       const ts = data.timestamp || data.$createdAt;
       if (ts > scores[email].last_submission) {
@@ -202,7 +204,14 @@ app.get('/api/leaderboard', async (req, res) => {
     const leaderboard = Object.values(scores).map(s => ({
       ...s,
       solved: s.solved.size
-    })).sort((a, b) => b.total_points - a.total_points || a.last_submission.localeCompare(b.last_submission));
+    })).sort((a, b) => {
+      // 1. Sort by points (descending)
+      if (b.total_points !== a.total_points) return b.total_points - a.total_points;
+      // 2. Tie-breaker: Sort by total time (ascending - faster is better)
+      if (a.total_time !== b.total_time) return a.total_time - b.total_time;
+      // 3. Final tie-breaker: Last submission timestamp
+      return a.last_submission.localeCompare(b.last_submission);
+    });
 
     res.json(leaderboard);
   } catch (err) {
@@ -355,7 +364,7 @@ app.post('/api/proctor/logs', async (req, res) => {
 
 // ── POST /api/submit ───────────────────────────────────────
 app.post('/api/submit', async (req, res) => {
-  const { question_id, code, source_code, language, language_id, user_id, user_email, user_name, contest_id } = req.body;
+  const { question_id, code, source_code, language, language_id, user_id, user_email, user_name, contest_id, time_taken } = req.body;
   const actualCode = source_code || code;
   const actualLang = language_id || language;
   const actualEmail = user_email || user_id;
@@ -423,6 +432,7 @@ app.post('/api/submit', async (req, res) => {
       total_count: total,
       passed_all,
       points: passed_all ? (qDoc.points || 100) : 0,
+      time_taken: Number(time_taken) || 0,
       results: JSON.stringify(results)
     });
 

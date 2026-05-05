@@ -145,10 +145,10 @@ export async function registerParticipant(contest: any, user: any) {
   }
 }
 
-export async function finishParticipant(participantId: string) {
+export async function finishParticipant(participantId: string, status: string = "finished") {
   try {
     await databases.updateDocument(APPWRITE_DB_ID, "participants", participantId, {
-      status: "finished"
+      status: status
     });
   } catch (e) {
     console.warn("Could not finish participant session.", e);

@@ -98,6 +98,7 @@ export default function CodingWorkspace() {
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
   const [allQuestionIds, setAllQuestionIds] = useState<string[]>([]);
   const [nextQuestionId, setNextQuestionId] = useState<string | null>(null);
+  const [prevQuestionId, setPrevQuestionId] = useState<string | null>(null);
 
   const handleEditorChange = (value: string | undefined) => {
     const newCode = value || "";
@@ -200,10 +201,19 @@ export default function CodingWorkspace() {
         if (Array.isArray(qIds)) {
           setAllQuestionIds(qIds);
           const currentIndex = qIds.indexOf(id || "");
+          
+          // Next Question
           if (currentIndex !== -1 && currentIndex < qIds.length - 1) {
             setNextQuestionId(qIds[currentIndex + 1]);
           } else {
             setNextQuestionId(null);
+          }
+
+          // Previous Question
+          if (currentIndex > 0) {
+            setPrevQuestionId(qIds[currentIndex - 1]);
+          } else {
+            setPrevQuestionId(null);
           }
         }
       })
@@ -772,6 +782,20 @@ export default function CodingWorkspace() {
               <Play className={`w-3 h-3 ${isRunning ? 'animate-spin' : 'text-[#0099ff]'}`} />
               Run Code
             </button>
+
+            {prevQuestionId && (
+              <button
+                onClick={() => {
+                  const qp = new URLSearchParams(window.location.search);
+                  const cId = qp.get("contestId");
+                  navigate(`/student/workspace/${prevQuestionId}${cId ? `?contestId=${cId}` : ""}`);
+                }}
+                className="group flex items-center gap-3 h-10 px-6 rounded-xl text-[11px] font-bold uppercase tracking-[0.15em] text-[#525252] hover:text-white bg-white/5 border border-white/5 hover:border-[#0099ff]/50 transition-all shadow-2xl active:scale-95"
+              >
+                <ChevronLeft className="w-3.5 h-3.5" />
+                Prev
+              </button>
+            )}
 
             {nextQuestionId && (
               <button
