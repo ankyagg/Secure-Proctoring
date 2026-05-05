@@ -144,25 +144,29 @@ export default function CodingWorkspace() {
           }
         }
 
-        setProblem({ ...data, boilerplates: parsedBoilerplates });
+        setProblem({ ...doc, boilerplates: parsedBoilerplates });
         
-        // Initialize source code from boilerplates
         const initialCode = parsedBoilerplates[language] || "";
         setCode(initialCode);
         setCurrentCode(initialCode);
-        setCustomInput(data.sampleInput || "");
+        setCustomInput(doc.sampleInput || "");
       })
       .catch((err) => {
         console.error("Appwrite fetch failed", err);
-        navigate("/student/lobby");
+        setProblem(null);
       })
       .finally(() => setLoadingProblem(false));
-  }, [id, navigate]);
+  }, [id, language]);
 
   useEffect(() => {
     const queryParams = new URLSearchParams(window.location.search);
     const contestId = queryParams.get("contestId");
-    if (!contestId) return;
+    if (!contestId) {
+      setAllQuestionIds([]);
+      setNextQuestionId(null);
+      setPrevQuestionId(null);
+      return;
+    }
 
     databases.getDocument(APPWRITE_DB_ID, "contests", contestId)
       .then((data: any) => {
@@ -171,7 +175,6 @@ export default function CodingWorkspace() {
         const duration = Number(data.duration) || 0;
         
         let finalEnd = contestEnd;
-        
         if (duration > 0) {
           const startTimeKey = `contest_start_${contestId}_${currentUser?.id || 'anon'}`;
           let studentStartTime = localStorage.getItem(startTimeKey);
@@ -193,32 +196,28 @@ export default function CodingWorkspace() {
           setTimeLeft(diff);
         }
 
-        // Handle Navigation
+        // Set Question IDs for navigation
         let qIds = data.question_ids;
         if (typeof qIds === 'string') {
           try { qIds = JSON.parse(qIds); } catch(e) { qIds = []; }
         }
         if (Array.isArray(qIds)) {
           setAllQuestionIds(qIds);
-          const currentIndex = qIds.indexOf(id || "");
-          
-          // Next Question
-          if (currentIndex !== -1 && currentIndex < qIds.length - 1) {
-            setNextQuestionId(qIds[currentIndex + 1]);
-          } else {
-            setNextQuestionId(null);
-          }
-
-          // Previous Question
-          if (currentIndex > 0) {
-            setPrevQuestionId(qIds[currentIndex - 1]);
-          } else {
-            setPrevQuestionId(null);
-          }
         }
       })
       .catch(err => console.error("Appwrite Contest fetch failed:", err));
-  }, [id, navigate]);
+  }, [navigate, currentUser?.id, window.location.search]); // Added window.location.search to track contestId changes
+
+  // Update Next/Prev IDs when current question ID or allQuestionIds change
+  useEffect(() => {
+    if (allQuestionIds.length > 0) {
+      const currentIndex = allQuestionIds.indexOf(id || "");
+      if (currentIndex !== -1) {
+        setNextQuestionId(currentIndex < allQuestionIds.length - 1 ? allQuestionIds[currentIndex + 1] : null);
+        setPrevQuestionId(currentIndex > 0 ? allQuestionIds[currentIndex - 1] : null);
+      }
+    }
+  }, [id, allQuestionIds]);
 
   useEffect(() => {
     if (timeLeft === null || timeLeft <= 0) return;
@@ -655,16 +654,20 @@ export default function CodingWorkspace() {
                            </div>
                            <div className="space-y-3">
                               <span className="text-[9px] font-bold text-[#2a2a2a] uppercase tracking-wider">Actual (First line)</span>
-                              <div className={`p-6 border rounded-2xl text-[12px] font-mono ${outputText.toLowerCase().includes(expectedOutput.trim().toLowerCase()) ? "bg-emerald-500/5 border-emerald-500/10 text-emerald-400" : "bg-rose-500/5 border-rose-500/10 text-rose-400"}`}>
+                              <div className={`p-6 border rounded-2xl text-[12px] font-mono ${
+                                (outputText.toLowerCase().includes(expectedOutput.trim().toLowerCase()) || outputText.includes("SUCCESS")) 
+                                ? "bg-emerald-500/5 border-emerald-500/10 text-emerald-400" 
+                                : "bg-rose-500/5 border-rose-500/10 text-rose-400"
+                              }`}>
                                  {outputText.replace("✅ RESULTS:\n\n", "").split('\n')[0].trim() || "(empty)"}
                               </div>
                            </div>
                         </div>
                         
-                        {outputText.toLowerCase().includes(expectedOutput.trim().toLowerCase()) ? (
+                        {(outputText.toLowerCase().includes(expectedOutput.trim().toLowerCase()) || outputText.includes("SUCCESS")) ? (
                           <div className="flex items-center gap-3 text-emerald-400 text-[10px] font-bold uppercase tracking-widest pt-4">
                              <CheckCircle2 className="w-4 h-4" />
-                             Outputs Match! You are ready to submit.
+                             {outputText.includes("SUCCESS") ? "All Testcases Passed! Ready to finish." : "Outputs Match! You are ready to submit."}
                           </div>
                         ) : (
                           <div className="flex items-center gap-3 text-rose-400 text-[10px] font-bold uppercase tracking-widest pt-4">
@@ -752,16 +755,7 @@ export default function CodingWorkspace() {
 
             <div className="h-6 w-px bg-white/5" />
             
-            <div className="hidden lg:flex items-center gap-6">
-               <div className="flex -space-x-3">
-                  {[1,2,3].map(i => (
-                    <div key={i} className="w-9 h-9 rounded-lg bg-black border border-white/5 flex items-center justify-center text-[10px] font-bold text-[#2a2a2a] shadow-2xl">
-                      {i}
-                    </div>
-                  ))}
-               </div>
-               <span className="text-[9px] font-bold text-[#2a2a2a] uppercase tracking-[0.15em]">History</span>
-            </div>
+            
           </div>
 
           <div className="flex items-center gap-6">
@@ -773,15 +767,6 @@ export default function CodingWorkspace() {
             )}
             
             <div className="h-6 w-px bg-white/5" />
-
-            <button
-              onClick={handleRun}
-              disabled={isRunning || isSubmitting}
-              className="group flex items-center gap-2.5 h-10 px-6 rounded-xl text-[11px] font-bold uppercase tracking-[0.15em] text-[#525252] hover:text-white bg-white/5 border border-white/5 hover:border-[#0099ff]/50 transition-all shadow-2xl active:scale-95 disabled:opacity-20"
-            >
-              <Play className={`w-3 h-3 ${isRunning ? 'animate-spin' : 'text-[#0099ff]'}`} />
-              Run Code
-            </button>
 
             {prevQuestionId && (
               <button
@@ -810,6 +795,15 @@ export default function CodingWorkspace() {
                 <ChevronLeft className="w-3.5 h-3.5 rotate-180" />
               </button>
             )}
+
+            <button
+              onClick={handleRun}
+              disabled={isRunning || isSubmitting}
+              className="group flex items-center gap-2.5 h-10 px-6 rounded-xl text-[11px] font-bold uppercase tracking-[0.15em] text-[#525252] hover:text-white bg-white/5 border border-white/5 hover:border-[#0099ff]/50 transition-all shadow-2xl active:scale-95 disabled:opacity-20"
+            >
+              <Play className={`w-3 h-3 ${isRunning ? 'animate-spin' : 'text-[#0099ff]'}`} />
+              Run Code
+            </button>
 
             <button
               onClick={handleSubmit}
