@@ -29,5 +29,9 @@ export default defineConfig({
       }
     }
   },
+  build: {
+    sourcemap: false,
+    chunkSizeWarningLimit: 1000,
+  },
   assetsInclude: ['**/*.svg', '**/*.csv'],
 })
