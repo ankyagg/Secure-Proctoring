@@ -17,7 +17,16 @@ export default function Leaderboard() {
     try {
       const response = await fetch(`${API_BASE}/leaderboard`);
       const leaderData = await response.json();
-      setData(leaderData);
+      
+      // Sort: Points (DESC), then Time (ASC)
+      const sorted = [...leaderData].sort((a, b) => {
+        if (Number(b.total_points) !== Number(a.total_points)) {
+          return Number(b.total_points) - Number(a.total_points);
+        }
+        return Number(a.total_time || 0) - Number(b.total_time || 0);
+      });
+      
+      setData(sorted);
     } catch (err) {
       console.error("Leaderboard synchronization failed:", err);
     } finally {
@@ -162,10 +171,11 @@ export default function Leaderboard() {
 
         {/* Main Ranking Matrix */}
         <div className="bg-[#090909] border border-white/5 rounded-[3rem] overflow-hidden shadow-2xl">
-          <div className="grid grid-cols-[120px_1fr_200px_160px_200px] items-center bg-white/[0.02] px-12 py-8 text-[9px] font-semibold text-[#2a2a2a] uppercase tracking-wider border-b border-white/5">
+          <div className="grid grid-cols-[80px_1fr_180px_140px_140px_180px] items-center bg-white/[0.02] px-12 py-8 text-[9px] font-semibold text-[#2a2a2a] uppercase tracking-wider border-b border-white/5">
             <span>Rank</span>
             <span>Student Name</span>
-            <span className="text-center">Challenges Solved</span>
+            <span className="text-center">Challenges</span>
+            <span className="text-right">Time Taken</span>
             <span className="text-right">Points</span>
             <span className="text-right">Last Activity</span>
           </div>
@@ -177,7 +187,7 @@ export default function Leaderboard() {
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: index * 0.03 }}
-                className="grid grid-cols-[120px_1fr_200px_160px_200px] items-center px-12 py-10 hover:bg-white/[0.01] transition-all group relative"
+                className="grid grid-cols-[80px_1fr_180px_140px_140px_180px] items-center px-12 py-10 hover:bg-white/[0.01] transition-all group relative"
               >
                 <div className="flex items-center">
                   <span className={`text-3xl font-semibold tracking-tighter ${index < 3 ? 'text-white' : 'text-[#2a2a2a]'} group-hover:text-[#0099ff] transition-colors`}>
@@ -208,8 +218,17 @@ export default function Leaderboard() {
                 <div className="flex justify-center">
                    <div className="flex items-center gap-3 px-6 py-2.5 rounded-2xl bg-white/5 border border-white/5">
                       <Target className="w-4 h-4 text-[#0099ff]" />
-                      <span className="text-[10px] font-semibold text-white uppercase tracking-widest">{entry.solved} Challenges</span>
+                      <span className="text-[10px] font-semibold text-white uppercase tracking-widest">{entry.solved}</span>
                    </div>
+                </div>
+
+                <div className="text-right">
+                  <div className="flex items-center justify-end gap-2 text-[#525252]">
+                    <Clock className="w-3.5 h-3.5 text-[#0099ff]/50" />
+                    <span className="text-lg font-bold tabular-nums tracking-tighter">
+                      {Math.floor((entry.total_time || 0) / 60)}m {Math.floor((entry.total_time || 0) % 60)}s
+                    </span>
+                  </div>
                 </div>
 
                 <div className="text-right">
@@ -217,7 +236,6 @@ export default function Leaderboard() {
                 </div>
 
                 <div className="flex items-center justify-end gap-3 text-[#2a2a2a]">
-                  <Clock className="w-4 h-4" />
                   <span className="text-[12px] font-semibold tabular-nums tracking-tighter uppercase">
                     {new Date(entry.last_submission).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </span>

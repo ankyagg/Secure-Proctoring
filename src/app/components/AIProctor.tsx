@@ -60,7 +60,16 @@ export default function AIProctor() {
   };
 
   useEffect(() => {
-    if (initedRef.current || !videoRef.current || !webcamStream || !antiCheat?.enabled) return;
+    if (!videoRef.current || !webcamStream || !antiCheat?.enabled) {
+      if (initedRef.current) {
+        detectorRef.current?.stop();
+        setProctorStatus('inactive');
+        initedRef.current = false;
+      }
+      return;
+    }
+    
+    if (initedRef.current) return;
     initedRef.current = true;
 
     let cancelled = false;
@@ -72,15 +81,15 @@ export default function AIProctor() {
         await new Promise<void>((resolve) => {
           if (videoRef.current) {
             videoRef.current.onloadedmetadata = () => {
-              videoRef.current?.play().then(resolve);
+              videoRef.current?.play().then(resolve).catch(resolve);
             };
           }
         });
 
-        if (cancelled) return;
+        if (cancelled || !antiCheat?.enabled) return;
         const detector = new ProctorGazeDetector(videoRef.current!);
         await detector.init();
-        if (cancelled) { detector.stop(); return; }
+        if (cancelled || !antiCheat?.enabled) { detector.stop(); return; }
 
         detectorRef.current = detector;
         detector.start();
@@ -88,6 +97,8 @@ export default function AIProctor() {
         setProctorReason('Anti-Cheat Active');
         
         syncTimer = setInterval(() => {
+          if (!antiCheat?.enabled) return;
+          
           const data = detector.getStatus();
           let newState: 'happy' | 'suspicious' | 'angry' = 'happy';
           
@@ -95,13 +106,10 @@ export default function AIProctor() {
             newState = 'angry';
           } else if (data.status === 'POSSIBLE_CHEATING') {
             newState = 'suspicious';
-            // PRE-CAPTURE: Take a snapshot NOW while it's suspicious
-            // This ensures we catch them in the act, even if confirm takes 300ms
             if (!pendingSnapshot.current) {
               pendingSnapshot.current = captureFrame();
             }
           } else {
-            // All clear - reset pending
             pendingSnapshot.current = null;
           }
 
@@ -113,13 +121,12 @@ export default function AIProctor() {
           }
 
           if (data.status === 'CHEATING_DETECTED' && Date.now() - lastViolationTime.current > 5000) {
-            // USE PENDING IF AVAILABLE, otherwise capture now
             const evidence = pendingSnapshot.current || captureFrame();
             addWarningRef.current(data.reason, `Confidence: ${(data.confidence * 100).toFixed(0)}%`, evidence);
             lastViolationTime.current = Date.now();
-            pendingSnapshot.current = null; // reset
+            pendingSnapshot.current = null;
           }
-        }, 100); // Faster sync loop
+        }, 200); 
       } catch (err) {
         console.error("AI Initialization Failed:", err);
         setProctorStatus('error');
@@ -132,8 +139,9 @@ export default function AIProctor() {
       cancelled = true;
       if (syncTimer) clearInterval(syncTimer);
       detectorRef.current?.stop();
+      initedRef.current = false;
     };
-  }, [webcamStream]);
+  }, [webcamStream, antiCheat?.enabled]);
 
   const captureAndLog = (type: string, details: string) => {
     const screenshot = captureFrame();

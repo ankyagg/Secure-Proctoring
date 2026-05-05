@@ -29,18 +29,23 @@ export default function ContestLobby() {
   useEffect(() => {
     // Cleanup any lingering active sessions when entering the lobby
     const cleanupActiveSessions = async () => {
+      const keys = [];
       for (let i = 0; i < sessionStorage.length; i++) {
         const key = sessionStorage.key(i);
         if (key && key.startsWith('active_session_')) {
-          const pId = sessionStorage.getItem(key);
-          if (pId) {
-            try {
-              const { finishParticipant } = await import("../../services/contest");
-              await finishParticipant(pId);
-              sessionStorage.removeItem(key);
-            } catch (err) {
-              console.error("Cleanup error:", err);
-            }
+          keys.push(key);
+        }
+      }
+
+      for (const key of keys) {
+        const pId = sessionStorage.getItem(key);
+        if (pId) {
+          try {
+            const { finishParticipant } = await import("../../services/contest");
+            await finishParticipant(pId);
+            sessionStorage.removeItem(key);
+          } catch (err) {
+            console.error("Cleanup error:", err);
           }
         }
       }

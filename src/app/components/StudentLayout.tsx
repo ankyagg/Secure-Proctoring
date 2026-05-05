@@ -251,7 +251,7 @@ export default function StudentLayout() {
     document.addEventListener("fullscreenchange", checkFs);
     if (!document.fullscreenElement) setShowFullscreenPrompt(true);
     return () => document.removeEventListener("fullscreenchange", checkFs);
-  }, [antiCheat?.fullscreen, antiCheat?.enabled, user, currentCode]);
+  }, [antiCheat?.fullscreen, antiCheat?.enabled, user]);
 
   useEffect(() => {
     if (!antiCheat?.tabSwitch || !antiCheat?.enabled) return;
@@ -264,7 +264,7 @@ export default function StudentLayout() {
 
     document.addEventListener("visibilitychange", onVisibility);
     return () => document.removeEventListener("visibilitychange", onVisibility);
-  }, [antiCheat?.tabSwitch, antiCheat?.enabled, user, currentCode]);
+  }, [antiCheat?.tabSwitch, antiCheat?.enabled, user]);
 
   const enterFullscreen = () => {
     document.documentElement.requestFullscreen().catch(console.error);
@@ -283,18 +283,23 @@ export default function StudentLayout() {
       
       // Cleanup lingering sessions
       const cleanup = async () => {
+        const keys = [];
         for (let i = 0; i < sessionStorage.length; i++) {
           const key = sessionStorage.key(i);
           if (key && key.startsWith('active_session_')) {
-            const pId = sessionStorage.getItem(key);
-            if (pId) {
-              try {
-                const { finishParticipant } = await import("../services/contest");
-                await finishParticipant(pId);
-                sessionStorage.removeItem(key);
-              } catch (e) {
-                console.error("Layout cleanup error:", e);
-              }
+            keys.push(key);
+          }
+        }
+
+        for (const key of keys) {
+          const pId = sessionStorage.getItem(key);
+          if (pId) {
+            try {
+              const { finishParticipant } = await import("../services/contest");
+              await finishParticipant(pId);
+              sessionStorage.removeItem(key);
+            } catch (e) {
+              console.error("Layout cleanup error:", e);
             }
           }
         }
@@ -313,27 +318,6 @@ export default function StudentLayout() {
     }
   }, [location.pathname, location.search, webcamStream]);
 
-  const contextValue = useState(() => ({
-    timeRemaining,
-    warningCount,
-    addWarning,
-    currentUser: user ? { username: user.name || user.email.split('@')[0], email: user.email, id: user.$id } : { username: "node" },
-    antiCheat,
-    currentCode,
-    setCurrentCode,
-    webcamStream,
-    watchdogState,
-    setWatchdogState,
-    proctorReason,
-    setProctorReason,
-    voiceActive,
-    setVoiceActive,
-    proctorStatus,
-    setProctorStatus
-  }))[0];
-
-  // We need to use useMemo but I'll update the Provider to use a stable-ish object
-  // Actually, let's just use useMemo for real.
   const memoizedContextValue = {
     timeRemaining,
     warningCount,
@@ -451,7 +435,7 @@ export default function StudentLayout() {
               <div className="flex flex-col">
                 <span className="text-[9px] font-semibold uppercase tracking-wider mb-1 opacity-50">Security Alert</span>
                 <p className="text-sm font-semibold tracking-tight leading-none">
-                  {watchdogState === 'angry' ? "Please look back at the screen!" : "Please focus on the screen."}
+                  {proctorReason}
                 </p>
               </div>
             </motion.div>
@@ -592,7 +576,7 @@ export default function StudentLayout() {
           </AnimatePresence>
         </main>
 
-        <AIProctor />
+        {antiCheat?.enabled && <AIProctor />}
 
         <AnimatePresence>
           {antiCheat?.webcam && (

@@ -24,8 +24,8 @@ if not exist node_modules (
 cd ..
 
 :: 3. Start the Backend Server in a new window
-echo [3/4] Starting Backend Server (Port 3000)...
-start "Proctor Backend" cmd /c "cd backend && npm start"
+echo [3/4] Starting Backend Server (Port 3000 with nodemon)...
+start "Proctor Backend" cmd /c "cd backend && npm run dev"
 
 :: 4. Start the Frontend Dev Server
 echo [4/4] Starting Frontend Dev Server...

@@ -557,6 +557,61 @@ app.post('/api/ai/analyze-code', async (req, res) => {
   }
 });
 
+// AI Output Prediction for Custom Input
+app.post('/api/ai/predict-output', async (req, res) => {
+  const { problem_statement, custom_input, input_format, output_format, sample_input, sample_output } = req.body;
+  const apiKey = process.env.XAI_API_KEY;
+
+  if (!apiKey) return res.status(500).json({ error: "XAI_API_KEY missing on server" });
+
+  const systemPrompt = `You are a highly precise competitive programming judge simulator.
+  Given a problem statement, custom input, and sample cases, you must predict exactly what the correct solution would output.
+  
+  PROBLEM: ${problem_statement}
+  INPUT FORMAT: ${input_format}
+  OUTPUT FORMAT: ${output_format}
+  SAMPLE INPUT: ${sample_input}
+  SAMPLE OUTPUT: ${sample_output}
+
+  CUSTOM INPUT TO SIMULATE:
+  ${custom_input}
+
+  CRITICAL: 
+  1. Return ONLY the raw predicted output string for the CUSTOM INPUT.
+  2. DO NOT include any explanation, labels, or additional text.
+  3. If the input is invalid according to constraints, predict what a robust solution would output (often nothing or specific error defined in problem).
+  
+  RESPONSE FORMAT (STRICT JSON):
+  {
+    "expected_output": "actual_output_here"
+  }`;
+
+  try {
+    const response = await axios.post('https://api.groq.com/openai/v1/chat/completions', {
+      model: "llama-3.3-70b-versatile",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: `Predict output for this custom input: ${custom_input}` }
+      ],
+      temperature: 0.1
+    }, {
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    const content = response.data.choices[0].message.content.trim();
+    const jsonMatch = content.match(/\{[\s\S]*\}/);
+    const finalJson = jsonMatch ? jsonMatch[0] : content;
+    
+    res.json(JSON.parse(finalJson));
+  } catch (err) {
+    console.error("AI Prediction Error:", err.message);
+    res.status(500).json({ error: "Failed to predict output" });
+  }
+});
+
 // ── Wildcard Route (For React Router) ──────────────────────
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '../dist', 'index.html'));

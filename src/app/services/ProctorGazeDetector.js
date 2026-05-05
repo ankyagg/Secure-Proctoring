@@ -17,13 +17,13 @@
 import Human from '@vladmandic/human';
 
 // ─── Tuning Constants (RADIANS) ──────────────────────────────────────────────
-const CHEAT_YAW = 0.25;   // ~31° left/right turn → cheating
-const CHEAT_PITCH = 0.35;   // ~26° up/down nod → cheating
-const SUSTAIN_MS = 300;    // faster confirmation
-const NOFACE_MS = 600;    // faster face-absent check
-const ALPHA = 0.45;   // more responsive smoothing
-const CAL_MS = 3000;   // shorter calibration
-const DETECT_INTERVAL = 80; // ms between detection runs (~12 FPS)
+const CHEAT_YAW = 0.45;   // ~26° left/right turn
+const CHEAT_PITCH = 0.40;   // ~23° up/down nod
+const SUSTAIN_MS = 1200;    // more grace time for movement
+const NOFACE_MS = 2500;    // allow 2.5s of face absence (looking at keyboard, etc.)
+const ALPHA = 0.35;   // smoother tracking
+const CAL_MS = 4000;   // slightly longer calibration for stability
+const DETECT_INTERVAL = 100; // ms between detection runs (~10 FPS)
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default class ProctorGazeDetector {
@@ -54,6 +54,11 @@ export default class ProctorGazeDetector {
       confidence: 1.0,
       timestamp: Date.now(),
     };
+
+    // Movement Tracking (Liveness Check)
+    this.lastBox = null;
+    this.lastMovementTime = Date.now();
+    this.staticCount = 0;
   }
 
   async init() {
@@ -66,7 +71,7 @@ export default class ProctorGazeDetector {
         detector: {
           rotation: true,
           maxDetected: 3,
-          minConfidence: 0.5,
+          minConfidence: 0.4,
         },
         mesh: { enabled: true },      // REQUIRED for rotation angles
         iris: { enabled: false },
@@ -142,17 +147,39 @@ export default class ProctorGazeDetector {
     // ── Antispoof/Liveness ────────────────────────────────────────────────
     if (real.length === 1) {
       const face = real[0];
-      // Debug log for checking real/live scores in console
-      console.log(`[Proctor] Face Scores - Real: ${face.real?.toFixed(3)}, Live: ${face.live?.toFixed(3)}`);
-
-      // real score < 0.6 usually indicates a fake (photo/screen)
-      if (face.real !== undefined && face.real < 0.6) {
+      
+      // 1. Threshold-based check (Human library native)
+      // Signficantly lowered for production stability across various webcams
+      if (face.real !== undefined && face.real < 0.40) {
          return this._set('CHEATING_DETECTED', 'BREACH: Anti-spoofing triggered (Static Image)', 0.99);
       }
-      // live score < 0.6 usually indicates a non-live face
-      if (face.live !== undefined && face.live < 0.6) {
+      if (face.live !== undefined && face.live < 0.40) {
          return this._set('CHEATING_DETECTED', 'BREACH: Liveness check failed', 0.99);
       }
+
+      // 2. Micro-Movement Check (Custom Liveness)
+      // If the bounding box doesn't move even slightly, it's likely a photo
+      const box = face.box;
+      if (this.lastBox) {
+        const dx = Math.abs(box[0] - this.lastBox[0]);
+        const dy = Math.abs(box[1] - this.lastBox[1]);
+        const dw = Math.abs(box[2] - this.lastBox[2]);
+        const dh = Math.abs(box[3] - this.lastBox[3]);
+        
+        // Threshold for "natural" movement
+        if (dx < 0.001 && dy < 0.001 && dw < 0.001 && dh < 0.001) {
+          this.staticCount++;
+        } else {
+          this.staticCount = 0;
+          this.lastMovementTime = now;
+        }
+
+        // If static for more than 15 seconds (~150 ticks at 10fps)
+        if (this.staticCount > 150) {
+          return this._set('CHEATING_DETECTED', 'BREACH: Static image detected (Liveness Error)', 0.99);
+        }
+      }
+      this.lastBox = [...box];
     }
 
     // ── No Face ──────────────────────────────────────────────────────────

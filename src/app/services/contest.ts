@@ -118,6 +118,17 @@ export async function deleteContest(id: string) {
 
 export async function registerParticipant(contest: any, user: any) {
   try {
+    // Check if there's an existing active session for this user and contest
+    const existing = await databases.listDocuments(APPWRITE_DB_ID, "participants", [
+      Query.equal("user_email", user.email),
+      Query.equal("contest_id", contest.id),
+      Query.equal("status", "active")
+    ]);
+
+    if (existing.total > 0) {
+      return existing.documents[0].$id;
+    }
+
     const payload = {
       user_email: user.email,
       user_name: user.name || user.email.split('@')[0],

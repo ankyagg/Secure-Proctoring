@@ -254,10 +254,18 @@ export default function CodingWorkspace() {
   };
 
   const generateSignature = (title: string, lang: string) => {
-    const className = title.replace(/\s+/g, "");
-    if (lang === "C++") return `#include <iostream>\n#include <vector>\nusing namespace std;\n\nclass Solution {\npublic:\n    void solve() {\n        // Write your code here\n    }\n};\n\nint main() {\n    Solution sol;\n    sol.solve();\n    return 0;\n}`;
-    if (lang === "Java") return `import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        // Write your code here\n    }\n}`;
-    if (lang === "Python") return `import sys\n\ndef main():\n    # Write your code here\n    pass\n\nif __name__ == "__main__":\n    main()`;
+    // Convert "Two Sum" to "twoSum" for methods and "TwoSum" for classes
+    const sanitized = title.replace(/[^a-zA-Z0-9 ]/g, "");
+    const words = sanitized.split(" ");
+    const className = words.map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join("");
+    const methodName = words[0].toLowerCase() + words.slice(1).map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join("");
+    
+    if (lang === "C++") return `#include <iostream>\n#include <vector>\n#include <string>\n#include <algorithm>\n#include <map>\n#include <set>\n#include <queue>\n#include <stack>\n\nusing namespace std;\n\n/*\n * Problem: ${title}\n * Implement the solution within the Solution class.\n */\nclass Solution {\npublic:\n    void ${methodName}() {\n        // Enter your code here\n        \n    }\n};\n\nint main() {\n    // Standard I/O Optimization\n    ios_base::sync_with_stdio(false);\n    cin.tie(NULL);\n\n    Solution sol;\n    sol.${methodName}();\n    \n    return 0;\n}`;
+    
+    if (lang === "Java") return `import java.util.*;\nimport java.io.*;\n\n/**\n * Problem: ${title}\n * Implement your logic in the ${methodName} method.\n */\npublic class Solution {\n    public void ${methodName}() {\n        // Enter your code here\n        \n    }\n\n    public static void main(String[] args) throws IOException {\n        // Faster I/O\n        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));\n        Solution sol = new Solution();\n        sol.${methodName}();\n    }\n}`;
+    
+    if (lang === "Python") return `import sys\nimport math\nfrom collections import Counter, deque\nimport heapq\n\n# Problem: ${title}\n# Implement your solution in the ${methodName} function.\n\ndef ${methodName}():\n    \"\"\"\n    Write your solution logic here.\n    To read input optimally: input = sys.stdin.read().split()\n    \"\"\"\n    # Example: line = sys.stdin.readline()\n    pass\n\nif __name__ == "__main__":\n    ${methodName}()`;
+    
     return "";
   };
 
@@ -278,11 +286,15 @@ export default function CodingWorkspace() {
         })
       });
       const data = await res.json();
-      if (data.expected_output) {
+      if (res.ok && data.expected_output) {
          setExpectedOutput(data.expected_output);
+      } else {
+         console.error("AI Prediction failed:", data.error || "Unknown error");
+         setExpectedOutput("⚠️ Prediction failed: " + (data.error || "Server returned non-JSON response"));
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("AI Prediction failed", err);
+      setExpectedOutput("⚠️ Prediction failed: " + err.message);
     } finally {
       setIsPredicting(false);
     }
@@ -592,16 +604,66 @@ export default function CodingWorkspace() {
                 key="output"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="space-y-8"
+                className="space-y-8 pb-20"
               >
                 <div className="flex items-center justify-between px-2">
-                  <h3 className="text-[10px] font-semibold text-[#525252] uppercase tracking-wider">Output</h3>
-                  <button onClick={() => setOutputText("")} className="text-[#525252] hover:text-white transition-colors">
-                    <RotateCcw className="w-4 h-4" />
-                  </button>
+                   <h3 className="text-[10px] font-semibold text-[#525252] uppercase tracking-wider">Execution Output</h3>
+                   <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-2">
+                         <div className={`w-1.5 h-1.5 rounded-full ${isRunning ? "bg-amber-500 animate-pulse" : "bg-emerald-500"}`} />
+                         <span className="text-[9px] font-bold text-[#525252] uppercase tracking-wider">{isRunning ? "Running" : "Idle"}</span>
+                      </div>
+                      <button onClick={() => setOutputText("")} className="text-[#525252] hover:text-white transition-colors">
+                        <RotateCcw className="w-4 h-4" />
+                      </button>
+                   </div>
                 </div>
-                <div className="bg-[#000000] border border-white/5 rounded-[2.5rem] p-10 min-h-[400px] font-mono text-xs text-[#a6a6a6] whitespace-pre-wrap leading-relaxed shadow-2xl border-t-white/10">
-                  {outputText || <span className="text-[#2a2a2a] italic uppercase tracking-wider">Run your code to see output.</span>}
+                
+                <div className="w-full min-h-[300px] bg-[#000000] border border-white/5 rounded-[2.5rem] p-10 font-mono text-[13px] leading-relaxed relative overflow-hidden shadow-2xl group border-t-white/10">
+                   <div className="absolute inset-0 bg-gradient-to-br from-[#0099ff]/[0.02] to-transparent pointer-events-none" />
+                   <div className={`whitespace-pre-wrap relative z-10 ${outputText.includes("❌") ? "text-rose-400" : outputText.includes("✅") ? "text-emerald-400" : "text-[#d1d1d1]"}`}>
+                      {outputText || "Your program output will appear here after clicking 'Run Sample'..."}
+                   </div>
+                   
+                   {/* Compare with Expected */}
+                   {expectedOutput && outputText && !isRunning && (
+                     <motion.div 
+                       initial={{ opacity: 0, y: 10 }}
+                       animate={{ opacity: 1, y: 0 }}
+                       className="mt-12 pt-8 border-t border-white/5 space-y-6 relative z-10"
+                     >
+                        <div className="flex items-center gap-3 text-[10px] font-bold text-[#0099ff] uppercase tracking-wider">
+                           <Target className="w-4 h-4" />
+                           Expected vs Actual
+                        </div>
+                        <div className="grid grid-cols-2 gap-8">
+                           <div className="space-y-3">
+                              <span className="text-[9px] font-bold text-[#2a2a2a] uppercase tracking-wider">Expected</span>
+                              <div className="p-6 bg-emerald-500/5 border border-emerald-500/10 rounded-2xl text-[12px] text-emerald-500/80 font-mono">
+                                 {expectedOutput}
+                              </div>
+                           </div>
+                           <div className="space-y-3">
+                              <span className="text-[9px] font-bold text-[#2a2a2a] uppercase tracking-wider">Actual (First line)</span>
+                              <div className={`p-6 border rounded-2xl text-[12px] font-mono ${outputText.toLowerCase().includes(expectedOutput.trim().toLowerCase()) ? "bg-emerald-500/5 border-emerald-500/10 text-emerald-400" : "bg-rose-500/5 border-rose-500/10 text-rose-400"}`}>
+                                 {outputText.replace("✅ RESULTS:\n\n", "").split('\n')[0].trim() || "(empty)"}
+                              </div>
+                           </div>
+                        </div>
+                        
+                        {outputText.toLowerCase().includes(expectedOutput.trim().toLowerCase()) ? (
+                          <div className="flex items-center gap-3 text-emerald-400 text-[10px] font-bold uppercase tracking-widest pt-4">
+                             <CheckCircle2 className="w-4 h-4" />
+                             Outputs Match! You are ready to submit.
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-3 text-rose-400 text-[10px] font-bold uppercase tracking-widest pt-4">
+                             <XCircle className="w-4 h-4" />
+                             Mismatch detected. Please check your logic.
+                          </div>
+                        )}
+                     </motion.div>
+                   )}
                 </div>
               </motion.div>
             )}
