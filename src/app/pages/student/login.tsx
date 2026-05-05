@@ -110,10 +110,10 @@ export default function Login() {
                 <Mail className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-[#2a2a2a] group-focus-within:text-[#0099ff] transition-colors" />
                 <input
                   type="email"
-                  placeholder="YOUR@EMAIL.COM"
+                  placeholder="your@email.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-16 pr-8 py-6 bg-[#000000] border border-white/5 rounded-3xl text-white placeholder:text-[#2a2a2a] focus:outline-none focus:border-[#0099ff]/50 transition-all font-semibold text-[11px] uppercase tracking-wider"
+                  className="w-full pl-16 pr-8 py-6 bg-[#000000] border border-white/5 rounded-3xl text-white placeholder:text-[#2a2a2a] focus:outline-none focus:border-[#0099ff]/50 transition-all font-semibold text-[11px] tracking-wider"
                   required
                 />
               </div>

@@ -39,7 +39,7 @@ export default function Landing() {
     fetchStats();
   }, []);
   return (
-    <div className="min-h-screen text-white flex flex-col font-sans selection:bg-[#0099ff]/30 overflow-x-hidden">
+    <div className="min-h-screen bg-transparent text-white flex flex-col font-sans selection:bg-[#0099ff]/30 overflow-x-hidden">
       
       {/* Intro Splash Screen */}
       <AnimatePresence>

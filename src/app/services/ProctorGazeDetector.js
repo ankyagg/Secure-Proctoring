@@ -20,10 +20,10 @@ import Human from '@vladmandic/human';
 const CHEAT_YAW = 0.25;   // ~31° left/right turn → cheating
 const CHEAT_PITCH = 0.35;   // ~26° up/down nod → cheating
 const SUSTAIN_MS = 300;    // faster confirmation
-const NOFACE_MS = 800;    // faster face-absent check
+const NOFACE_MS = 600;    // faster face-absent check
 const ALPHA = 0.45;   // more responsive smoothing
 const CAL_MS = 3000;   // shorter calibration
-const DETECT_INTERVAL = 100; // ms between detection runs (~10 FPS)
+const DETECT_INTERVAL = 80; // ms between detection runs (~12 FPS)
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default class ProctorGazeDetector {
@@ -72,8 +72,8 @@ export default class ProctorGazeDetector {
         iris: { enabled: false },
         description: { enabled: false },
         emotion: { enabled: false },
-        antispoof: { enabled: false },
-        liveness: { enabled: false },
+        antispoof: { enabled: true },
+        liveness: { enabled: true },
       },
       body: { enabled: false },
       hand: { enabled: false },
@@ -137,6 +137,22 @@ export default class ProctorGazeDetector {
 
     if (real.length > 1) {
       return this._set('CHEATING_DETECTED', `Multiple people (${real.length})`, 0.97);
+    }
+
+    // ── Antispoof/Liveness ────────────────────────────────────────────────
+    if (real.length === 1) {
+      const face = real[0];
+      // Debug log for checking real/live scores in console
+      console.log(`[Proctor] Face Scores - Real: ${face.real?.toFixed(3)}, Live: ${face.live?.toFixed(3)}`);
+
+      // real score < 0.6 usually indicates a fake (photo/screen)
+      if (face.real !== undefined && face.real < 0.6) {
+         return this._set('CHEATING_DETECTED', 'BREACH: Anti-spoofing triggered (Static Image)', 0.99);
+      }
+      // live score < 0.6 usually indicates a non-live face
+      if (face.live !== undefined && face.live < 0.6) {
+         return this._set('CHEATING_DETECTED', 'BREACH: Liveness check failed', 0.99);
+      }
     }
 
     // ── No Face ──────────────────────────────────────────────────────────

@@ -45,6 +45,7 @@ interface StudentContextType {
   setVoiceActive: (active: boolean) => void;
   proctorStatus: 'inactive' | 'active' | 'error';
   setProctorStatus: (status: 'inactive' | 'active' | 'error') => void;
+  refreshUser: () => Promise<void>;
 }
 
 export const StudentContext = createContext<StudentContextType>({
@@ -138,6 +139,15 @@ export default function StudentLayout() {
     };
     checkUser();
   }, [navigate]);
+  
+  const refreshUser = async () => {
+    try {
+      const session = await account.get();
+      setUser(session);
+    } catch (e) {
+      console.error("Failed to refresh user:", e);
+    }
+  };
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -149,9 +159,30 @@ export default function StudentLayout() {
           setActiveContest(found);
           
           // Calculate time remaining
-          const end = new Date(found.end_time || found.endTime).getTime();
+          const globalEnd = new Date(found.end_time || found.endTime).getTime();
           const now = new Date().getTime();
-          const remaining = Math.max(0, Math.floor((end - now) / 1000));
+          
+          let remaining = Math.max(0, Math.floor((globalEnd - now) / 1000));
+
+          // Handle individual duration if specified (e.g. "Contest ends in 3hrs for this user")
+          if (found.duration && found.duration > 0 && user?.email) {
+            const storageKey = `contest_start_${found.id}_${user.email}`;
+            let startTimeStr = localStorage.getItem(storageKey);
+            
+            if (!startTimeStr) {
+              startTimeStr = now.toString();
+              localStorage.setItem(storageKey, startTimeStr);
+            }
+            
+            const startTime = parseInt(startTimeStr);
+            const durationMs = found.duration * 60 * 1000;
+            const individualEnd = startTime + durationMs;
+            
+            // The actual remaining time is the minimum of individual duration and global end time
+            const individualRemaining = Math.max(0, Math.floor((individualEnd - now) / 1000));
+            remaining = Math.min(remaining, individualRemaining);
+          }
+          
           setTimeRemaining(remaining);
 
           const config = found.antiCheat || found.anti_cheat;
@@ -167,7 +198,7 @@ export default function StudentLayout() {
         }
       });
     }
-  }, [location.search, isAdmin]);
+  }, [location.search, isAdmin, user]);
 
   useEffect(() => {
     if ((antiCheat?.webcam || antiCheat?.faceDetection) && !webcamStream) {
@@ -240,17 +271,71 @@ export default function StudentLayout() {
   };
 
   useEffect(() => {
-    // Revoke all restrictions when returning to lobby
-    if (location.pathname === "/student/lobby") {
+    // Revoke all restrictions when returning to lobby or library
+    const nonProctorPaths = ["/student/lobby", "/student/problems", "/student/activity", "/student/leaderboard"];
+    if (nonProctorPaths.includes(location.pathname) && !location.search.includes("contestId")) {
       setAntiCheat(null);
       setWarningCount(0);
       setWatchdogState('happy');
       setProctorStatus('inactive');
+      
+      // Stop webcam tracks if they exist
+      if (webcamStream) {
+        webcamStream.getTracks().forEach(track => track.stop());
+        setWebcamStream(null);
+      }
+
       if (document.fullscreenElement) {
         document.exitFullscreen().catch(() => {});
       }
     }
-  }, [location.pathname]);
+  }, [location.pathname, location.search, webcamStream]);
+
+  const contextValue = useState(() => ({
+    timeRemaining,
+    warningCount,
+    addWarning,
+    currentUser: user ? { username: user.name || user.email.split('@')[0], email: user.email, id: user.$id } : { username: "node" },
+    antiCheat,
+    currentCode,
+    setCurrentCode,
+    webcamStream,
+    watchdogState,
+    setWatchdogState,
+    proctorReason,
+    setProctorReason,
+    voiceActive,
+    setVoiceActive,
+    proctorStatus,
+    setProctorStatus
+  }))[0];
+
+  // We need to use useMemo but I'll update the Provider to use a stable-ish object
+  // Actually, let's just use useMemo for real.
+  const memoizedContextValue = {
+    timeRemaining,
+    warningCount,
+    addWarning,
+    currentUser: user ? { 
+      username: user.name || user.email.split('@')[0], 
+      email: user.email, 
+      id: user.$id,
+      avatar: user.prefs?.avatar || null
+    } : { username: "node" },
+    antiCheat,
+    currentCode,
+    setCurrentCode,
+    webcamStream,
+    watchdogState,
+    setWatchdogState,
+    proctorReason,
+    setProctorReason,
+    voiceActive,
+    setVoiceActive,
+    proctorStatus,
+    setProctorStatus,
+    refreshUser
+  };
 
   const [isExiting, setIsExiting] = useState(false);
 
@@ -269,27 +354,8 @@ export default function StudentLayout() {
   const isWorkspace = location.pathname.includes("/workspace");
 
   return (
-    <StudentContext.Provider
-      value={{ 
-        timeRemaining, 
-        warningCount, 
-        addWarning, 
-        currentUser: user ? { username: user.name || user.email.split('@')[0], email: user.email, id: user.$id } : { username: "node" }, 
-        antiCheat,
-        currentCode,
-        setCurrentCode,
-        webcamStream,
-        watchdogState,
-        setWatchdogState,
-        proctorReason,
-        setProctorReason,
-        voiceActive,
-        setVoiceActive,
-        proctorStatus,
-        setProctorStatus
-      }}
-    >
-      <div className="h-screen bg-[#000000] flex flex-col text-white font-sans selection:bg-[#0099ff]/30 overflow-hidden relative">
+    <StudentContext.Provider value={memoizedContextValue}>
+      <div className="h-screen bg-transparent flex flex-col text-white font-sans selection:bg-[#0099ff]/30 overflow-hidden relative">
         
         {/* Logout/Exit Overlay */}
         <AnimatePresence>
@@ -362,7 +428,7 @@ export default function StudentLayout() {
               </div>
               <div className="flex flex-col">
                 <span className="text-[9px] font-semibold uppercase tracking-wider mb-1 opacity-50">Security Alert</span>
-                <p className="text-sm font-semibold uppercase tracking-widest leading-none">
+                <p className="text-sm font-semibold tracking-tight leading-none">
                   {watchdogState === 'angry' ? "Please look back at the screen!" : "Please focus on the screen."}
                 </p>
               </div>
@@ -372,7 +438,7 @@ export default function StudentLayout() {
 
         {/* Global Toolbar */}
         {!isWorkspace && (
-          <header className="flex items-center justify-between px-8 py-3.5 border-b border-white/5 bg-black/50 backdrop-blur-3xl sticky top-0 z-[100]">
+          <header className="flex items-center justify-between px-8 py-3.5 border-b border-white/5 bg-black/20 backdrop-blur-xl sticky top-0 z-[100]">
             <div className="max-w-[90rem] mx-auto w-full flex items-center justify-between relative">
               <div className="flex items-center gap-8">
                 <Link to="/" className="flex items-center gap-4 group">
@@ -413,40 +479,30 @@ export default function StudentLayout() {
                 </Link>
 
                 <div className="h-8 w-px bg-white/5 hidden md:block" />
-
-                <div className="hidden md:flex items-center gap-10">
-                  <div className="flex items-center gap-10 text-[10px] font-semibold uppercase tracking-wider">
-                    <Link 
-                      to="/student/lobby" 
-                      className={`transition-colors ${location.pathname.includes("/student/lobby") ? "text-[#0099ff]" : "text-[#525252] hover:text-white"}`}
-                    >
-                      Active Contests
-                    </Link>
-                    <Link 
-                      to="/student/problems" 
-                      className={`transition-colors ${location.pathname.includes("/student/problems") ? "text-[#0099ff]" : "text-[#525252] hover:text-white"}`}
-                    >
-                      Library
-                    </Link>
-                    <Link 
-                      to="/student/activity" 
-                      className={`transition-colors ${location.pathname.includes("/student/activity") ? "text-[#0099ff]" : "text-[#525252] hover:text-white"}`}
-                    >
-                      Recent Activity
-                    </Link>
-                    <Link 
-                      to="/student/leaderboard" 
-                      className={`transition-colors ${location.pathname.includes("/student/leaderboard") ? "text-[#0099ff]" : "text-[#525252] hover:text-white"}`}
-                    >
-                      Leaderboard
-                    </Link>
+                {!location.search.includes("contestId") && (
+                  <div className="hidden md:flex items-center gap-8  ">
+                    {[
+                      { name: "Active Contests", path: "/student/lobby" },
+                      { name: "Library", path: "/student/problems" },
+                      { name: "Recent Activity", path: "/student/activity" },
+                      { name: "Leaderboard", path: "/student/leaderboard" },
+                      { name: "Settings", path: "/student/settings" }
+                    ].map((item) => (
+                      <Link 
+                        key={item.path}
+                        to={item.path} 
+                        className={`text-[12px] font-bold uppercase tracking-wider transition-colors ${location.pathname === item.path ? "text-[#0099ff]" : "text-[#525252] hover:text-white"}`}
+                      >
+                        {item.name}
+                      </Link>
+                    ))}
                   </div>
-                </div>
+                )}
               </div>
 
               <div className="flex items-center gap-6">
 
-                {!location.pathname.includes("/student/lobby") && (
+                {location.search.includes("contestId") && (
                   <div className="flex items-center gap-6">
                     <div className="flex items-center gap-3 px-5 py-2 rounded-xl bg-[#0099ff]/5 border border-[#0099ff]/10 text-[#0099ff]">
                       <div className="w-1.5 h-1.5 bg-[#0099ff] rounded-full animate-ping" />
@@ -468,16 +524,32 @@ export default function StudentLayout() {
                   </div>
                 )}
 
-                <div className="h-8 w-px bg-white/5" />
+                {!location.search.includes("contestId") && (
+                  <>
+                    <div className="h-8 w-px bg-white/5" />
 
-                <div className="flex items-center gap-6">
-                   <div className="w-12 h-12 rounded-2xl bg-white border border-white/10 flex items-center justify-center text-black font-semibold text-xs shadow-2xl">
-                     {user?.name ? user.name.substring(0, 2).toUpperCase() : (user?.email ? user.email.substring(0, 2).toUpperCase() : "??")}
-                   </div>
-                   <button onClick={handleLogout} className="p-3 text-[#2a2a2a] hover:text-white transition-colors">
-                    <LogOut className="w-5 h-5" />
-                  </button>
-                </div>
+                    <div className="flex items-center gap-6">
+                      <div className="w-12 h-12 rounded-2xl bg-black border border-white/10 flex items-center justify-center text-white font-semibold text-xs shadow-2xl overflow-hidden group/avatar relative">
+                        {user?.prefs?.avatar ? (
+                          <img 
+                            key={user.prefs.avatar}
+                            src={`${user.prefs.avatar}${user.prefs.avatar.includes('?') ? '&' : '?'}v=${new Date().getTime()}`} 
+                            className="w-full h-full object-cover transition-transform duration-500 group-hover/avatar:scale-110" 
+                            alt="Profile" 
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-gradient-to-br from-[#0099ff]/20 to-black flex items-center justify-center">
+                            <span className="tracking-tighter">{user?.name ? user.name.substring(0, 2).toUpperCase() : (user?.email ? user.email.substring(0, 2).toUpperCase() : "??")}</span>
+                          </div>
+                        )}
+                        <div className="absolute inset-0 bg-[#0099ff]/10 opacity-0 group-hover/avatar:opacity-100 transition-opacity" />
+                      </div>
+                      <button onClick={handleLogout} className="p-3 text-[#2a2a2a] hover:text-white transition-colors">
+                        <LogOut className="w-5 h-5" />
+                      </button>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           </header>

@@ -1,27 +1,26 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router";
-import {
-  ChevronLeft,
-  Play,
-  Send,
-  ChevronDown,
-  RotateCcw,
-  Terminal,
-  CheckCircle2,
-  XCircle,
-  Clock,
-  Zap,
-  Trophy,
-  History,
-  Code2,
-  Binary,
+import { 
+  TerminalSquare, 
+  Binary, 
+  Clock, 
+  Zap, 
+  Layout, 
+  History, 
+  CheckCircle2, 
+  XCircle, 
+  ChevronLeft, 
+  Play, 
+  Send, 
+  AlertTriangle, 
+  Trophy, 
   Target,
-  Maximize2,
-  Layout,
-  TerminalSquare,
-  AlertTriangle,
-  Sparkles
+  ChevronDown,
+  Sparkles,
+  Loader2,
+  RotateCcw
 } from "lucide-react";
+import { fetchContests, registerParticipant, finishParticipant } from "../../services/contest";
 import WebcamPreview from "../../components/WebcamPreview";
 import { useStudentContext } from "../../components/StudentLayout";
 import Editor from "@monaco-editor/react";
@@ -93,6 +92,7 @@ export default function CodingWorkspace() {
   const [outputText, setOutputText] = useState("");
   const [isRunning, setIsRunning] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [expectedOutput, setExpectedOutput] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [activeTab, setActiveTab] = useState<"statement" | "input" | "output">("statement");
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
@@ -166,11 +166,27 @@ export default function CodingWorkspace() {
     databases.getDocument(APPWRITE_DB_ID, "contests", contestId)
       .then((data: any) => {
         // Handle Timer
-        const end = new Date(data.end_time).getTime();
+        const contestEnd = new Date(data.end_time).getTime();
+        const duration = Number(data.duration) || 0;
+        
+        let finalEnd = contestEnd;
+        
+        if (duration > 0) {
+          const startTimeKey = `contest_start_${contestId}_${currentUser?.id || 'anon'}`;
+          let studentStartTime = localStorage.getItem(startTimeKey);
+          if (!studentStartTime) {
+            studentStartTime = Date.now().toString();
+            localStorage.setItem(startTimeKey, studentStartTime);
+          }
+          const studentEnd = Number(studentStartTime) + (duration * 60 * 1000);
+          finalEnd = Math.min(studentEnd, contestEnd);
+        }
+
         const now = Date.now();
-        const diff = end - now;
+        const diff = finalEnd - now;
+        
         if (diff <= 0) {
-          alert("Contest has ended!");
+          alert("Time is up or contest has ended!");
           navigate("/student/lobby");
         } else {
           setTimeLeft(diff);
@@ -201,6 +217,13 @@ export default function CodingWorkspace() {
         if (prev !== null && prev <= 1000) {
           clearInterval(interval);
           handleSubmit(); 
+          
+          // Finish the participant session when time is up
+          const qp = new URLSearchParams(window.location.search);
+          const cId = qp.get("contestId");
+          const pId = sessionStorage.getItem(`active_session_${cId}`);
+          if (pId) finishParticipant(pId);
+          
           return 0;
         }
         return prev !== null ? prev - 1000 : null;
@@ -216,9 +239,53 @@ export default function CodingWorkspace() {
     return `${h > 0 ? `${h}:` : ""}${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
   };
 
+  const [startTime] = useState(Date.now());
+  const [isPredicting, setIsPredicting] = useState(false);
+
   const handleLanguageChange = (lang: string) => {
     setLanguage(lang);
-    setCode(problem?.boilerplates?.[lang] ?? "");
+    if (problem?.boilerplates?.[lang]) {
+      setCode(problem.boilerplates[lang]);
+    } else {
+      // Generate default signature
+      const signature = generateSignature(problem?.title || "Solution", lang);
+      setCode(signature);
+    }
+  };
+
+  const generateSignature = (title: string, lang: string) => {
+    const className = title.replace(/\s+/g, "");
+    if (lang === "C++") return `#include <iostream>\n#include <vector>\nusing namespace std;\n\nclass Solution {\npublic:\n    void solve() {\n        // Write your code here\n    }\n};\n\nint main() {\n    Solution sol;\n    sol.solve();\n    return 0;\n}`;
+    if (lang === "Java") return `import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        // Write your code here\n    }\n}`;
+    if (lang === "Python") return `import sys\n\ndef main():\n    # Write your code here\n    pass\n\nif __name__ == "__main__":\n    main()`;
+    return "";
+  };
+
+  const handlePredictExpectedOutput = async () => {
+    if (!customInput) return;
+    setIsPredicting(true);
+    try {
+      const res = await fetch(`${API_BASE}/ai/predict-output`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          problem_statement: problem?.statement,
+          input_format: problem?.inputFormat,
+          output_format: problem?.outputFormat,
+          sample_input: problem?.sampleInput,
+          sample_output: problem?.sampleOutput,
+          custom_input: customInput 
+        })
+      });
+      const data = await res.json();
+      if (data.expected_output) {
+         setExpectedOutput(data.expected_output);
+      }
+    } catch (err) {
+      console.error("AI Prediction failed", err);
+    } finally {
+      setIsPredicting(false);
+    }
   };
 
   const handleRun = async () => {
@@ -252,6 +319,7 @@ export default function CodingWorkspace() {
     
     const queryParams = new URLSearchParams(window.location.search);
     const contestId = queryParams.get("contestId");
+    const timeSpent = Math.floor((Date.now() - startTime) / 1000);
 
     try {
       const res = await fetch(`${API_BASE}/submit`, {
@@ -264,7 +332,8 @@ export default function CodingWorkspace() {
           user_email: currentUser?.email || "anonymous@node",
           user_name: currentUser?.username || "ANON",
           user_id: currentUser?.id || "ANON",
-          contest_id: contestId
+          contest_id: contestId,
+          time_taken: timeSpent
         }),
       });
 
@@ -275,6 +344,13 @@ export default function CodingWorkspace() {
           : `❌ FAILED: ${data.passed}/${data.total} TESTCASES PASSED.`
         );
         
+        
+        // If they passed all testcases and it was the last problem, finish their session
+        if (data.passed_all && !nextQuestionId && contestId) {
+          const pId = sessionStorage.getItem(`active_session_${contestId}`);
+          if (pId) finishParticipant(pId);
+        }
+
         // Parallel call to AI Analyzer to save time
         fetch(`${API_BASE}/ai/analyze-code`, {
           method: "POST",
@@ -311,10 +387,10 @@ export default function CodingWorkspace() {
   if (!problem) return null;
 
   return (
-    <div className="flex h-screen bg-[#000000] text-white selection:bg-[#0099ff]/30 overflow-hidden font-sans relative">
+    <div className="flex h-screen bg-transparent text-white selection:bg-[#0099ff]/30 overflow-hidden font-sans relative">
       
       {/* ── LEFT PANEL: PROBLEM SPEC ───────────────────────────────────── */}
-      <div className="w-[600px] flex flex-col border-r border-white/5 bg-[#000000] relative">
+      <div className="w-[600px] flex flex-col border-r border-white/5 bg-transparent relative">
         
         {/* Workspace Toolbar */}
         <div className="px-8 h-16 border-b border-white/5 flex items-center justify-between bg-[#050505]/80 backdrop-blur-md sticky top-0 z-50">
@@ -340,9 +416,22 @@ export default function CodingWorkspace() {
           </div>
           
           <button
-            onClick={() => {
+            onClick={async () => {
               const queryParams = new URLSearchParams(window.location.search);
               const cId = queryParams.get("contestId");
+              
+              if (cId) {
+                const pId = sessionStorage.getItem(`active_session_${cId}`);
+                if (pId) {
+                  try {
+                    await finishParticipant(pId);
+                    sessionStorage.removeItem(`active_session_${cId}`);
+                  } catch (err) {
+                    console.error("Error ending session:", err);
+                  }
+                }
+              }
+              
               navigate(cId ? `/student/problems?contestId=${cId}` : "/student/problems");
             }}
             className="flex items-center gap-2 h-9 px-4 rounded-lg text-[#525252] hover:text-white bg-white/5 border border-white/5 transition-all group active:scale-95 hover:bg-white/[0.08]"
@@ -353,7 +442,7 @@ export default function CodingWorkspace() {
         </div>
 
         {/* Intelligence Tabs */}
-        <div className="flex px-6 pt-2 gap-2 bg-[#050505] border-b border-white/5">
+        <div className="flex px-6 pt-2 gap-2 bg-black/20 backdrop-blur-xl border-b border-white/5">
           {[
             { id: "statement", label: "Problem", icon: TerminalSquare },
             { id: "input",     label: "Custom Input", icon: Layout },
@@ -379,7 +468,7 @@ export default function CodingWorkspace() {
         </div>
 
         {/* Spec Content */}
-        <div className="flex-1 overflow-y-auto p-12 custom-scrollbar bg-[#000000] relative">
+        <div className="flex-1 overflow-y-auto p-12 custom-scrollbar bg-black/10 backdrop-blur-lg relative">
           <Watermark />
           <AnimatePresence mode="wait">
             {activeTab === "statement" && (
@@ -449,6 +538,23 @@ export default function CodingWorkspace() {
                     placeholder="Enter stdin here..."
                     className="w-full h-48 bg-[#000000] border border-white/5 rounded-[2rem] p-8 text-xs font-mono text-[#0099ff] outline-none focus:border-[#0099ff]/50 transition-all placeholder:text-[#2a2a2a] shadow-2xl"
                   />
+                </div>
+
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-[10px] font-semibold text-[#525252] uppercase tracking-wider ml-2">Expected Output (Predicted)</h3>
+                    <button
+                      onClick={handlePredictExpectedOutput}
+                      disabled={isPredicting || !customInput}
+                      className="flex items-center gap-3 px-5 py-2.5 rounded-xl bg-[#0099ff]/10 text-[#0099ff] text-[9px] font-bold uppercase tracking-wider hover:bg-[#0099ff] hover:text-white transition-all disabled:opacity-30"
+                    >
+                      {isPredicting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+                      Predict with AI
+                    </button>
+                  </div>
+                  <div className="w-full min-h-[100px] bg-[#050505] border border-white/5 rounded-[2rem] p-8 text-xs font-mono text-emerald-500/80 whitespace-pre-wrap shadow-2xl">
+                    {expectedOutput || "Click predict to generate expected output using AI..."}
+                  </div>
                 </div>
 
                 {problem.sampleInput && (
@@ -736,9 +842,22 @@ export default function CodingWorkspace() {
 
                    <div className="flex gap-4">
                      <button 
-                       onClick={() => {
+                       onClick={async () => {
                          const qp = new URLSearchParams(window.location.search);
                          const cId = qp.get("contestId");
+                         
+                         if (cId) {
+                           const pId = sessionStorage.getItem(`active_session_${cId}`);
+                           if (pId) {
+                             try {
+                               await finishParticipant(pId);
+                               sessionStorage.removeItem(`active_session_${cId}`);
+                             } catch (err) {
+                               console.error("Error ending session:", err);
+                             }
+                           }
+                         }
+                         
                          navigate(cId ? `/student/problems?contestId=${cId}` : "/student/problems");
                        }}
                        className="flex-1 py-4 bg-black border border-white/10 text-[#525252] font-semibold uppercase tracking-wider text-[10px] rounded-2xl hover:text-white transition-all shadow-2xl"

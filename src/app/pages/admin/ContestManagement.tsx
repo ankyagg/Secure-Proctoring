@@ -12,7 +12,8 @@ import {
   Clock,
   Trophy,
   Zap,
-  Box
+  Box,
+  Eye
 } from "lucide-react";
 import { fetchContests, deleteContest } from "../../services/contest";
 import { motion, AnimatePresence } from "framer-motion";
@@ -176,12 +177,20 @@ export default function ContestManagement() {
                         questionIds: JSON.stringify(c.question_ids || []),
                         logo_url: c.logo_url || "",
                         backdrop_url: c.backdrop_url || "",
+                        duration: String(c.duration || 0),
                       });
                       navigate(`/admin/contests/new?${params.toString()}`);
                     }}
                     className="p-3.5 bg-[#000000] border border-white/5 text-[#2a2a2a] hover:text-white hover:border-[#0099ff]/50 rounded-xl transition-all"
                   >
                     <Edit2 className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => navigate(`/admin/participants?contestId=${c.id}`)}
+                    className="p-3.5 bg-[#000000] border border-white/5 text-[#2a2a2a] hover:text-[#0099ff] hover:border-[#0099ff]/50 rounded-xl transition-all"
+                    title="Monitor Live Participants"
+                  >
+                    <Eye className="w-4 h-4" />
                   </button>
                   <button
                     onClick={() => setDeleteId(c.id)}

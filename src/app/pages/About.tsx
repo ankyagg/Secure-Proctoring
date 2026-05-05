@@ -6,7 +6,7 @@ export default function About() {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-[#000000] text-white font-sans selection:bg-[#0099ff]/30 overflow-x-hidden">
+    <div className="min-h-screen bg-transparent text-white font-sans selection:bg-[#0099ff]/30 overflow-x-hidden">
       
       {/* Background Ambience */}
       <div className="fixed inset-0 z-0">

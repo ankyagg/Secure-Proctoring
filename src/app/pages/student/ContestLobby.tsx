@@ -14,11 +14,13 @@ import {
   ChevronLeft
 } from "lucide-react";
 import { useNavigate } from "react-router";
-import { fetchContests } from "../../services/contest";
+import { fetchContests, registerParticipant } from "../../services/contest";
 import { motion, AnimatePresence } from "framer-motion";
+import { useStudentContext } from "../../components/StudentLayout";
 
 export default function ContestLobby() {
   const navigate = useNavigate();
+  const { currentUser } = useStudentContext();
   const [contests, setContests] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedContest, setSelectedContest] = useState<any>(null);
@@ -38,8 +40,15 @@ export default function ContestLobby() {
     setSelectedContest(contest);
   };
 
-  const confirmEnterContest = () => {
-    if (!selectedContest) return;
+  const confirmEnterContest = async () => {
+    if (!selectedContest || !currentUser) return;
+    
+    // Register the user as an active participant and store the session ID
+    const participantId = await registerParticipant(selectedContest, currentUser);
+    if (participantId) {
+      sessionStorage.setItem(`active_session_${selectedContest.id}`, participantId);
+    }
+    
     navigate(`/student/problems?contestId=${selectedContest.id}`);
   };
 
@@ -175,7 +184,10 @@ export default function ContestLobby() {
                     <div className="flex items-center justify-between group/btn">
                       <div className="flex items-center gap-3 text-[10px] font-semibold uppercase tracking-wider text-[#525252]">
                         <Clock className="w-4 h-4 text-[#0099ff]/40" />
-                        {contest.points || "100"} POINTS
+                        {contest.duration && contest.duration > 0 
+                          ? `${Math.floor(contest.duration / 60)}H ${contest.duration % 60}M` 
+                          : `${contest.points || "100"} POINTS`
+                        }
                       </div>
                       <div className="w-14 h-14 rounded-full bg-white/5 border border-white/10 flex items-center justify-center group-hover:bg-[#0099ff] group-hover:border-[#0099ff] group-hover:scale-110 transition-all shadow-2xl">
                         <ChevronRight className="w-5 h-5 text-white" />
@@ -219,7 +231,15 @@ export default function ContestLobby() {
                   Join <span className="text-[#0099ff]">Contest</span>
                 </h2>
                 <div className="text-[10px] font-semibold text-[#525252] uppercase tracking-wider">Problems Solved</div>
-                <p className="text-[10px] font-semibold text-[#525252] uppercase tracking-wider mb-8">Joining Contest: {selectedContest.name}</p>
+                <p className="text-[10px] font-semibold text-[#525252] uppercase tracking-wider mb-4">Joining Contest: {selectedContest.name}</p>
+                {selectedContest.duration > 0 && (
+                  <div className="flex items-center gap-2 mb-8 px-4 py-2 rounded-xl bg-[#0099ff]/5 border border-[#0099ff]/10">
+                    <Clock className="w-3 h-3 text-[#0099ff]" />
+                    <span className="text-[10px] font-bold text-[#0099ff] uppercase tracking-widest">
+                      Individual Timer: {Math.floor(selectedContest.duration / 60)}H {selectedContest.duration % 60}M
+                    </span>
+                  </div>
+                )}
 
                 <div className="grid grid-cols-1 gap-3 w-full mb-10 text-left">
                   <div className="p-5 rounded-[1.5rem] bg-white/5 border border-white/5 flex items-center gap-6 group hover:bg-[#0099ff]/5 hover:border-[#0099ff]/20 transition-all">

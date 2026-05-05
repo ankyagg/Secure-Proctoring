@@ -101,8 +101,12 @@ export default function Leaderboard() {
           >
             <div className="absolute top-0 left-0 w-full h-1.5 bg-white/5" />
             <div className="text-4xl font-semibold text-[#2a2a2a] absolute top-12 left-12 italic opacity-20">#02</div>
-            <div className="w-24 h-24 bg-white/5 rounded-[2rem] mx-auto flex items-center justify-center text-white font-semibold text-2xl border border-white/10 mb-10">
-              {top3[1]?.user?.substring(0, 2).toUpperCase() || "??"}
+            <div className="w-24 h-24 bg-white/5 rounded-[2rem] mx-auto flex items-center justify-center text-white font-semibold text-2xl border border-white/10 mb-10 overflow-hidden">
+              {top3[1]?.avatar ? (
+                <img src={top3[1].avatar} className="w-full h-full object-cover" alt={top3[1].user} />
+              ) : (
+                top3[1]?.user?.substring(0, 2).toUpperCase() || "??"
+              )}
             </div>
             <div>
               <div className="text-2xl font-semibold text-white uppercase tracking-tighter mb-2">{top3[1]?.user || "---"}</div>
@@ -120,8 +124,12 @@ export default function Leaderboard() {
             <div className="absolute inset-0 bg-[#0099ff]/5 blur-3xl rounded-full opacity-50" />
             <Crown className="w-20 h-20 text-[#0099ff] mx-auto mb-10 animate-bounce shadow-2xl" />
             <div className="text-4xl font-semibold text-[#0099ff]/10 absolute top-16 left-16 italic uppercase">#01</div>
-            <div className="w-32 h-32 bg-white text-black rounded-[2.5rem] mx-auto flex items-center justify-center font-semibold text-4xl shadow-2xl group-hover:scale-105 transition-all mb-10">
-              {top3[0]?.user?.substring(0, 2).toUpperCase() || "??"}
+            <div className="w-32 h-32 bg-white text-black rounded-[2.5rem] mx-auto flex items-center justify-center font-semibold text-4xl shadow-2xl group-hover:scale-105 transition-all mb-10 overflow-hidden">
+              {top3[0]?.avatar ? (
+                <img src={top3[0].avatar} className="w-full h-full object-cover" alt={top3[0].user} />
+              ) : (
+                top3[0]?.user?.substring(0, 2).toUpperCase() || "??"
+              )}
             </div>
             <div>
               <div className="text-4xl font-semibold text-white uppercase tracking-tight mb-3">{top3[0]?.user || "---"}</div>
@@ -138,8 +146,12 @@ export default function Leaderboard() {
           >
             <div className="absolute top-0 left-0 w-full h-1.5 bg-white/5" />
             <div className="text-4xl font-semibold text-[#2a2a2a] absolute top-10 left-10 italic opacity-20">#03</div>
-            <div className="w-20 h-20 bg-white/5 rounded-[1.5rem] mx-auto flex items-center justify-center text-white font-semibold text-xl border border-white/10 mb-8">
-              {top3[2]?.user?.substring(0, 2).toUpperCase() || "??"}
+            <div className="w-20 h-20 bg-white/5 rounded-[1.5rem] mx-auto flex items-center justify-center text-white font-semibold text-xl border border-white/10 mb-8 overflow-hidden">
+              {top3[2]?.avatar ? (
+                <img src={top3[2].avatar} className="w-full h-full object-cover" alt={top3[2].user} />
+              ) : (
+                top3[2]?.user?.substring(0, 2).toUpperCase() || "??"
+              )}
             </div>
             <div>
               <div className="text-xl font-semibold text-white uppercase tracking-tighter mb-2">{top3[2]?.user || "---"}</div>
@@ -174,10 +186,14 @@ export default function Leaderboard() {
                 </div>
 
                 <div className="flex items-center gap-6">
-                  <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-xs font-semibold uppercase border transition-all ${
+                  <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-xs font-semibold uppercase border transition-all overflow-hidden ${
                     index === 0 ? "bg-white text-black border-transparent" : "bg-black border-white/5 text-[#525252]"
                   }`}>
-                    {entry.user?.substring(0, 2).toUpperCase() || "??"}
+                    {entry.avatar ? (
+                      <img src={entry.avatar} className="w-full h-full object-cover" alt={entry.user} />
+                    ) : (
+                      entry.user?.substring(0, 2).toUpperCase() || "??"
+                    )}
                   </div>
                   <div>
                     <div className="text-xl font-semibold text-white uppercase tracking-tighter group-hover:text-[#0099ff] transition-colors">

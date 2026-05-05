@@ -27,7 +27,7 @@ export default function StudentActivity() {
     };
 
     fetchActivity();
-  }, [currentUser]);
+  }, [currentUser?.email]);
 
   if (loading) {
     return (

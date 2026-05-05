@@ -16,6 +16,7 @@ export type Contest = {
   question_ids?: string[];
   logo_url?: string;
   backdrop_url?: string;
+  duration?: number;
 };
 
 export const fetchContests = async (): Promise<Contest[]> => {
@@ -47,6 +48,7 @@ export const fetchContests = async (): Promise<Contest[]> => {
         status: getStatus(doc.start_time, doc.end_time),
         logo_url: doc.logo_url,
         backdrop_url: doc.backdrop_url,
+        duration: Number(doc.duration) || 0,
       } as Contest;
     });
   } catch (error) {
@@ -81,7 +83,8 @@ export async function createContest(data: any) {
       anti_cheat: typeof data.anti_cheat === 'object' ? JSON.stringify(data.anti_cheat) : data.anti_cheat,
       question_ids: Array.isArray(data.question_ids) ? JSON.stringify(data.question_ids) : data.question_ids,
       logo_url: data.logo_url,
-      backdrop_url: data.backdrop_url
+      backdrop_url: data.backdrop_url,
+      duration: String(data.duration || 0)
     };
     const response = await databases.createDocument(APPWRITE_DB_ID, COLLECTION_ID, ID.unique(), payload);
     return { id: response.$id, ...data };
@@ -103,11 +106,39 @@ export async function updateContest(id: string, data: any) {
     anti_cheat: typeof data.anti_cheat === 'object' ? JSON.stringify(data.anti_cheat) : data.anti_cheat,
     question_ids: Array.isArray(data.question_ids) ? JSON.stringify(data.question_ids) : data.question_ids,
     logo_url: data.logo_url,
-    backdrop_url: data.backdrop_url
+    backdrop_url: data.backdrop_url,
+    duration: String(data.duration || 0)
   };
   await databases.updateDocument(APPWRITE_DB_ID, COLLECTION_ID, id, payload);
 }
 
 export async function deleteContest(id: string) {
   await databases.deleteDocument(APPWRITE_DB_ID, COLLECTION_ID, id);
+}
+
+export async function registerParticipant(contest: any, user: any) {
+  try {
+    const payload = {
+      user_email: user.email,
+      user_name: user.name || user.email.split('@')[0],
+      contest_id: contest.id,
+      contest_name: contest.name,
+      status: "active"
+    };
+    const response = await databases.createDocument(APPWRITE_DB_ID, "participants", ID.unique(), payload);
+    return response.$id;
+  } catch (e) {
+    console.warn("Could not register participant.", e);
+    return null;
+  }
+}
+
+export async function finishParticipant(participantId: string) {
+  try {
+    await databases.updateDocument(APPWRITE_DB_ID, "participants", participantId, {
+      status: "finished"
+    });
+  } catch (e) {
+    console.warn("Could not finish participant session.", e);
+  }
 }

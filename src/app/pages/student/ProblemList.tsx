@@ -12,10 +12,10 @@ import {
   Flame,
   ArrowRight,
   ChevronLeft,
-  CircleDashed,
   Binary
 } from "lucide-react";
 import { databases, APPWRITE_DB_ID } from "../../services/appwrite";
+import { finishParticipant } from "../../services/contest";
 import { Query } from "appwrite";
 import { motion } from "framer-motion";
 
@@ -93,7 +93,20 @@ export default function ProblemList() {
         <motion.button 
           initial={{ opacity: 0, x: -10 }}
           animate={{ opacity: 1, x: 0 }}
-          onClick={() => navigate("/student/lobby")}
+          onClick={async () => {
+            if (contestId) {
+              const pId = sessionStorage.getItem(`active_session_${contestId}`);
+              if (pId) {
+                try {
+                  await finishParticipant(pId);
+                  sessionStorage.removeItem(`active_session_${contestId}`);
+                } catch (err) {
+                  console.error("Error ending session:", err);
+                }
+              }
+            }
+            navigate("/student/lobby");
+          }}
           className="flex items-center gap-3 text-[#525252] hover:text-white transition-all text-[10px] font-semibold uppercase tracking-wider group mb-10"
         >
           <ChevronLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />

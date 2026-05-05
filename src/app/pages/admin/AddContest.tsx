@@ -25,6 +25,7 @@ export default function AddContest() {
     problems: Number(searchParams.get("problems")) || 5,
     logo_url: (searchParams.get("logo_url") ?? ""),
     backdrop_url: (searchParams.get("backdrop_url") ?? ""),
+    duration: Number(searchParams.get("duration")) || 0,
   });
 
   const [questions, setQuestions] = useState<Question[]>([]);
@@ -110,6 +111,7 @@ export default function AddContest() {
       question_ids: selectedQuestions,
       logo_url: form.logo_url,
       backdrop_url: form.backdrop_url,
+      duration: String(form.duration),
     };
 
     try {
@@ -236,6 +238,25 @@ export default function AddContest() {
                       className="w-full bg-[#000000] border border-white/5 rounded-2xl px-6 py-4 text-white font-bold text-sm focus:border-[#0099ff]/50 transition-all outline-none [color-scheme:dark]"
                     />
                   </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="block text-[10px] font-semibold uppercase tracking-wider text-[#525252]">Duration (Minutes) - Optional</label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      value={form.duration || ""}
+                      onChange={(e) => setForm({ ...form, duration: Number(e.target.value) })}
+                      placeholder="e.g. 180 for 3 hours"
+                      className="w-full bg-[#000000] border border-white/5 rounded-2xl px-6 py-4 text-white font-semibold text-sm placeholder:text-[#2a2a2a] focus:border-[#0099ff]/50 transition-all outline-none"
+                    />
+                    <div className="absolute right-6 top-1/2 -translate-y-1/2 text-[10px] font-bold text-[#2a2a2a] uppercase tracking-widest pointer-events-none">
+                      Minutes
+                    </div>
+                  </div>
+                  <p className="text-[9px] text-[#525252] font-medium uppercase tracking-widest mt-2 px-1">
+                    If set, the timer will start individually for each student when they join.
+                  </p>
                 </div>
               </div>
             </section>

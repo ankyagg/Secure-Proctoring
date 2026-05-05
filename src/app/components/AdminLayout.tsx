@@ -17,7 +17,8 @@ import {
   BarChart3,
   Menu,
   ChevronLeft,
-  Shield
+  Shield,
+  Users
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { account } from "../services/appwrite";
@@ -38,6 +39,7 @@ export default function AdminLayout() {
   const [theme, setTheme] = useState(() => localStorage.getItem("theme") || "dark");
   const [userName, setUserName] = useState("ADMINISTRATOR");
   const [userInitials, setUserInitials] = useState("AD");
+  const [userAvatar, setUserAvatar] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -52,6 +54,7 @@ export default function AdminLayout() {
             .join("")
             .toUpperCase();
           setUserInitials(initials.slice(0, 2));
+          setUserAvatar(user.prefs?.avatar || null);
         } else {
           navigate("/admin/login");
         }
@@ -224,8 +227,20 @@ export default function AdminLayout() {
                 <span className="text-[10px] font-semibold text-white uppercase tracking-tighter">{userName}</span>
                  <span className="text-[8px] font-bold text-[#0099ff] uppercase tracking-wider">Administrator</span>
               </div>
-              <div className="w-10 h-10 rounded-2xl bg-white border border-white/10 flex items-center justify-center shadow-2xl">
-                <span className="font-semibold text-black text-[10px]">{userInitials}</span>
+              <div className="w-10 h-10 rounded-2xl bg-black border border-white/10 flex items-center justify-center shadow-2xl overflow-hidden group/avatar relative">
+                {userAvatar ? (
+                  <img 
+                    key={userAvatar}
+                    src={`${userAvatar}${userAvatar.includes('?') ? '&' : '?'}v=${new Date().getTime()}`} 
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover/avatar:scale-110" 
+                    alt="Admin Profile" 
+                  />
+                ) : (
+                  <div className="w-full h-full bg-gradient-to-br from-[#0099ff]/20 to-black flex items-center justify-center">
+                    <span className="font-semibold text-white text-[10px] tracking-tighter">{userInitials}</span>
+                  </div>
+                )}
+                <div className="absolute inset-0 bg-[#0099ff]/10 opacity-0 group-hover/avatar:opacity-100 transition-opacity" />
               </div>
             </div>
           </div>
