@@ -561,11 +561,11 @@ export default function CodingWorkspace() {
                       className="flex items-center gap-3 px-5 py-2.5 rounded-xl bg-[#0099ff]/10 text-[#0099ff] text-[9px] font-bold uppercase tracking-wider hover:bg-[#0099ff] hover:text-white transition-all disabled:opacity-30"
                     >
                       {isPredicting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
-                      Predict with AI
+                      Predict
                     </button>
                   </div>
                   <div className="w-full min-h-[100px] bg-[#050505] border border-white/5 rounded-[2rem] p-8 text-xs font-mono text-emerald-500/80 whitespace-pre-wrap shadow-2xl">
-                    {expectedOutput || "Click predict to generate expected output using AI..."}
+                    {expectedOutput || "Click predict to generate expected output"}
                   </div>
                 </div>
 
