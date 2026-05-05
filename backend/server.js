@@ -12,6 +12,10 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// ── Serve Frontend ───────────────────────────────────────────
+const path = require('path');
+app.use(express.static(path.join(__dirname, '../dist')));
+
 // ── Appwrite Client ────────────────────────────────────────
 const API_KEY = process.env.VITE_APPWRITE_API_KEY;
 const PROJECT_ID = process.env.VITE_APPWRITE_PROJECT_ID || '69ec85ee00105396979f';
@@ -551,6 +555,11 @@ app.post('/api/ai/analyze-code', async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: "Failed to analyze code" });
   }
+});
+
+// ── Wildcard Route (For React Router) ──────────────────────
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../dist', 'index.html'));
 });
 
 const PORT = process.env.PORT || 3000;
