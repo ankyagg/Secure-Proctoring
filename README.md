@@ -1,104 +1,62 @@
-# 🛡️ Secure Proctor - AI-Enhanced Online Proctoring & Assessment Platform
+# 🛡️ SecureProctor
+### The Future of High-Stakes Digital Assessment
 
-Secure Proctor is a comprehensive, production-ready online assessment and coding platform designed to ensure exam integrity. It provides a seamless experience for students to solve performance-critical problems while giving administrators real-time monitoring and anti-cheat capabilities.
-
----
-
-## 🚀 Key Features
-
-### 👨‍🎓 Student Experience
-- **Fluid Coding Workspace**: A high-performance code editor supporting C++, Java, and Python.
-- **Wandbox Integration**: Instant code compilation and execution via cloud-based compilers.
-- **Intelligent Feedback**: Real-time feedback on test cases (Accepted, Wrong Answer, TLE, MLE, CE).
-- **Proctoring Overlay**: Persistent webcam preview ensuring honesty throughout the session.
-- **Secure Fullscreen Experience**: Automatic enforcement of fullscreen mode to prevent distraction.
-
-### 👩‍💼 Admin Management
-- **Anti-Cheat Monitoring**: A dedicated dashboard to track student violations (Tab switching, Fullscreen exiting).
-- **Suspicion Scoring**: Automatic risk assessment for each participant based on behavioral triggers.
-- **Content Management**: Full CRUD operations for creating problems, test cases, and scheduled contests.
-- **Submission Monitoring**: Live feed of all student submissions with detailed breakdown of execution metrics (Time, Memory).
-- **Database Seeding**: Built-in scripts to quickly populate the platform with challenges.
+**⚠️ PROPRIETARY AND CONFIDENTIAL**
+This repository is the exclusive intellectual property of **Aniket Walanj & Mansi Parande**. Unauthorized access, reproduction, or distribution is strictly prohibited under global intellectual property laws.
 
 ---
 
-## 🛠️ Technology Stack
+## 🌑 The Philosophy: Framer-Inspired Precision
+SecureProctor is not just a proctoring tool; it is a cinematic environment designed to minimize cognitive friction for students while maximizing diagnostic clarity for administrators. 
 
-| Component | Technology |
-| :--- | :--- |
-| **Frontend** | React 18, Vite, TypeScript |
-| **Styling** | Tailwind CSS 4, Framer Motion, Lucide Icons |
-| **UI Components** | Radix UI, Material UI (MUI) |
-| **Backend** | Firebase Firestore, Node.js, Express |
-| **Execution** | Wandbox API (Production), Docker + Judge0 (Self-hosted options) |
-| **Integrations** | Firebase Auth, Firebase Admin SDK |
+Inspired by **Framer’s tool-forward aesthetic**, we utilize an absolute black void (`#000000`) canvas. This ensures that the only elements demanding attention are the ones that matter: the code, the problem statement, and the proctoring telemetry.
 
 ---
 
-## 📂 Project Architecture
+## 🚀 The Product Architecture
 
-```bash
-├── backend/            # Express server (Firebase admin & Docker logic)
-├── src/
-│   ├── app/
-│   │   ├── components/ # Reusable UI & Layouts (Navbar, Sidebar, Webcam)
-│   │   ├── pages/      # Core screens (Student Workspace, Admin Dashboard)
-│   │   ├── services/   # Firebase & API interaction logic
-│   │   └── routes.tsx  # Dynamic routing configuration
-│   ├── styles/         # Global styles & Tailwind config
-│   └── main.tsx        # Application entry point
-├── judge0/             # Infrastructure for local Judge0 deployment
-├── start_all.bat       # Unified startup script
-└── package.json        # Dependencies & scripts
-```
+### 1. The Cinematic Student Workspace
+The student's entry point is a high-performance IDE built for focus.
+*   **High-Fidelity Editor**: Supporting C++, Java, and Python with zero-latency compilation.
+*   **AI Sidekick**: Integrated Llama 3.3 70B logic that provides real-time Big-O complexity analysis and output prediction for custom edge cases.
+*   **Dynamic Glassmorphism**: UI elements that feel alive, utilizing blurred glass surfaces and motion-driven feedback to create a premium, high-stakes atmosphere.
+
+### 2. The "Oracle" Admin Intelligence
+Administrators gain a god-mode view of the assessment lifecycle.
+*   **Real-time Violation Feed**: A centralized stream of student behavior, scoring participants on a "Suspicion Scale."
+*   **AI Question Architect**: Leverages Groq-accelerated models to generate unique, balanced programming challenges and hidden test cases instantly.
+*   **Leaderboard tie-breaking**: A complex logic engine that ranks students based on points, execution time, and submission recency.
 
 ---
 
-## 🚦 Getting Started
+## 🔒 Proctoring Logic (The Shield)
+The core of SecureProctor is its multi-layered integrity enforcement system:
 
-### Prerequisites
-- [Node.js](https://nodejs.org/) (v18+)
-- [npm](https://www.npmjs.com/)
-- [Firebase account](https://firebase.google.com/) for database and auth
-
-### Setup
-1. **Clone the repository**:
-   ```bash
-   git clone https://github.com/ankyagg/Secure-Proctoring.git
-   cd Secure-Proctoring
-   ```
-
-2. **Install dependencies**:
-   ```bash
-   npm install
-   ```
-
-3. **Configure Environment**:
-   Create a `.env` file in the root with your Firebase configuration:
-   ```env
-   VITE_FIREBASE_API_KEY=your_key
-   VITE_FIREBASE_AUTH_DOMAIN=your_domain
-   VITE_FIREBASE_PROJECT_ID=your_id
-   VITE_FIREBASE_STORAGE_BUCKET=your_bucket
-   VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
-   VITE_FIREBASE_APP_ID=your_app_id
-   ```
-
-4. **Launch Application**:
-   Simply run the start script:
-   ```bash
-   ./start_all.bat
-   ```
-   The application will be available at [http://localhost:5173](http://localhost:5173).
+| Layer | Logic | Enforcement |
+| :--- | :--- | :--- |
+| **Gaze Protection** | Face-landmarks detection via TensorFlow.js. | Logs violations if the student looks away from the screen for >3 seconds. |
+| **Session Isolation** | Automated Fullscreen API enforcement. | Immediate warning and log entry upon exiting fullscreen mode. |
+| **Tab-Switch Detection** | Document Visibility API & Blur/Focus events. | Tracks every instance of the student leaving the workspace tab. |
+| **Violation Rotation** | Intelligent backend log rotation. | Persists the 5 most critical snapshots per user to optimize database density while maintaining a complete history of suspicious activity. |
 
 ---
 
-## ⚖️ License
-This project is licensed under the **ISC License**. See the `LICENSE` file for details (or `package.json`).
+## 🛠️ Core Infrastructure
+SecureProctor utilizes a state-of-the-art serverless-first architecture:
+- **Database**: Appwrite NoSQL for high-concurrency telemetry persistence.
+- **AI**: Groq LPU™ technology for near-instant Large Language Model responses.
+- **Execution**: Wandbox Cloud for safe, isolated code compilation.
+- **Motion**: Framer Motion for a fluid, reactive UI.
 
 ---
 
-## 🤝 Contributing
-Contributions are welcome! Please feel free to submit a Pull Request.
+## ⚖️ Legal & Licensing
 
-*Developed with ❤️ for secure educational environments.*
+**Copyright © 2026 Aniket Walanj & Mansi Parande. All Rights Reserved.**
+
+This software is strictly **Proprietary**. Access to this repository does not grant any rights to use, modify, or distribute the source code. All telemetry collection is performed in accordance with the **[End User License Agreement (EULA)](EULA.md)** to ensure institutional compliance and student privacy.
+
+---
+
+*Developed with 🖤 for the next generation of academic integrity.*
+
