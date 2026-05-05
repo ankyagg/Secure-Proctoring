@@ -43,6 +43,7 @@ export default function ProblemList() {
     const fetchData = async () => {
       setLoading(true);
       try {
+        let questionDocs: any[] = [];
         if (contestId) {
           // 1. Fetch contest to get question_ids
           const contestDoc = await databases.getDocument(APPWRITE_DB_ID, 'contests', contestId);
@@ -54,37 +55,42 @@ export default function ProblemList() {
           }
 
           if (questionIds && questionIds.length > 0) {
-            // 2. Fetch specific questions
             const response = await databases.listDocuments(APPWRITE_DB_ID, 'questions', [
               Query.equal('$id', questionIds)
             ]);
-            setProblems(response.documents);
-
-            // Fetch student's solved submissions for this contest
-            if (currentUser?.email) {
-              try {
-                const subs = await databases.listDocuments(APPWRITE_DB_ID, 'submissions', [
-                  Query.equal('user_email', currentUser.email),
-                  Query.equal('contest_id', contestId),
-                  Query.equal('passed_all', true)
-                ]);
-                const solvedIds = new Set<string>(subs.documents.map((s: any) => s.question_id));
-                setSolvedProblemIds(solvedIds);
-                setSolvedCount(solvedIds.size);
-                const score = response.documents
-                  .filter((p: any) => solvedIds.has(p.$id))
-                  .reduce((acc: number, p: any) => acc + (p.points || 100), 0);
-                setTotalScore(score);
-              } catch (e) {
-                console.warn('Could not fetch submission stats:', e);
-              }
-            }
-          } else {
-            setProblems([]);
+            questionDocs = response.documents;
           }
         } else {
           const response = await databases.listDocuments(APPWRITE_DB_ID, 'questions');
-          setProblems(response.documents);
+          questionDocs = response.documents;
+        }
+
+        setProblems(questionDocs);
+
+        // Fetch student's solved submissions strictly for this context
+        if (currentUser?.email && questionDocs.length > 0) {
+          try {
+            const queries = [
+              Query.equal('user_email', currentUser.email),
+              Query.equal('passed_all', true),
+              Query.equal('contest_id', contestId || "none")
+            ];
+
+            const subs = await databases.listDocuments(APPWRITE_DB_ID, 'submissions', queries);
+            
+            // Map solved question IDs
+            const solvedIds = new Set<string>(subs.documents.map((s: any) => s.question_id));
+            setSolvedProblemIds(solvedIds);
+            setSolvedCount(solvedIds.size);
+
+            // Calculate total score from the points of solved questions present in current list
+            const score = questionDocs
+              .filter((p: any) => solvedIds.has(p.$id))
+              .reduce((acc: number, p: any) => acc + (p.points || 100), 0);
+            setTotalScore(score);
+          } catch (e) {
+            console.warn('Could not fetch submission stats:', e);
+          }
         }
       } catch (err) {
         console.error("Failed to load problems:", err);

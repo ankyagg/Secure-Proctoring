@@ -423,7 +423,7 @@ app.post('/api/submit', async (req, res) => {
       
       // Optional/Additional fields
       question_title: qDoc.title || '',
-      contest_id: contest_id || null,
+      contest_id: contest_id || "none",
       user_email: actualEmail || 'anonymous@node',
       user_name: user_name || (actualEmail ? actualEmail.split('@')[0] : 'ANON'),
       source_code: actualCode,
