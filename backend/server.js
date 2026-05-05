@@ -564,8 +564,8 @@ app.post('/api/ai/predict-output', async (req, res) => {
 
   if (!apiKey) return res.status(500).json({ error: "XAI_API_KEY missing on server" });
 
-  const systemPrompt = `You are a highly precise competitive programming judge simulator.
-  Given a problem statement, custom input, and sample cases, you must predict exactly what the correct solution would output.
+  const systemPrompt = `You are an elite competitive programming judge simulator.
+  Your task is to predict the EXACT output a correct solution would produce for a given custom input.
   
   PROBLEM: ${problem_statement}
   INPUT FORMAT: ${input_format}
@@ -573,13 +573,25 @@ app.post('/api/ai/predict-output', async (req, res) => {
   SAMPLE INPUT: ${sample_input}
   SAMPLE OUTPUT: ${sample_output}
 
+  FEW-SHOT EXAMPLES FOR YOUR LOGIC:
+  Example 1 (Two Sum):
+  Input: 4 9 \n 2 7 11 15
+  Thinking: Target 9. 2+7=9. Indices 0 and 1.
+  Output: 0 1
+
+  Example 2 (Two Sum):
+  Input: 5 11 \n 2 7 5 9 1
+  Thinking: Target 11. 2+9=11. Indices 0 and 3.
+  Output: 0 3
+
+  CRITICAL GUIDELINES:
+  1. INTERNAL VERIFICATION: Manually perform the math/logic for the custom input before finalizing.
+  2. STANDARD ALGORITHM: Simulate the most common optimal algorithm (e.g., single-pass hash map for search).
+  3. FIRST MATCH: If multiple valid outputs exist, return the one a standard linear scan would find first.
+  4. STRICT OUTPUT: Return ONLY the raw output string. No explanations.
+
   CUSTOM INPUT TO SIMULATE:
   ${custom_input}
-
-  CRITICAL: 
-  1. Return ONLY the raw predicted output string for the CUSTOM INPUT.
-  2. DO NOT include any explanation, labels, or additional text.
-  3. If the input is invalid according to constraints, predict what a robust solution would output (often nothing or specific error defined in problem).
   
   RESPONSE FORMAT (STRICT JSON):
   {
@@ -614,6 +626,9 @@ app.post('/api/ai/predict-output', async (req, res) => {
 
 // ── Wildcard Route (For React Router) ──────────────────────
 app.get('*', (req, res) => {
+  if (req.path.startsWith('/api')) {
+    return res.status(404).json({ error: `API route not found: ${req.path}` });
+  }
   res.sendFile(path.join(__dirname, '../dist', 'index.html'));
 });
 
